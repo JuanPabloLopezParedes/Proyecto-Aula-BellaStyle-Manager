@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel | BellaStyle</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="min-h-screen">
+
+  <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+    <div class="absolute -right-40 -top-40 h-[30rem] w-[30rem] rounded-full bg-bella-700/20 blur-3xl"></div>
+  </div>
+
+  <!-- Barra superior -->
+  <header class="sticky top-0 z-20 border-b border-white/10 bg-noche-950/80 backdrop-blur">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-3">
+      <a href="welcome.html" class="font-titulo text-2xl font-bold">Bella<span class="text-bella-400">Style</span></a>
+      <div class="flex items-center gap-3">
+        <img id="fotoUsuario" src="" alt="" class="hidden h-9 w-9 rounded-full object-cover ring-2 ring-bella-500/50 sm:block">
+        <div class="hidden text-right leading-tight sm:block">
+          <p id="nombreUsuario" class="text-sm font-semibold"></p>
+          <p id="rolUsuario" class="text-xs text-bella-300"></p>
+        </div>
+        <button id="btnSalir" class="btn-secundario px-3 py-1.5">Salir</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl px-5 py-8">
+    <div class="animate-aparecer">
+      <h1 id="saludo" class="text-4xl font-bold"></h1>
+      <p id="subtitulo" class="mt-1 text-white/50"></p>
+    </div>
+
+    <!-- ===================== CLIENTA ===================== -->
+    <section data-rol="Clienta" class="mt-8 hidden grid-cols-1 gap-6 lg:grid-cols-5">
+      <div class="tarjeta p-6 lg:col-span-2">
+        <h2 class="text-2xl font-bold">Agendar cita</h2>
+        <div id="alertaCita" class="alerta mt-4"></div>
+        <form id="formCita" class="mt-5 space-y-4">
+          <div>
+            <label for="servicio" class="etiqueta">Servicio</label>
+            <select id="servicio" class="campo" required></select>
+          </div>
+          <div>
+            <label for="estilista" class="etiqueta">Estilista</label>
+            <select id="estilista" class="campo">
+              <option value="">Asignación automática</option>
+            </select>
+            <p class="mt-1 text-xs text-white/40">Si no eliges, el sistema asigna la estilista disponible con menos citas.</p>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label for="fecha" class="etiqueta">Fecha</label>
+              <input id="fecha" type="date" class="campo" required>
+            </div>
+            <div>
+              <label for="hora" class="etiqueta">Hora</label>
+              <select id="hora" class="campo" required></select>
+            </div>
+          </div>
+          <div>
+            <label for="observaciones" class="etiqueta">Observaciones (opcional)</label>
+            <textarea id="observaciones" rows="2" class="campo" placeholder="Ej: tengo el cabello largo"></textarea>
+          </div>
+          <button type="submit" class="btn-primario w-full py-3">Agendar</button>
+        </form>
+
+        <div class="mt-8 border-t border-white/10 pt-6">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xl font-bold">Mis datos</h3>
+            <button id="btnEditarMisDatos" class="btn-mini bg-white/10 text-white hover:bg-white/15">Editar</button>
+          </div>
+          <dl id="misDatos" class="mt-3 space-y-1 text-sm text-white/60"></dl>
+        </div>
+      </div>
+
+      <div class="tarjeta overflow-hidden lg:col-span-3">
+        <h2 class="p-6 pb-2 text-2xl font-bold">Mis citas</h2>
+        <div class="overflow-x-auto">
+          <table class="tabla">
+            <thead><tr><th>Servicio</th><th>Fecha</th><th>Estilista</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="tablaCitasClienta"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== ESTILISTA ===================== -->
+    <section data-rol="Estilista" class="mt-8 hidden">
+      <div id="metricasEstilista" class="grid grid-cols-2 gap-4 lg:grid-cols-4"></div>
+      <div class="tarjeta mt-6 flex flex-wrap items-center justify-between gap-3 p-6">
+        <div>
+          <h2 class="text-2xl font-bold">Mis servicios</h2>
+          <p id="misServicios" class="mt-1 text-sm text-white/60"></p>
+        </div>
+        <button id="btnEditarMisServicios" class="btn-secundario">Editar mis servicios</button>
+      </div>
+      <div class="tarjeta mt-6 overflow-hidden">
+        <h2 class="p-6 pb-2 text-2xl font-bold">Citas asignadas</h2>
+        <div class="overflow-x-auto">
+          <table class="tabla">
+            <thead><tr><th>Código</th><th>Clienta</th><th>Servicio</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="tablaCitasEstilista"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== ADMINISTRADORA ===================== -->
+    <section data-rol="Administradora" class="mt-8 hidden">
+      <div id="metricasAdmin" class="grid grid-cols-2 gap-4 lg:grid-cols-4"></div>
+
+      <nav id="pestanas" class="mt-8 flex gap-1 overflow-x-auto rounded-xl bg-white/5 p-1">
+        <button class="pestana pestana-activa" data-pestana="citas">Citas</button>
+        <button class="pestana" data-pestana="estilistas">Estilistas</button>
+        <button class="pestana" data-pestana="clientas">Clientas</button>
+        <button class="pestana" data-pestana="servicios">Servicios</button>
+        <button class="pestana" data-pestana="productos">Productos</button>
+        <button class="pestana" data-pestana="nuevo">Registrar usuario</button>
+        <button class="pestana relative" data-pestana="mensajes">
+          Mensajes
+          <span id="contadorMensajes" class="ml-1 hidden rounded-full bg-oro px-2 py-0.5 text-xs font-bold text-noche-950">0</span>
+        </button>
+      </nav>
+
+      <div class="tarjeta mt-4 overflow-hidden">
+        <!-- Citas -->
+        <div data-panel="citas">
+          <div class="flex flex-wrap items-center justify-between gap-3 p-6 pb-2">
+            <h2 class="text-2xl font-bold">Todas las citas</h2>
+            <select id="filtroEstado" class="campo w-auto py-2">
+              <option value="">Todos los estados</option>
+              <option>Pendiente</option>
+              <option>Confirmada</option>
+              <option>Finalizada</option>
+              <option>Cancelada</option>
+            </select>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="tabla">
+              <thead><tr><th>Código</th><th>Clienta</th><th>Servicio</th><th>Estilista</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
+              <tbody id="tablaCitasAdmin"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Estilistas -->
+        <div data-panel="estilistas" class="hidden overflow-x-auto">
+          <table class="tabla">
+            <thead><tr><th>Nombre</th><th>Servicios que realiza</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="tablaEstilistas"></tbody>
+          </table>
+        </div>
+
+        <!-- Clientas -->
+        <div data-panel="clientas" class="hidden overflow-x-auto">
+          <table class="tabla">
+            <thead><tr><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Cuenta</th><th></th></tr></thead>
+            <tbody id="tablaClientas"></tbody>
+          </table>
+        </div>
+
+        <!-- Servicios -->
+        <div data-panel="servicios" class="hidden">
+          <div class="flex justify-end p-4 pb-0">
+            <button id="btnNuevoServicio" class="btn-primario py-2">+ Nuevo servicio</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="tabla">
+              <thead><tr><th>Servicio</th><th>Precio</th><th>Duración</th><th>Estado</th><th></th></tr></thead>
+              <tbody id="tablaServicios"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Productos -->
+        <div data-panel="productos" class="hidden">
+          <div class="flex justify-end p-4 pb-0">
+            <button id="btnNuevoProducto" class="btn-primario py-2">+ Nuevo producto</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="tabla">
+              <thead><tr><th>Producto</th><th>Precio</th><th>Stock</th><th>Estado</th><th></th></tr></thead>
+              <tbody id="tablaProductos"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Mensajes del chat de la página de inicio -->
+        <div data-panel="mensajes" class="hidden">
+          <div class="grid md:grid-cols-[18rem_1fr]">
+            <div class="border-b border-white/10 md:border-b-0 md:border-r">
+              <p class="p-4 pb-2 text-xs font-semibold uppercase tracking-wider text-white/40">Conversaciones</p>
+              <ul id="listaConversaciones" class="max-h-[30rem] overflow-y-auto"></ul>
+            </div>
+            <div class="flex min-h-[30rem] flex-col">
+              <div id="cabeceraConversacion" class="border-b border-white/10 p-4 text-white/40">Selecciona una conversación para leerla y responder.</div>
+              <div id="mensajesAdmin" class="max-h-[24rem] flex-1 space-y-3 overflow-y-auto p-4"></div>
+              <form id="formResponder" class="hidden gap-2 border-t border-white/10 p-3">
+                <input id="textoRespuesta" class="campo py-2" maxlength="500" placeholder="Escribe tu respuesta..." autocomplete="off">
+                <button class="btn-primario px-4 py-2">Responder</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Registrar usuario -->
+        <div data-panel="nuevo" class="hidden p-6">
+          <h2 class="text-2xl font-bold">Registrar estilista o clienta</h2>
+          <div id="alertaNuevo" class="alerta mt-4"></div>
+          <form id="formNuevo" class="mt-5 grid max-w-2xl gap-4 sm:grid-cols-2">
+            <div>
+              <label for="nuevoRol" class="etiqueta">Tipo de cuenta</label>
+              <select id="nuevoRol" class="campo">
+                <option value="estilista">Estilista</option>
+                <option value="cliente">Clienta</option>
+              </select>
+            </div>
+            <div>
+              <label for="nuevoNombre" class="etiqueta">Nombre completo</label>
+              <input id="nuevoNombre" class="campo" required>
+            </div>
+            <div>
+              <label for="nuevoUsuario" class="etiqueta">Usuario</label>
+              <input id="nuevoUsuario" class="campo" required>
+            </div>
+            <div>
+              <label for="nuevoPassword" class="etiqueta">Contraseña</label>
+              <input id="nuevoPassword" class="campo" type="text" minlength="6" required>
+            </div>
+            <div id="bloqueServicios" class="sm:col-span-2">
+              <p class="etiqueta">Servicios que realiza</p>
+              <div id="nuevoServicios" class="grid gap-2 sm:grid-cols-3"></div>
+            </div>
+            <div class="sm:col-span-2">
+              <button type="submit" class="btn-primario">Registrar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Ventana para crear y editar (se llena desde js/panel.js) -->
+  <dialog id="ventana" class="w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-white/10 bg-noche-900 p-0 text-white shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm">
+    <form id="formVentana" class="p-6">
+      <h2 id="tituloVentana" class="text-2xl font-bold"></h2>
+      <div id="alertaVentana" class="alerta mt-4"></div>
+      <div id="camposVentana" class="mt-5 space-y-4"></div>
+      <div class="mt-6 flex justify-end gap-2">
+        <button type="button" id="btnCerrarVentana" class="btn-secundario">Cancelar</button>
+        <button type="submit" class="btn-primario">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Aviso flotante -->
+  <div id="aviso" class="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 translate-y-4 rounded-xl bg-noche-800 px-5 py-3 text-sm opacity-0 shadow-2xl ring-1 ring-white/10 transition duration-300"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/panel.js"></script>
+</body>
+</html>

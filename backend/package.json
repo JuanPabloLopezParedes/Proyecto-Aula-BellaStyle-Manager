@@ -1,0 +1,19 @@
+{
+  "name": "bellastyle-backend",
+  "version": "2.0.0",
+  "description": "BellaStyle Manager - servidor Node.js + Express + MySQL",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "css": "tailwindcss -c ../frontend/tailwind.config.js -i ../frontend/src/estilos.css -o ../frontend/css/estilos.css --minify",
+    "css:watch": "tailwindcss -c ../frontend/tailwind.config.js -i ../frontend/src/estilos.css -o ../frontend/css/estilos.css --watch"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.19.2",
+    "mysql2": "^3.11.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

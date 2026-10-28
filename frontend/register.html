@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crear cuenta | BellaStyle</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="min-h-screen">
+
+  <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+    <div class="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-bella-600/25 blur-3xl"></div>
+    <div class="absolute -bottom-40 -left-20 h-[28rem] w-[28rem] rounded-full bg-bella-900/40 blur-3xl"></div>
+  </div>
+
+  <header class="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
+    <a href="welcome.html" class="font-titulo text-2xl font-bold">Bella<span class="text-bella-400">Style</span></a>
+    <a href="index.html" class="text-sm text-white/50 transition hover:text-white">Ya tengo cuenta</a>
+  </header>
+
+  <main class="mx-auto max-w-xl px-5 pb-12 pt-2">
+    <section class="tarjeta animate-aparecer p-6 sm:p-8">
+
+      <!-- Selector de rol -->
+      <div id="selectorRol" class="grid grid-cols-3 gap-1 rounded-xl bg-white/5 p-1"></div>
+
+      <div class="mt-6 flex items-center gap-4">
+        <img id="imagenRol" src="img/login_cliente.webp" alt="" class="h-14 w-14 rounded-2xl object-cover ring-2 ring-bella-500/40">
+        <div>
+          <p class="text-xs uppercase tracking-wider text-white/40">Crear cuenta de</p>
+          <h1 id="tituloRol" class="text-3xl font-bold">Clienta</h1>
+        </div>
+      </div>
+
+      <div id="alerta" class="alerta mt-6"></div>
+
+      <form id="formRegistro" class="mt-6 space-y-5">
+        <div>
+          <label for="nombre" class="etiqueta">Nombre completo</label>
+          <input id="nombre" class="campo" type="text" placeholder="Ej: Ana María López" required>
+        </div>
+
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label for="usuario" class="etiqueta">Usuario</label>
+            <input id="usuario" class="campo" type="text" placeholder="Ej: anamaria" required>
+          </div>
+          <div>
+            <label for="password" class="etiqueta">Contraseña</label>
+            <input id="password" class="campo" type="password" minlength="6" placeholder="Mínimo 6 caracteres" required>
+          </div>
+        </div>
+
+        <!-- Solo para clienta -->
+        <div data-solo="cliente" class="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label for="telefono" class="etiqueta">Teléfono</label>
+            <input id="telefono" class="campo" type="tel" placeholder="300 000 0000">
+          </div>
+          <div>
+            <label for="email" class="etiqueta">Correo</label>
+            <input id="email" class="campo" type="email" placeholder="tu@correo.com">
+          </div>
+        </div>
+
+        <!-- Solo para estilista -->
+        <div data-solo="estilista">
+          <p class="etiqueta">Servicios que sabes realizar</p>
+          <div id="listaServicios" class="grid gap-2 sm:grid-cols-2">
+            <p class="text-sm text-white/40">Cargando servicios...</p>
+          </div>
+        </div>
+
+        <!-- Solo para administradora -->
+        <div data-solo="admin">
+          <label for="codigo" class="etiqueta">Código de administradora</label>
+          <input id="codigo" class="campo" type="password" placeholder="Te lo entrega la dueña del salón">
+        </div>
+
+        <button id="btnRegistrar" type="submit" class="btn-primario w-full py-3">Crear cuenta</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/registro.js"></script>
+</body>
+</html>

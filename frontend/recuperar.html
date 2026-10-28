@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recuperar contraseña | BellaStyle</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="flex min-h-screen flex-col">
+
+  <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+    <div class="absolute -left-32 top-1/3 h-96 w-96 rounded-full bg-bella-600/20 blur-3xl"></div>
+  </div>
+
+  <header class="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-5">
+    <a href="welcome.html" class="font-titulo text-2xl font-bold">Bella<span class="text-bella-400">Style</span></a>
+  </header>
+
+  <main class="flex flex-1 items-center justify-center px-5 pb-16">
+    <section class="tarjeta animate-aparecer w-full max-w-md p-6 sm:p-8">
+      <h1 class="text-3xl font-bold">Recuperar contraseña</h1>
+      <p class="mt-2 text-sm text-white/50">Escribe tu usuario y la nueva contraseña.</p>
+
+      <div id="alerta" class="alerta mt-6"></div>
+
+      <form id="formRecuperar" class="mt-6 space-y-5">
+        <div>
+          <label for="usuario" class="etiqueta">Usuario</label>
+          <input id="usuario" class="campo" type="text" required>
+        </div>
+        <div>
+          <label for="nueva" class="etiqueta">Nueva contraseña</label>
+          <input id="nueva" class="campo" type="password" minlength="6" required>
+        </div>
+        <div>
+          <label for="confirmar" class="etiqueta">Confirmar contraseña</label>
+          <input id="confirmar" class="campo" type="password" minlength="6" required>
+        </div>
+        <button type="submit" class="btn-primario w-full py-3">Cambiar contraseña</button>
+      </form>
+
+      <p class="mt-6 text-center text-sm">
+        <a href="index.html" class="text-white/50 hover:text-bella-300">Volver a iniciar sesión</a>
+      </p>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    document.getElementById('formRecuperar').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alerta = document.getElementById('alerta');
+      const nueva = document.getElementById('nueva').value;
+
+      if (nueva !== document.getElementById('confirmar').value) {
+        return mostrarAlerta(alerta, 'Las contraseñas no coinciden.');
+      }
+
+      const respuesta = await pedir('/recuperar-password', 'POST', {
+        username: document.getElementById('usuario').value.trim(),
+        nuevaPassword: nueva
+      });
+
+      if (respuesta.success) {
+        mostrarAlerta(alerta, respuesta.message, 'ok');
+        e.target.reset();
+      } else {
+        mostrarAlerta(alerta, respuesta.message);
+      }
+    });
+  </script>
+</body>
+</html>

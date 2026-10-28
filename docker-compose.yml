@@ -1,0 +1,35 @@
+# Levanta BellaStyle completo en tu PC con un solo comando:
+#   docker compose up --build
+# Luego abre http://localhost:3000
+services:
+  # Contenedor 1: base de datos MySQL 8
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+    volumes:
+      # La primera vez, MySQL ejecuta init_db.sql (crea tablas y datos de prueba)
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
+      - datos_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p1234"]
+      interval: 5s
+      retries: 20
+
+  # Contenedor 2: la aplicación (se construye con el Dockerfile)
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: db          # nombre del servicio de arriba
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: 1234
+      DB_NAME: bellastylemanager
+    depends_on:
+      db:
+        condition: service_healthy   # espera a que MySQL esté listo
+
+volumes:
+  datos_mysql:
