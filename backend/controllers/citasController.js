@@ -1,35 +1,50 @@
-// Controlador de citas: listar, crear (con asignación automática), reprogramar y cambiar estado
+// Controlador de citas: listar, horas libres, crear (con asignación automática),
+// reprogramar y cambiar estado
 const citaModel = require('../models/citaModel');
 const clienteModel = require('../models/clienteModel');
 const servicioModel = require('../models/servicioModel');
 const estilistaModel = require('../models/estilistaModel');
+const horarioModel = require('../models/horarioModel');
+const {
+    APERTURA, CIERRE, INTERVALO, aMinutos, aHora, seCruzan,
+    diaDeLaSemana, ahoraColombia, fechaValida, horaValida
+} = require('../utils/agenda');
 
-const APERTURA = 8 * 60;  // 8:00 a.m. en minutos
-const CIERRE = 19 * 60;   // 7:00 p.m. en minutos
 const ESTADOS = ['Pendiente', 'Confirmada', 'Finalizada', 'Cancelada'];
 
-// "14:30" -> 870 minutos
-function aMinutos(hora) {
-    const [h, m] = hora.split(':').map(Number);
-    return h * 60 + m;
-}
-
-// Dos rangos se cruzan si uno empieza antes de que el otro termine
-function seCruzan(inicioA, finA, inicioB, finB) {
-    return inicioA < finB && inicioB < finA;
-}
-
-// Revisa si la estilista está libre entre inicio y fin.
-// Devuelve también cuántas citas tiene ese día (sirve para repartir el trabajo).
+// Carga de una sola vez lo que se necesita para saber si una estilista
+// puede atender un día: su horario, si está ausente y las citas que ya tiene.
 // excluirId: al reprogramar, la propia cita no se cuenta.
-async function revisarDisponibilidad(idEstilista, fecha, inicio, fin, excluirId = 0) {
+async function agendaDelDia(idEstilista, fecha, excluirId = 0) {
+    const horario = await horarioModel.horarioDelDia(idEstilista, diaDeLaSemana(fecha));
+    const ausente = await horarioModel.ausenteEn(idEstilista, fecha);
     const citas = await citaModel.ocupadasDelDia(idEstilista, fecha, excluirId);
-    const ocupada = citas.some((c) => {
-        const otroInicio = aMinutos(c.hora);
-        return seCruzan(inicio, fin, otroInicio, otroInicio + c.duracion_min);
-    });
-    return { libre: !ocupada, carga: citas.length };
+    return {
+        horario,
+        ausente,
+        ocupadas: citas.map((c) => ({ inicio: aMinutos(c.hora), fin: aMinutos(c.hora) + c.duracion_min }))
+    };
 }
+
+// ¿Puede la estilista atender entre inicio y fin?
+// Devuelve null si puede, o el motivo por el que no:
+// 'ausente', 'no_trabaja', 'fuera_de_horario' u 'ocupada'.
+function motivoNoDisponible(agenda, inicio, fin) {
+    if (agenda.ausente) return 'ausente';
+    if (!agenda.horario) return 'no_trabaja';
+    if (inicio < aMinutos(agenda.horario.hora_inicio) || fin > aMinutos(agenda.horario.hora_fin)) {
+        return 'fuera_de_horario';
+    }
+    if (agenda.ocupadas.some((o) => seCruzan(inicio, fin, o.inicio, o.fin))) return 'ocupada';
+    return null;
+}
+
+const MENSAJES_NO_DISPONIBLE = {
+    ausente: 'La estilista no trabaja ese día (está ausente).',
+    no_trabaja: 'La estilista no trabaja ese día de la semana.',
+    fuera_de_horario: 'Esa hora está fuera del horario de la estilista.',
+    ocupada: 'La estilista ya tiene una cita en ese horario.'
+};
 
 // Revisa si la clienta ya tiene otra cita que se cruce con ese horario
 async function clientaTieneCruce(idClienta, fecha, inicio, fin, excluirId = 0) {
@@ -42,17 +57,18 @@ async function clientaTieneCruce(idClienta, fecha, inicio, fin, excluirId = 0) {
 
 // Reglas de fecha y hora. Devuelve el mensaje de error, o null si todo está bien.
 function validarFechaHora(fecha, hora) {
-    if (!/^\d{2}:\d{2}$/.test(hora || '')) {
+    if (!horaValida(hora)) {
         return 'La hora no tiene un formato válido.';
     }
-    const dia = new Date(fecha + 'T12:00:00');
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    if (isNaN(dia) || dia < hoy) {
+    const ahora = ahoraColombia();
+    if (!fechaValida(fecha) || fecha < ahora.fecha) {
         return 'La fecha no puede ser anterior a hoy.';
     }
-    if (dia.getDay() === 0) {
+    if (diaDeLaSemana(fecha) === 0) {
         return 'El salón no atiende los domingos.';
+    }
+    if (fecha === ahora.fecha && aMinutos(hora) <= ahora.minutos) {
+        return 'Esa hora ya pasó. Escoge una hora más tarde.';
     }
     return null;
 }
@@ -78,6 +94,51 @@ async function listar(req, res) {
     } catch (err) {
         console.error('Error al listar citas:', err.message);
         res.status(500).json({ success: false, message: 'Error al consultar las citas.' });
+    }
+}
+
+// GET /api/disponibilidad?idServicio=1&fecha=2026-11-03&idEstilista=2&excluirCita=5
+// Devuelve las horas (cada 30 minutos) en que se puede agendar ese servicio ese día.
+// Con idEstilista: las horas libres de esa estilista.
+// Sin idEstilista: las horas en que al menos una estilista que sabe el servicio está libre.
+async function disponibilidad(req, res) {
+    const { idServicio, fecha, idEstilista } = req.query;
+    const excluirCita = Number(req.query.excluirCita) || 0;
+
+    if (!idServicio || !fechaValida(fecha)) {
+        return res.status(400).json({ success: false, message: 'Escoge el servicio y una fecha válida.' });
+    }
+    const ahora = ahoraColombia();
+    if (fecha < ahora.fecha || diaDeLaSemana(fecha) === 0) {
+        return res.json({ success: true, data: { horas: [] } });
+    }
+
+    try {
+        const servicio = await servicioModel.buscarPorId(idServicio);
+        if (!servicio) {
+            return res.status(404).json({ success: false, message: 'El servicio no existe.' });
+        }
+
+        const candidatas = idEstilista
+            ? [{ id_estilista: Number(idEstilista) }]
+            : await estilistaModel.capacitadasPara(idServicio);
+        const agendas = [];
+        for (const e of candidatas) {
+            agendas.push(await agendaDelDia(e.id_estilista, fecha, excluirCita));
+        }
+
+        const horas = [];
+        for (let inicio = APERTURA; inicio + servicio.duracion_min <= CIERRE; inicio += INTERVALO) {
+            if (fecha === ahora.fecha && inicio <= ahora.minutos) continue;   // hoy: solo horas que no han pasado
+            const fin = inicio + servicio.duracion_min;
+            if (agendas.some((a) => motivoNoDisponible(a, inicio, fin) === null)) {
+                horas.push(aHora(inicio));
+            }
+        }
+        res.json({ success: true, data: { horas, duracion: servicio.duracion_min } });
+    } catch (err) {
+        console.error('Error al calcular la disponibilidad:', err.message);
+        res.status(500).json({ success: false, message: 'No se pudieron consultar las horas libres.' });
     }
 }
 
@@ -123,22 +184,24 @@ async function crear(req, res) {
         let elegida = null;
 
         if (idEstilista) {
-            // La clienta escogió estilista: solo se revisa que esté libre
-            const { libre } = await revisarDisponibilidad(idEstilista, fecha, inicio, fin);
-            if (!libre) {
-                return res.status(409).json({ success: false, message: 'La estilista ya tiene una cita en ese horario.' });
+            // La clienta escogió estilista: se revisa su horario, ausencias y citas
+            const agenda = await agendaDelDia(idEstilista, fecha);
+            const motivo = motivoNoDisponible(agenda, inicio, fin);
+            if (motivo) {
+                return res.status(409).json({ success: false, message: MENSAJES_NO_DISPONIBLE[motivo] });
             }
-            elegida = { id_estilista: Number(idEstilista) };
+            const estilista = await estilistaModel.buscarPorId(idEstilista);
+            elegida = { id_estilista: Number(idEstilista), nombre: estilista ? estilista.nombre : null };
         } else {
             // Asignación automática: de las estilistas que saben hacer el servicio
-            // y están libres, se escoge la que tenga menos citas ese día.
+            // y pueden atender a esa hora, se escoge la que tenga menos citas ese día.
             const candidatas = await estilistaModel.capacitadasPara(idServicio);
             let menorCarga = Infinity;
             for (const estilista of candidatas) {
-                const { libre, carga } = await revisarDisponibilidad(estilista.id_estilista, fecha, inicio, fin);
-                if (libre && carga < menorCarga) {
+                const agenda = await agendaDelDia(estilista.id_estilista, fecha);
+                if (motivoNoDisponible(agenda, inicio, fin) === null && agenda.ocupadas.length < menorCarga) {
                     elegida = estilista;
-                    menorCarga = carga;
+                    menorCarga = agenda.ocupadas.length;
                 }
             }
             if (!elegida) {
@@ -159,7 +222,7 @@ async function crear(req, res) {
         const mensaje = elegida.nombre
             ? `Cita agendada. Te atenderá ${elegida.nombre}.`
             : 'Cita agendada.';
-        res.status(201).json({ success: true, message: mensaje, id: idCita });
+        res.status(201).json({ success: true, message: mensaje, id: idCita, estilista: elegida.nombre });
     } catch (err) {
         console.error('Error al crear cita:', err.message);
         res.status(500).json({ success: false, message: 'No se pudo agendar la cita.' });
@@ -213,9 +276,10 @@ async function reprogramar(req, res) {
             });
         }
 
-        const { libre } = await revisarDisponibilidad(cita.id_estilista, fecha, inicio, fin, cita.id_cita);
-        if (!libre) {
-            return res.status(409).json({ success: false, message: 'La estilista ya tiene una cita en ese horario.' });
+        const agenda = await agendaDelDia(cita.id_estilista, fecha, cita.id_cita);
+        const motivo = motivoNoDisponible(agenda, inicio, fin);
+        if (motivo) {
+            return res.status(409).json({ success: false, message: MENSAJES_NO_DISPONIBLE[motivo] });
         }
         if (await clientaTieneCruce(cita.id_cliente, fecha, inicio, fin, cita.id_cita)) {
             return res.status(409).json({ success: false, message: 'Ya tienes otra cita en ese horario.' });
@@ -229,4 +293,4 @@ async function reprogramar(req, res) {
     }
 }
 
-module.exports = { listar, crear, reprogramar, cambiarEstado };
+module.exports = { listar, disponibilidad, crear, reprogramar, cambiarEstado };

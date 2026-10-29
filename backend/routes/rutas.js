@@ -8,6 +8,9 @@ const citas = require('../controllers/citasController');
 const catalogo = require('../controllers/catalogoController');
 const gestion = require('../controllers/gestionController');
 const chat = require('../controllers/chatController');
+const horarios = require('../controllers/horarioController');
+const calificaciones = require('../controllers/calificacionController');
+const chatCita = require('../controllers/chatCitaController');
 
 // Autenticación
 router.post('/login', auth.login);
@@ -16,9 +19,17 @@ router.post('/recuperar-password', auth.recuperarPassword);
 
 // Citas
 router.get('/citas', citas.listar);
+router.get('/disponibilidad', citas.disponibilidad);
 router.post('/citas', citas.crear);
 router.put('/citas/:id/estado', citas.cambiarEstado);
 router.put('/citas/:id/reprogramar', citas.reprogramar);
+
+// Calificación de una cita finalizada
+router.post('/citas/:id/calificacion', calificaciones.calificar);
+
+// Chat entre la clienta y la estilista de una cita
+router.get('/citas/:id/mensajes', chatCita.verMensajes);
+router.post('/citas/:id/mensajes', chatCita.enviar);
 
 // Servicios
 router.get('/servicios', catalogo.servicios);
@@ -37,6 +48,13 @@ router.get('/estilistas', catalogo.estilistas);
 router.get('/estilistas/usuario/:idUsuario', catalogo.estilistaPorUsuario);
 router.put('/estilistas/:id/estado', gestion.estadoEstilista);
 router.put('/estilistas/:id/servicios', gestion.serviciosEstilista);
+router.get('/estilistas/:id/calificaciones', calificaciones.deEstilista);
+
+// Horario de trabajo y ausencias (vacaciones, permisos) de cada estilista
+router.get('/estilistas/:id/horario', horarios.obtener);
+router.put('/estilistas/:id/horario', horarios.guardar);
+router.post('/estilistas/:id/ausencias', horarios.crearAusencia);
+router.delete('/ausencias/:id', horarios.eliminarAusencia);
 
 // Clientas
 router.get('/clientas', catalogo.clientas);
