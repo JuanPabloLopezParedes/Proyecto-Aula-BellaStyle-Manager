@@ -1,0 +1,46 @@
+@startuml Diagrama_Comunicacion
+title Diagrama de Comunicación (UML 2.5) — BellaStyle Manager\nEscenario: la clienta agenda una cita
+skinparam defaultFontName DejaVu Sans
+skinparam shadowing false
+skinparam object {
+  BackgroundColor #FCF1F6
+  BorderColor #B03A78
+}
+skinparam ArrowColor #333333
+allowmixing
+left to right direction
+
+actor ":Clienta" as C
+object ":panel.js" as P
+object ":api.js" as A
+object ":Enrutador\n(rutas.js)" as R
+object ":CitasController" as CC
+object ":Validadores\n(validators.js)" as V
+object ":ClienteModel" as CM
+object ":ServicioModel" as SM
+object ":EstilistaModel" as EM
+object ":CitaModel" as CI
+database ":MySQL\nbellastylemanager" as DB
+
+C -- P : "1: agendarCita(servicio, fecha, hora) →"
+P -- A : "2: pedir('/citas', 'POST', datos) →"
+P -- P : "6: mostrarAlerta(mensaje) ↺"
+A -- R : "3: POST /api/citas (JSON) →\n← 5: 201 {success, message, id}"
+R -- CC : "4: crear(req, res) →"
+CC -- V : "4.1: validarFechaHora(fecha, hora) →"
+CC -- CM : "4.2: buscarPorUsuario(idUsuario) →"
+CC -- SM : "4.3: buscarPorId(idServicio) →"
+CC -- EM : "4.5: [sin estilista elegida]\ncapacitadasPara(idServicio) →"
+CC -- CI : "4.4: ocupadasClientaDelDia(...) →\n4.6 *: ocupadasDelDia(idEstilista, fecha) →\n4.7: crear(datosCita) →"
+CM -- DB : "4.2.1: SELECT clientas →"
+SM -- DB : "4.3.1: SELECT servicios →"
+EM -- DB : "4.5.1: SELECT estilista_servicios →"
+CI -- DB : "4.4.1 / 4.6.1: SELECT citas →\n4.7.1: INSERT INTO citas →"
+
+note bottom of CC
+  Si la clienta no eligió estilista (4.5),
+  se revisa cada candidata (4.6 *) y se
+  asigna la que tenga menos citas ese día.
+  Mensajes numerados en orden; "*" = se repite.
+end note
+@enduml
