@@ -4,30 +4,35 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Crear cuenta | BellaStyle</title>
-  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="apple-touch-icon" href="img/icono-180.png">
+  <meta name="description" content="BellaStyle: agenda tu cita en el salón de belleza en minutos.">
+  <meta name="theme-color" content="#f7d3e2">
+  <link rel="stylesheet" href="css/estilos.css?v=8">
+  <script src="js/tema.js?v=7"></script>
 </head>
 <body class="min-h-screen">
 
   <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-    <div class="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-bella-600/25 blur-3xl"></div>
-    <div class="absolute -bottom-40 -left-20 h-[28rem] w-[28rem] rounded-full bg-bella-900/40 blur-3xl"></div>
+    <div class="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-bella-200/50 blur-3xl"></div>
+    <div class="absolute -bottom-40 -left-20 h-[28rem] w-[28rem] rounded-full bg-lavanda-200/50 blur-3xl"></div>
   </div>
 
   <header class="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
-    <a href="welcome.html" class="font-titulo text-2xl font-bold">Bella<span class="text-bella-400">Style</span></a>
-    <a href="index.html" class="text-sm text-white/50 transition hover:text-white">Ya tengo cuenta</a>
+    <a href="welcome.html" class="flex items-center gap-2 font-titulo text-2xl font-bold"><img src="img/logo.webp" alt="" class="h-9 w-9 rounded-full shadow-sm"><span>Bella<span class="text-bella-700">Style</span></span></a>
+    <a href="index.html" class="text-sm text-tinta/80 transition hover:text-tinta">Ya tengo cuenta</a>
   </header>
 
   <main class="mx-auto max-w-xl px-5 pb-12 pt-2">
     <section class="tarjeta animate-aparecer p-6 sm:p-8">
 
       <!-- Selector de rol -->
-      <div id="selectorRol" class="grid grid-cols-3 gap-1 rounded-xl bg-white/5 p-1"></div>
+      <div id="selectorRol" class="grid grid-cols-3 gap-1 rounded-xl bg-tinta/5 p-1"></div>
 
       <div class="mt-6 flex items-center gap-4">
-        <img id="imagenRol" src="img/login_cliente.webp" alt="" class="h-14 w-14 rounded-2xl object-cover ring-2 ring-bella-500/40">
+        <img id="imagenRol" src="img/rol_clienta.svg" alt="" class="h-14 w-14 rounded-2xl object-cover shadow-sm">
         <div>
-          <p class="text-xs uppercase tracking-wider text-white/40">Crear cuenta de</p>
+          <p class="text-xs uppercase tracking-wider text-tinta/80">Crear cuenta de</p>
           <h1 id="tituloRol" class="text-3xl font-bold">Clienta</h1>
         </div>
       </div>
@@ -67,7 +72,7 @@
         <div data-solo="estilista">
           <p class="etiqueta">Servicios que sabes realizar</p>
           <div id="listaServicios" class="grid gap-2 sm:grid-cols-2">
-            <p class="text-sm text-white/40">Cargando servicios...</p>
+            <p class="text-sm text-tinta/80">Cargando servicios...</p>
           </div>
         </div>
 

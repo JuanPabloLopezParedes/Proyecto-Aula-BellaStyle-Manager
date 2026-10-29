@@ -37,11 +37,11 @@ async function cargarServicios() {
     const contenedor = document.getElementById('listaServicios');
     const respuesta = await pedir('/servicios');
     if (!respuesta.success) {
-        contenedor.innerHTML = '<p class="text-sm text-red-300">No se pudieron cargar los servicios.</p>';
+        contenedor.innerHTML = '<p class="text-sm text-red-700">No se pudieron cargar los servicios.</p>';
         return;
     }
     contenedor.innerHTML = respuesta.data.map((s) => `
-        <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm transition hover:border-bella-400/50 has-[:checked]:border-bella-400 has-[:checked]:bg-bella-500/10">
+        <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-tinta/10 bg-tinta/5 px-3 py-2.5 text-sm transition hover:border-bella-400/50 has-[:checked]:border-bella-400 has-[:checked]:bg-bella-500/10">
             <input type="checkbox" name="servicio" value="${s.id_servicio}" class="accent-bella-500">
             ${escapar(s.nombre)}
         </label>`).join('');

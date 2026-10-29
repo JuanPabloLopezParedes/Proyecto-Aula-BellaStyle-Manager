@@ -4,23 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Panel | BellaStyle</title>
-  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="apple-touch-icon" href="img/icono-180.png">
+  <meta name="description" content="BellaStyle: agenda tu cita en el salón de belleza en minutos.">
+  <meta name="theme-color" content="#f7d3e2">
+  <link rel="stylesheet" href="css/estilos.css?v=8">
+  <script src="js/tema.js?v=7"></script>
 </head>
-<body class="min-h-screen">
+<!-- data-sin-video: en el panel de trabajo el fondo es una imagen quieta (no distrae) -->
+<body class="zona-trabajo min-h-screen" data-sin-video>
 
   <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-    <div class="absolute -right-40 -top-40 h-[30rem] w-[30rem] rounded-full bg-bella-700/20 blur-3xl"></div>
+    <div class="absolute -right-40 -top-40 h-[30rem] w-[30rem] rounded-full bg-bella-100/60 blur-3xl"></div>
   </div>
 
   <!-- Barra superior -->
-  <header class="sticky top-0 z-20 border-b border-white/10 bg-noche-950/80 backdrop-blur">
+  <header class="sticky top-0 z-20 border-b border-tinta/10 bg-noche-950/25 backdrop-blur-sm">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-3">
-      <a href="welcome.html" class="font-titulo text-2xl font-bold">Bella<span class="text-bella-400">Style</span></a>
+      <a href="welcome.html" class="flex items-center gap-2 font-titulo text-2xl font-bold"><img src="img/logo.webp" alt="" class="h-9 w-9 rounded-full shadow-sm"><span>Bella<span class="text-bella-700">Style</span></span></a>
       <div class="flex items-center gap-3">
-        <img id="fotoUsuario" src="" alt="" class="hidden h-9 w-9 rounded-full object-cover ring-2 ring-bella-500/50 sm:block">
+        <img id="fotoUsuario" src="" alt="" class="hidden h-9 w-9 rounded-xl object-cover shadow-sm sm:block">
         <div class="hidden text-right leading-tight sm:block">
           <p id="nombreUsuario" class="text-sm font-semibold"></p>
-          <p id="rolUsuario" class="text-xs text-bella-300"></p>
+          <p id="rolUsuario" class="text-xs text-bella-700"></p>
         </div>
         <button id="btnSalir" class="btn-secundario px-3 py-1.5">Salir</button>
       </div>
@@ -29,14 +35,14 @@
 
   <main class="mx-auto max-w-7xl px-5 py-8">
     <div class="animate-aparecer">
-      <h1 id="saludo" class="text-4xl font-bold"></h1>
-      <p id="subtitulo" class="mt-1 text-white/50"></p>
+      <h1 id="saludo" class="text-4xl font-bold text-tinta sm:text-5xl"></h1>
+      <p id="subtitulo" class="mt-1 text-base text-tinta/70"></p>
     </div>
 
     <!-- ===================== CLIENTA ===================== -->
     <section data-rol="Clienta" class="mt-8 hidden grid-cols-1 gap-6 lg:grid-cols-5">
       <div class="tarjeta p-6 lg:col-span-2">
-        <h2 class="text-2xl font-bold">Agendar cita</h2>
+        <h2 class="titulo-seccion"><span class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>Agendar cita</h2>
         <div id="alertaCita" class="alerta mt-4"></div>
         <form id="formCita" class="mt-5 space-y-4">
           <div>
@@ -48,17 +54,18 @@
             <select id="estilista" class="campo">
               <option value="">Asignación automática</option>
             </select>
-            <p class="mt-1 text-xs text-white/40">Si no eliges, el sistema asigna la estilista disponible con menos citas.</p>
+            <p class="mt-1 text-xs text-tinta/60">Si no eliges, el sistema asigna la estilista disponible con menos citas.</p>
           </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label for="fecha" class="etiqueta">Fecha</label>
-              <input id="fecha" type="date" class="campo" required>
-            </div>
-            <div>
-              <label for="hora" class="etiqueta">Hora</label>
-              <select id="hora" class="campo" required></select>
-            </div>
+          <div>
+            <label for="fecha" class="etiqueta">Fecha</label>
+            <input id="fecha" type="date" class="campo" required>
+          </div>
+          <div>
+            <p class="etiqueta">Hora disponible</p>
+            <!-- La hora escogida se guarda aquí; los botones se dibujan desde js/panel.js -->
+            <input type="hidden" id="hora">
+            <div id="horasLibres" class="grid grid-cols-4 gap-2 sm:grid-cols-5"></div>
+            <p id="avisoHoras" class="text-sm text-tinta/60">Escoge el servicio y la fecha para ver las horas libres.</p>
           </div>
           <div>
             <label for="observaciones" class="etiqueta">Observaciones (opcional)</label>
@@ -67,21 +74,21 @@
           <button type="submit" class="btn-primario w-full py-3">Agendar</button>
         </form>
 
-        <div class="mt-8 border-t border-white/10 pt-6">
+        <div class="mt-8 border-t border-tinta/10 pt-6">
           <div class="flex items-center justify-between">
-            <h3 class="text-xl font-bold">Mis datos</h3>
-            <button id="btnEditarMisDatos" class="btn-mini bg-white/10 text-white hover:bg-white/15">Editar</button>
+            <h3 class="titulo-seccion text-xl"><span class="icono h-8 w-8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Mis datos</h3>
+            <button id="btnEditarMisDatos" class="btn-mini btn-mini-gris">Editar</button>
           </div>
-          <dl id="misDatos" class="mt-3 space-y-1 text-sm text-white/60"></dl>
+          <dl id="misDatos" class="mt-3 space-y-1 text-sm text-tinta/75"></dl>
         </div>
       </div>
 
-      <div class="tarjeta overflow-hidden lg:col-span-3">
-        <h2 class="p-6 pb-2 text-2xl font-bold">Mis citas</h2>
+      <div class="tarjeta self-start overflow-hidden lg:col-span-3">
+        <h2 class="titulo-seccion p-6 pb-3"><span class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>Mis citas</h2>
         <div class="overflow-x-auto">
           <table class="tabla">
             <thead><tr><th>Servicio</th><th>Fecha</th><th>Estilista</th><th>Estado</th><th></th></tr></thead>
-            <tbody id="tablaCitasClienta"></tbody>
+            <tbody id="tablaCitasClienta"><tr><td colspan="5" class="px-4 py-4"><div class="esqueleto w-3/4"></div></td></tr><tr><td colspan="5" class="px-4 py-4"><div class="esqueleto w-2/3"></div></td></tr><tr><td colspan="5" class="px-4 py-4"><div class="esqueleto w-1/2"></div></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -89,20 +96,39 @@
 
     <!-- ===================== ESTILISTA ===================== -->
     <section data-rol="Estilista" class="mt-8 hidden">
-      <div id="metricasEstilista" class="grid grid-cols-2 gap-4 lg:grid-cols-4"></div>
+      <div id="metricasEstilista" class="grid grid-cols-2 gap-4 lg:grid-cols-4"><!-- esqueleto mientras carga --><div class="tarjeta flex items-center gap-4 p-5"><div class="h-12 w-12 animate-pulse rounded-xl bg-tinta/10"></div><div class="flex-1 space-y-2"><div class="esqueleto w-2/3"></div><div class="esqueleto h-6 w-1/3"></div></div></div><div class="tarjeta flex items-center gap-4 p-5"><div class="h-12 w-12 animate-pulse rounded-xl bg-tinta/10"></div><div class="flex-1 space-y-2"><div class="esqueleto w-2/3"></div><div class="esqueleto h-6 w-1/3"></div></div></div><div class="tarjeta flex items-center gap-4 p-5"><div class="h-12 w-12 animate-pulse rounded-xl bg-tinta/10"></div><div class="flex-1 space-y-2"><div class="esqueleto w-2/3"></div><div class="esqueleto h-6 w-1/3"></div></div></div><div class="tarjeta flex items-center gap-4 p-5"><div class="h-12 w-12 animate-pulse rounded-xl bg-tinta/10"></div><div class="flex-1 space-y-2"><div class="esqueleto w-2/3"></div><div class="esqueleto h-6 w-1/3"></div></div></div></div>
       <div class="tarjeta mt-6 flex flex-wrap items-center justify-between gap-3 p-6">
         <div>
-          <h2 class="text-2xl font-bold">Mis servicios</h2>
-          <p id="misServicios" class="mt-1 text-sm text-white/60"></p>
+          <h2 class="titulo-seccion"><span class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></svg></span>Mis servicios</h2>
+          <p id="misServicios" class="mt-1 text-sm text-tinta/75"></p>
         </div>
         <button id="btnEditarMisServicios" class="btn-secundario">Editar mis servicios</button>
       </div>
+      <div class="mt-6 grid gap-6 lg:grid-cols-2">
+        <div class="tarjeta p-6">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h2 class="titulo-seccion"><span class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>Mi horario</h2>
+            <div class="flex gap-2">
+              <button id="btnEditarMiHorario" class="btn-mini btn-mini-gris">Editar horario</button>
+              <button id="btnMisAusencias" class="btn-mini btn-mini-gris">Ausencias</button>
+            </div>
+          </div>
+          <ul id="miHorario" class="mt-4 divide-y divide-tinta/5 text-sm"></ul>
+        </div>
+        <div class="tarjeta p-6">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h2 class="titulo-seccion"><span class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Mi calificación</h2>
+            <button id="btnMisOpiniones" class="btn-mini btn-mini-gris">Ver opiniones</button>
+          </div>
+          <div id="miCalificacion" class="mt-4 text-tinta/75"></div>
+        </div>
+      </div>
       <div class="tarjeta mt-6 overflow-hidden">
-        <h2 class="p-6 pb-2 text-2xl font-bold">Citas asignadas</h2>
+        <h2 class="titulo-seccion p-6 pb-3"><span class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>Citas asignadas</h2>
         <div class="overflow-x-auto">
           <table class="tabla">
             <thead><tr><th>Código</th><th>Clienta</th><th>Servicio</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
-            <tbody id="tablaCitasEstilista"></tbody>
+            <tbody id="tablaCitasEstilista"><tr><td colspan="6" class="px-4 py-4"><div class="esqueleto w-3/4"></div></td></tr><tr><td colspan="6" class="px-4 py-4"><div class="esqueleto w-2/3"></div></td></tr><tr><td colspan="6" class="px-4 py-4"><div class="esqueleto w-1/2"></div></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -110,9 +136,9 @@
 
     <!-- ===================== ADMINISTRADORA ===================== -->
     <section data-rol="Administradora" class="mt-8 hidden">
-      <div id="metricasAdmin" class="grid grid-cols-2 gap-4 lg:grid-cols-4"></div>
+      <div id="metricasAdmin" class="grid grid-cols-2 gap-4 lg:grid-cols-4"><!-- esqueleto mientras carga --><div class="tarjeta flex items-center gap-4 p-5"><div class="h-12 w-12 animate-pulse rounded-xl bg-tinta/10"></div><div class="flex-1 space-y-2"><div class="esqueleto w-2/3"></div><div class="esqueleto h-6 w-1/3"></div></div></div><div class="tarjeta flex items-center gap-4 p-5"><div class="h-12 w-12 animate-pulse rounded-xl bg-tinta/10"></div><div class="flex-1 space-y-2"><div class="esqueleto w-2/3"></div><div class="esqueleto h-6 w-1/3"></div></div></div><div class="tarjeta flex items-center gap-4 p-5"><div class="h-12 w-12 animate-pulse rounded-xl bg-tinta/10"></div><div class="flex-1 space-y-2"><div class="esqueleto w-2/3"></div><div class="esqueleto h-6 w-1/3"></div></div></div><div class="tarjeta flex items-center gap-4 p-5"><div class="h-12 w-12 animate-pulse rounded-xl bg-tinta/10"></div><div class="flex-1 space-y-2"><div class="esqueleto w-2/3"></div><div class="esqueleto h-6 w-1/3"></div></div></div></div>
 
-      <nav id="pestanas" class="mt-8 flex gap-1 overflow-x-auto rounded-xl bg-white/5 p-1">
+      <nav id="pestanas" class="mt-8 flex gap-1 overflow-x-auto rounded-2xl border border-tinta/10 bg-white/15 p-1.5">
         <button class="pestana pestana-activa" data-pestana="citas">Citas</button>
         <button class="pestana" data-pestana="estilistas">Estilistas</button>
         <button class="pestana" data-pestana="clientas">Clientas</button>
@@ -121,7 +147,7 @@
         <button class="pestana" data-pestana="nuevo">Registrar usuario</button>
         <button class="pestana relative" data-pestana="mensajes">
           Mensajes
-          <span id="contadorMensajes" class="ml-1 hidden rounded-full bg-oro px-2 py-0.5 text-xs font-bold text-noche-950">0</span>
+          <span id="contadorMensajes" class="ml-1 hidden rounded-full bg-bella-700 px-2 py-0.5 text-xs font-bold text-white">0</span>
         </button>
       </nav>
 
@@ -129,7 +155,7 @@
         <!-- Citas -->
         <div data-panel="citas">
           <div class="flex flex-wrap items-center justify-between gap-3 p-6 pb-2">
-            <h2 class="text-2xl font-bold">Todas las citas</h2>
+            <h2 class="titulo-seccion"><span class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>Todas las citas</h2>
             <select id="filtroEstado" class="campo w-auto py-2">
               <option value="">Todos los estados</option>
               <option>Pendiente</option>
@@ -141,7 +167,7 @@
           <div class="overflow-x-auto">
             <table class="tabla">
               <thead><tr><th>Código</th><th>Clienta</th><th>Servicio</th><th>Estilista</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
-              <tbody id="tablaCitasAdmin"></tbody>
+              <tbody id="tablaCitasAdmin"><tr><td colspan="7" class="px-4 py-4"><div class="esqueleto w-3/4"></div></td></tr><tr><td colspan="7" class="px-4 py-4"><div class="esqueleto w-2/3"></div></td></tr><tr><td colspan="7" class="px-4 py-4"><div class="esqueleto w-1/2"></div></td></tr></tbody>
             </table>
           </div>
         </div>
@@ -149,8 +175,8 @@
         <!-- Estilistas -->
         <div data-panel="estilistas" class="hidden overflow-x-auto">
           <table class="tabla">
-            <thead><tr><th>Nombre</th><th>Servicios que realiza</th><th>Estado</th><th></th></tr></thead>
-            <tbody id="tablaEstilistas"></tbody>
+            <thead><tr><th>Nombre</th><th>Servicios que realiza</th><th>Calificación</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="tablaEstilistas"><tr><td colspan="5" class="px-4 py-4"><div class="esqueleto w-3/4"></div></td></tr><tr><td colspan="5" class="px-4 py-4"><div class="esqueleto w-2/3"></div></td></tr><tr><td colspan="5" class="px-4 py-4"><div class="esqueleto w-1/2"></div></td></tr></tbody>
           </table>
         </div>
 
@@ -158,32 +184,32 @@
         <div data-panel="clientas" class="hidden overflow-x-auto">
           <table class="tabla">
             <thead><tr><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Cuenta</th><th></th></tr></thead>
-            <tbody id="tablaClientas"></tbody>
+            <tbody id="tablaClientas"><tr><td colspan="5" class="px-4 py-4"><div class="esqueleto w-3/4"></div></td></tr><tr><td colspan="5" class="px-4 py-4"><div class="esqueleto w-2/3"></div></td></tr><tr><td colspan="5" class="px-4 py-4"><div class="esqueleto w-1/2"></div></td></tr></tbody>
           </table>
         </div>
 
         <!-- Servicios -->
         <div data-panel="servicios" class="hidden">
-          <div class="flex justify-end p-4 pb-0">
+          <div class="flex justify-end p-4 pb-2">
             <button id="btnNuevoServicio" class="btn-primario py-2">+ Nuevo servicio</button>
           </div>
           <div class="overflow-x-auto">
             <table class="tabla">
               <thead><tr><th>Servicio</th><th>Precio</th><th>Duración</th><th>Estado</th><th></th></tr></thead>
-              <tbody id="tablaServicios"></tbody>
+              <tbody id="tablaServicios"><tr><td colspan="5" class="px-4 py-4"><div class="esqueleto w-3/4"></div></td></tr><tr><td colspan="5" class="px-4 py-4"><div class="esqueleto w-2/3"></div></td></tr><tr><td colspan="5" class="px-4 py-4"><div class="esqueleto w-1/2"></div></td></tr></tbody>
             </table>
           </div>
         </div>
 
         <!-- Productos -->
         <div data-panel="productos" class="hidden">
-          <div class="flex justify-end p-4 pb-0">
+          <div class="flex justify-end p-4 pb-2">
             <button id="btnNuevoProducto" class="btn-primario py-2">+ Nuevo producto</button>
           </div>
           <div class="overflow-x-auto">
             <table class="tabla">
               <thead><tr><th>Producto</th><th>Precio</th><th>Stock</th><th>Estado</th><th></th></tr></thead>
-              <tbody id="tablaProductos"></tbody>
+              <tbody id="tablaProductos"><tr><td colspan="5" class="px-4 py-4"><div class="esqueleto w-3/4"></div></td></tr><tr><td colspan="5" class="px-4 py-4"><div class="esqueleto w-2/3"></div></td></tr><tr><td colspan="5" class="px-4 py-4"><div class="esqueleto w-1/2"></div></td></tr></tbody>
             </table>
           </div>
         </div>
@@ -191,14 +217,14 @@
         <!-- Mensajes del chat de la página de inicio -->
         <div data-panel="mensajes" class="hidden">
           <div class="grid md:grid-cols-[18rem_1fr]">
-            <div class="border-b border-white/10 md:border-b-0 md:border-r">
-              <p class="p-4 pb-2 text-xs font-semibold uppercase tracking-wider text-white/40">Conversaciones</p>
+            <div class="border-b border-tinta/10 md:border-b-0 md:border-r">
+              <p class="p-4 pb-2 text-xs font-semibold uppercase tracking-wider text-tinta/60">Conversaciones</p>
               <ul id="listaConversaciones" class="max-h-[30rem] overflow-y-auto"></ul>
             </div>
             <div class="flex min-h-[30rem] flex-col">
-              <div id="cabeceraConversacion" class="border-b border-white/10 p-4 text-white/40">Selecciona una conversación para leerla y responder.</div>
+              <div id="cabeceraConversacion" class="border-b border-tinta/10 p-4 text-tinta/60">Selecciona una conversación para leerla y responder.</div>
               <div id="mensajesAdmin" class="max-h-[24rem] flex-1 space-y-3 overflow-y-auto p-4"></div>
-              <form id="formResponder" class="hidden gap-2 border-t border-white/10 p-3">
+              <form id="formResponder" class="hidden gap-2 border-t border-tinta/10 p-3">
                 <input id="textoRespuesta" class="campo py-2" maxlength="500" placeholder="Escribe tu respuesta..." autocomplete="off">
                 <button class="btn-primario px-4 py-2">Responder</button>
               </form>
@@ -208,7 +234,7 @@
 
         <!-- Registrar usuario -->
         <div data-panel="nuevo" class="hidden p-6">
-          <h2 class="text-2xl font-bold">Registrar estilista o clienta</h2>
+          <h2 class="titulo-seccion"><span class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg></span>Registrar estilista o clienta</h2>
           <div id="alertaNuevo" class="alerta mt-4"></div>
           <form id="formNuevo" class="mt-5 grid max-w-2xl gap-4 sm:grid-cols-2">
             <div>
@@ -244,7 +270,7 @@
   </main>
 
   <!-- Ventana para crear y editar (se llena desde js/panel.js) -->
-  <dialog id="ventana" class="w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-white/10 bg-noche-900 p-0 text-white shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm">
+  <dialog id="ventana" class="w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-tinta/10 bg-noche-900/45 p-0 text-tinta shadow-2xl backdrop-blur-md backdrop:bg-tinta/20 backdrop:backdrop-blur-sm">
     <form id="formVentana" class="p-6">
       <h2 id="tituloVentana" class="text-2xl font-bold"></h2>
       <div id="alertaVentana" class="alerta mt-4"></div>
@@ -256,8 +282,25 @@
     </form>
   </dialog>
 
+  <!-- Chat entre la clienta y la estilista de una cita (se llena desde js/panel.js) -->
+  <dialog id="ventanaChat" class="w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-tinta/10 bg-noche-900/45 p-0 text-tinta shadow-2xl backdrop-blur-md backdrop:bg-tinta/20 backdrop:backdrop-blur-sm">
+    <div class="flex items-start justify-between gap-3 border-b border-tinta/10 p-5">
+      <div>
+        <h2 id="tituloChat" class="text-2xl font-bold"></h2>
+        <p id="detalleChat" class="text-xs text-tinta/65"></p>
+      </div>
+      <button type="button" id="btnCerrarChat" class="btn-mini btn-mini-gris" aria-label="Cerrar">&times;</button>
+    </div>
+    <div id="mensajesCita" class="h-80 space-y-3 overflow-y-auto p-5"></div>
+    <form id="formChatCita" class="flex gap-2 border-t border-tinta/10 p-3">
+      <input id="textoChatCita" class="campo py-2" maxlength="500" placeholder="Escribe tu mensaje..." autocomplete="off">
+      <button class="btn-primario px-4 py-2">Enviar</button>
+    </form>
+    <p id="chatCerrado" class="hidden border-t border-tinta/10 p-4 text-center text-sm text-tinta/60"></p>
+  </dialog>
+
   <!-- Aviso flotante -->
-  <div id="aviso" class="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 translate-y-4 rounded-xl bg-noche-800 px-5 py-3 text-sm opacity-0 shadow-2xl ring-1 ring-white/10 transition duration-300"></div>
+  <div id="aviso" role="status" class="pointer-events-none fixed right-5 top-20 z-50 -translate-y-4 rounded-xl bg-tinta px-5 py-3 text-sm font-medium text-white opacity-0 shadow-xl transition duration-300"></div>
 
   <script src="js/api.js"></script>
   <script src="js/panel.js"></script>
