@@ -5,6 +5,7 @@ const config = require('../config/config');
 const usuarioModel = require('../models/usuarioModel');
 const clienteModel = require('../models/clienteModel');
 const estilistaModel = require('../models/estilistaModel');
+const horarioModel = require('../models/horarioModel');
 const { nombreValido, usuarioValido, passwordValida, telefonoValido, emailValido, separarNombre } = require('../utils/validators');
 
 // Nombre del rol en el frontend -> nombre del rol en la base de datos
@@ -15,9 +16,9 @@ const ROLES = {
 };
 
 const FOTOS = {
-    Clienta: 'img/login_cliente.webp',
-    Estilista: 'img/login_estilicista.webp',
-    Administradora: 'img/login_admin.jpg'
+    Clienta: 'img/rol_clienta.svg',
+    Estilista: 'img/rol_estilista.svg',
+    Administradora: 'img/rol_admin.svg'
 };
 
 // POST /api/login
@@ -128,6 +129,8 @@ async function registrar(req, res) {
                 idUsuario, nombres, apellidos, especialidad: 'General'
             });
             await estilistaModel.asignarServicios(conexion, idEstilista, servicios);
+            // Horario inicial: lunes a sábado de 8:00 a 19:00 (luego ella lo puede cambiar)
+            await horarioModel.crearPorDefecto(conexion, idEstilista);
         }
 
         await conexion.commit();
