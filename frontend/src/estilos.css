@@ -14,13 +14,115 @@
 @tailwind utilities;
 
 @layer base {
+  /* Colores del modo claro (en números R G B para poder usar opacidad: text-tinta/60) */
+  :root {
+    --tinta: 43 29 49;
+    --blanco: 255 255 255;
+    --bella-50: 253 245 248;
+    --bella-100: 251 232 240;
+    --bella-200: 247 211 226;
+    --bella-300: 241 184 207;
+    --bella-400: 233 155 187;
+    --bella-500: 223 130 168;
+    --bella-600: 201 106 145;
+    --bella-700: 168 84 119;
+    --bella-800: 132 68 96;
+    --bella-900: 94 50 70;
+    --lavanda-100: 241 235 250;
+    --lavanda-200: 227 215 245;
+    --lavanda-300: 205 187 234;
+    --lavanda-400: 178 155 217;
+    --lavanda-500: 148 121 196;
+    --noche-800: 248 242 246;
+    --noche-900: 255 255 255;
+    --noche-950: 255 255 255;
+    --oro: 160 118 52;
+  }
+  /* Colores del modo oscuro: se activan con la clase "oscuro" en <html> */
+  .oscuro {
+    --tinta: 243 233 240;
+    --blanco: 34 26 39;
+    --bella-50: 42 29 39;
+    --bella-100: 58 36 50;
+    --bella-200: 77 45 64;
+    --bella-300: 109 59 87;
+    --bella-400: 147 80 111;
+    --bella-500: 189 107 144;
+    --bella-600: 224 143 176;
+    --bella-700: 239 177 202;
+    --bella-800: 246 205 221;
+    --bella-900: 251 228 238;
+    --lavanda-100: 45 36 64;
+    --lavanda-200: 59 46 86;
+    --lavanda-300: 86 69 124;
+    --lavanda-400: 140 118 194;
+    --lavanda-500: 187 167 232;
+    --noche-800: 43 33 49;
+    --noche-900: 34 26 39;
+    --noche-950: 24 18 28;
+    --oro: 226 188 120;
+    color-scheme: dark;
+  }
   body {
-    @apply bg-noche-950 font-sans text-white/90 antialiased;
+    @apply bg-noche-950 font-sans text-tinta antialiased;
+  }
+  /* Imagen de fondo de toda la app (img/fondo.webp).
+     Va en una capa fija detrás de todo; encima lleva un velo blanco
+     para que los textos se sigan leyendo bien. */
+  body::before {
+    content: '';
+    @apply pointer-events-none fixed inset-0 -z-20 bg-cover bg-center;
+    background-image: linear-gradient(rgba(255,255,255,.2), rgba(255,255,255,.2)), url('../img/fondo.webp');
+  }
+  /* Video de fondo del modo claro (lo crea js/tema.js). Va encima de la imagen;
+     si el video no carga, se sigue viendo la imagen. */
+  .fondo-video {
+    @apply pointer-events-none fixed inset-0 overflow-hidden;
+    z-index: -15;
+  }
+  .fondo-video video {
+    @apply h-full w-full object-cover;
+  }
+  /* Velo encima del video para que los textos se lean bien */
+  .fondo-video::after {
+    content: '';
+    @apply absolute inset-0;
+    background: rgba(255, 255, 255, .2);
+  }
+  .fondo-video-oscuro::after {
+    background: rgba(18, 12, 26, .35);
+  }
+  /* Cada tema muestra solo su video */
+  .fondo-video-oscuro,
+  .oscuro .fondo-video-claro {
+    display: none;
+  }
+  .oscuro .fondo-video-oscuro {
+    display: block;
+  }
+  /* Si la persona pidió "reducir movimiento" en su sistema, tampoco */
+  @media (prefers-reduced-motion: reduce) {
+    .fondo-video, .oscuro .fondo-video-oscuro { display: none; }
+  }
+  /* En modo oscuro el velo es oscuro */
+  .oscuro body::before {
+    background-image: linear-gradient(rgba(18,12,26,.35), rgba(18,12,26,.35)), url('../img/fondo-oscuro.webp');
   }
   h1, h2, h3 {
     @apply font-titulo;
   }
+  /* Números normales (no "estilo antiguo") en la letra de títulos: el 1 no parece una I */
+  h1, h2, h3, .font-titulo {
+    font-variant-numeric: lining-nums;
+  }
+  /* Borde visible al navegar con el teclado (accesibilidad) */
+  a:focus-visible, button:focus-visible {
+    @apply outline-none ring-2 ring-bella-400 ring-offset-2;
+  }
   input[type='date'], input[type='time'] {
+    color-scheme: light;
+  }
+  .oscuro input[type='date'], .oscuro input[type='time'] {
     color-scheme: dark;
   }
   html {
@@ -29,8 +131,16 @@
   @media (prefers-reduced-motion: reduce) {
     .revelar { opacity: 1; transform: none; }
   }
+  /* Chrome pinta de color los campos que autocompleta: así se mantienen transparentes */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: rgb(var(--tinta));
+    caret-color: rgb(var(--tinta));
+    transition: background-color 99999s ease-in-out 0s;
+  }
   select option {
-    @apply bg-noche-800 text-white;
+    @apply bg-white text-tinta;
   }
 }
 
@@ -40,8 +150,8 @@
 
   /* Tarjetas de colores de la galería del login */
   .galeria {
-    @apply flex h-28 flex-col justify-between rounded-2xl sm:h-auto sm:aspect-[4/5] border border-white/10 bg-white/[.03] p-4 text-sm
-           font-semibold text-white/80 transition duration-300 hover:-translate-y-1 hover:border-bella-400/30;
+    @apply flex h-28 flex-col justify-between rounded-2xl sm:h-auto sm:aspect-[4/5] border border-tinta/10 bg-tinta/[.03] p-4 text-sm
+           font-semibold text-tinta/80 transition duration-300 hover:-translate-y-1 hover:border-bella-400/30;
   }
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold
@@ -49,59 +159,97 @@
            disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primario {
-    @apply btn bg-gradient-to-r from-bella-500 to-bella-700 text-white shadow-lg shadow-bella-900/40
-           hover:from-bella-400 hover:to-bella-600 active:scale-[.98];
+    @apply btn bg-bella-700 text-white shadow-md shadow-bella-300/50
+           hover:bg-bella-800 active:scale-[.98];
   }
   .btn-secundario {
-    @apply btn border border-white/15 bg-white/5 text-white hover:border-bella-400/60 hover:bg-white/10;
+    @apply btn border border-bella-300 bg-white/20 text-bella-800 hover:border-bella-400 hover:bg-white/50;
+  }
+  /* Botones de las horas libres al agendar una cita */
+  .hora-libre {
+    @apply rounded-lg border border-tinta/20 bg-white/15 py-2 text-sm font-semibold tabular-nums text-tinta transition
+           hover:border-bella-400 hover:bg-white/40;
+  }
+  .hora-libre.hora-escogida {
+    @apply border-bella-700 bg-bella-700 text-white shadow-md shadow-bella-300/50 hover:bg-bella-700;
   }
   .btn-mini {
-    @apply rounded-lg px-2.5 py-1 text-xs font-semibold transition;
+    @apply inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold transition;
+  }
+  .btn-mini-gris {
+    @apply border border-tinta/20 bg-white/15 text-tinta hover:border-bella-300 hover:bg-white/40;
+  }
+  /* Título de cada tarjeta con su ícono */
+  .titulo-seccion {
+    @apply flex items-center gap-3 text-2xl font-bold text-tinta;
+  }
+  .icono {
+    @apply grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-bella-100 text-bella-700;
+  }
+  .icono svg {
+    @apply h-1/2 w-1/2;
   }
   .campo {
-    @apply w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white
-           placeholder:text-white/30 transition
-           focus:border-bella-400 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-bella-500/30;
+    @apply w-full rounded-xl border border-tinta/25 bg-white/15 px-4 py-2.5 text-sm text-tinta focus:bg-white/40
+           placeholder:text-tinta/45 transition hover:border-tinta/30
+           focus:border-bella-300 focus:outline-none focus:ring-2 focus:ring-bella-200;
   }
   .etiqueta {
-    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/50;
+    @apply mb-1.5 block text-sm font-semibold text-tinta/80;
   }
   .tarjeta {
-    @apply rounded-2xl border border-white/10 bg-white/[.04] backdrop-blur-sm;
+    @apply rounded-2xl border border-tinta/10 bg-white/20 shadow-[0_8px_24px_-12px_rgba(63,46,69,.25)] backdrop-blur-[2px];
   }
   .alerta {
     @apply hidden rounded-xl border px-4 py-3 text-sm;
   }
   .alerta-error {
-    @apply border-red-400/30 bg-red-500/10 text-red-300;
+    @apply border-red-200 bg-red-50 text-red-700;
   }
   .alerta-ok {
-    @apply border-emerald-400/30 bg-emerald-500/10 text-emerald-300;
+    @apply border-emerald-200 bg-emerald-50 text-emerald-700;
   }
   .estado {
-    @apply inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold;
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold
+           before:h-1.5 before:w-1.5 before:rounded-full before:bg-current before:content-[''];
   }
-  .estado-Pendiente  { @apply bg-amber-400/15 text-amber-300; }
-  .estado-Confirmada { @apply bg-sky-400/15 text-sky-300; }
-  .estado-Finalizada { @apply bg-emerald-400/15 text-emerald-300; }
-  .estado-Cancelada  { @apply bg-red-400/15 text-red-300; }
+  .estado-Pendiente  { @apply border-amber-200 bg-amber-50 text-amber-800; }
+  .estado-Confirmada { @apply border-sky-200 bg-sky-50 text-sky-800; }
+  .estado-Finalizada { @apply border-emerald-200 bg-emerald-50 text-emerald-800; }
+  .estado-Cancelada  { @apply border-red-200 bg-red-50 text-red-700; }
   .tabla {
     @apply w-full text-left text-sm;
   }
   .tabla th {
-    @apply border-b border-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-white/40;
+    @apply border-y border-tinta/10 bg-white/15 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-tinta/70;
   }
   .tabla td {
-    @apply border-b border-white/5 px-4 py-3 text-white/80;
+    @apply border-b border-tinta/5 px-4 py-3.5 text-tinta;
   }
   .tabla tbody tr {
-    @apply transition hover:bg-white/[.03];
+    @apply transition hover:bg-white/20;
   }
   .pestana {
-    @apply whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium text-white/50 transition hover:text-white;
+    @apply whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold text-tinta/70 transition hover:bg-white/70 hover:text-tinta;
   }
   .pestana-activa {
-    @apply bg-bella-500/15 text-bella-300;
+    @apply bg-white/50 text-bella-800 shadow-sm ring-1 ring-bella-200 hover:bg-white/50;
+  }
+  /* Panel de trabajo: tarjetas, tablas y formularios más opacos para leer cómodo */
+  .zona-trabajo .tarjeta {
+    @apply bg-white/65 backdrop-blur-md;
+  }
+  .zona-trabajo .campo,
+  .zona-trabajo .hora-libre,
+  .zona-trabajo .btn-mini-gris {
+    @apply bg-white/60;
+  }
+  .zona-trabajo .hora-libre.hora-escogida {
+    @apply bg-bella-700;
+  }
+  /* Barra gris animada mientras cargan los datos ("esqueleto") */
+  .esqueleto {
+    @apply h-4 animate-pulse rounded-full bg-tinta/10;
   }
   /* Elementos que aparecen al hacer scroll (js en welcome.html les agrega "visible") */
   .revelar {
@@ -110,7 +258,117 @@
   .revelar.visible {
     @apply translate-y-0 opacity-100;
   }
+  /* Botón para cambiar entre modo claro y oscuro (lo crea js/tema.js) */
+  .btn-tema {
+    @apply fixed bottom-4 left-4 z-40 inline-flex items-center gap-2 rounded-full border-2 border-bella-300 bg-white/70 backdrop-blur-md
+           px-4 py-2.5 text-sm font-semibold text-bella-800 shadow-lg shadow-tinta/15 transition
+           hover:-translate-y-0.5 hover:border-bella-500;
+  }
+  .btn-tema svg {
+    @apply h-5 w-5;
+  }
   .texto-brillo {
-    @apply bg-gradient-to-r from-bella-300 via-oro to-bella-300 bg-[length:200%_auto] bg-clip-text text-transparent motion-safe:animate-brillo;
+    @apply bg-gradient-to-r from-bella-600 via-lavanda-500 to-bella-600 bg-[length:200%_auto] bg-clip-text text-transparent motion-safe:animate-brillo;
   }
 }
+
+/* ---------- Modo oscuro: colores de estados, alertas y botones de acción ---------- */
+.oscuro .bg-amber-50, .oscuro .bg-amber-100 { background-color: rgb(245 158 11 / .14); }
+.oscuro .bg-emerald-50, .oscuro .bg-emerald-100, .oscuro .hover\:bg-emerald-100:hover { background-color: rgb(16 185 129 / .14); }
+.oscuro .bg-sky-50, .oscuro .bg-sky-100, .oscuro .hover\:bg-sky-100:hover { background-color: rgb(14 165 233 / .14); }
+.oscuro .bg-red-50, .oscuro .bg-red-100, .oscuro .hover\:bg-red-100:hover { background-color: rgb(239 68 68 / .14); }
+.oscuro .border-amber-200 { border-color: rgb(245 158 11 / .35); }
+.oscuro .border-emerald-200 { border-color: rgb(16 185 129 / .35); }
+.oscuro .border-sky-200 { border-color: rgb(14 165 233 / .35); }
+.oscuro .border-red-200 { border-color: rgb(239 68 68 / .35); }
+.oscuro .text-amber-700, .oscuro .text-amber-800 { color: #fcd34d; }
+.oscuro .text-emerald-700, .oscuro .text-emerald-800 { color: #6ee7b7; }
+.oscuro .text-sky-800 { color: #7dd3fc; }
+.oscuro .text-red-700 { color: #fca5a5; }
+.oscuro .mix-blend-multiply { mix-blend-mode: normal; }
+
+/* ---------- Ventanas: aparecen con una animación suave ---------- */
+dialog[open] {
+  animation: abrirVentana .22s ease-out;
+}
+dialog[open]::backdrop {
+  animation: oscurecerFondo .22s ease-out;
+}
+@keyframes abrirVentana {
+  from { opacity: 0; transform: translateY(10px) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes oscurecerFondo {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ---------- Celular (menos de 640 px) ---------- */
+@media (max-width: 639px) {
+  /* Espacio abajo para que los botones flotantes no tapen el contenido */
+  body { padding-bottom: 5rem; }
+  /* El botón de tema muestra solo el ícono */
+  .btn-tema { padding: .7rem; }
+  .btn-tema span { display: none; }
+
+  /* Las tablas se muestran como tarjetas: una por fila.
+     Cada celda muestra su título con data-label (lo pone js/panel.js). */
+  .tabla thead { display: none; }
+  .tabla, .tabla tbody, .tabla tr, .tabla td { display: block; width: 100%; }
+  .tabla tbody tr {
+    margin: .75rem;
+    width: auto;
+    border: 1px solid rgb(var(--tinta) / .1);
+    border-radius: 1rem;
+    background: rgb(var(--blanco) / .55);
+    padding: .5rem 0;
+  }
+  .tabla td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 0;
+    padding: .4rem 1rem;
+    text-align: right;
+  }
+  .tabla td[data-label]::before {
+    content: attr(data-label);
+    text-align: left;
+    font-size: .7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: rgb(var(--tinta) / .6);
+  }
+  /* La celda de botones (sin título) va a la derecha y puede bajar de línea */
+  .tabla td[data-label=""] { justify-content: flex-end; flex-wrap: wrap; }
+  .tabla td[colspan] { display: block; text-align: center; }
+}
+
+/* ---------- Modo claro: lectura cómoda ----------
+   El video se ve con más color (velo suave) y los cuadros son casi blancos,
+   así el texto oscuro siempre tiene buen contraste. */
+html:not(.oscuro) .tarjeta {
+  background-color: rgb(255 255 255 / .74);
+  border-color: rgb(255 255 255 / .9);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+html:not(.oscuro) .zona-trabajo .tarjeta { background-color: rgb(255 255 255 / .86); }
+html:not(.oscuro) .campo,
+html:not(.oscuro) .btn-secundario,
+html:not(.oscuro) .btn-mini-gris,
+html:not(.oscuro) .hora-libre:not(.hora-escogida) { background-color: rgb(255 255 255 / .85); }
+html:not(.oscuro) .tabla th { background-color: rgb(253 245 248 / .9); color: rgb(var(--tinta) / .8); }
+html:not(.oscuro) #pestanas { background-color: rgb(255 255 255 / .7); }
+/* Textos grises un poco más oscuros */
+html:not(.oscuro) .text-tinta\/45,
+html:not(.oscuro) .text-tinta\/60,
+html:not(.oscuro) .text-tinta\/65,
+html:not(.oscuro) .text-tinta\/70,
+html:not(.oscuro) .text-tinta\/75 { color: rgb(var(--tinta) / .82); }
+/* Texto que va directo sobre el video: un halo blanco suave detrás de las letras */
+html:not(.oscuro) .sobre-video { text-shadow: 0 0 18px rgb(255 255 255 / .95), 0 0 4px rgb(255 255 255 / .8); }
+html:not(.oscuro) .sobre-video .btn-primario,
+html:not(.oscuro) .sobre-video .texto-brillo { text-shadow: none; }

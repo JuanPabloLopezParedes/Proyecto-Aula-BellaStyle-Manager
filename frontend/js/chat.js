@@ -8,18 +8,18 @@
 document.body.insertAdjacentHTML('beforeend', `
   <div class="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-3">
     <!-- Ventana del chat -->
-    <div id="chatVentana" class="hidden h-[32rem] max-h-[75vh] w-[22rem] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-noche-900 shadow-2xl shadow-black/60">
-      <div class="flex items-center justify-between bg-gradient-to-r from-bella-600 to-bella-500 px-4 py-3">
+    <div id="chatVentana" class="hidden h-[32rem] max-h-[75vh] w-[22rem] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-2xl border border-tinta/10 bg-noche-900/45 shadow-2xl shadow-tinta/20 backdrop-blur-md">
+      <div class="flex items-center justify-between bg-gradient-to-r from-bella-200 to-lavanda-200 px-4 py-3">
         <div>
           <p class="font-semibold">Chat BellaStyle</p>
-          <p class="text-xs text-white/80">Asesoría y cotizaciones</p>
+          <p class="text-xs text-tinta/80">Asesoría y cotizaciones</p>
         </div>
-        <button id="chatCerrar" class="rounded-lg px-2 text-2xl leading-none text-white/80 hover:bg-white/10" aria-label="Cerrar chat">&times;</button>
+        <button id="chatCerrar" class="rounded-lg px-2 text-2xl leading-none text-tinta/80 hover:bg-tinta/10" aria-label="Cerrar chat">&times;</button>
       </div>
 
       <!-- Paso 1: datos del visitante (no necesita cuenta) -->
       <form id="chatDatos" class="flex flex-1 flex-col gap-3 p-4">
-        <p class="text-sm text-white/60">Escríbenos sin registrarte. Te respondemos por aquí.</p>
+        <p class="text-sm text-tinta/75">Escríbenos sin registrarte. Te respondemos por aquí.</p>
         <div id="chatAlerta" class="alerta"></div>
         <div>
           <label for="chatNombre" class="etiqueta">Tu nombre</label>
@@ -36,7 +36,7 @@ document.body.insertAdjacentHTML('beforeend', `
       <div id="chatConversacion" class="hidden flex-1 flex-col overflow-hidden">
         <div id="chatMensajes" class="flex-1 space-y-3 overflow-y-auto p-4"></div>
         <div id="chatAlertaMensaje" class="alerta mx-4"></div>
-        <form id="chatFormMensaje" class="flex gap-2 border-t border-white/10 p-3">
+        <form id="chatFormMensaje" class="flex gap-2 border-t border-tinta/10 p-3">
           <input id="chatTexto" class="campo py-2" maxlength="500" placeholder="Escribe tu mensaje..." autocomplete="off">
           <button class="btn-primario px-4 py-2">Enviar</button>
         </form>
@@ -44,10 +44,10 @@ document.body.insertAdjacentHTML('beforeend', `
     </div>
 
     <!-- Burbuja -->
-    <button id="chatBurbuja" class="group relative flex items-center gap-3 rounded-full bg-gradient-to-r from-bella-600 to-bella-500 py-3 pl-4 pr-5 font-semibold shadow-xl shadow-bella-900/50 transition hover:-translate-y-0.5">
+    <button id="chatBurbuja" class="group relative flex items-center gap-3 rounded-full bg-gradient-to-r from-bella-200 to-lavanda-200 py-3 pl-4 pr-5 font-semibold shadow-xl shadow-bella-200/70 transition hover:-translate-y-0.5">
       <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8M8 14h5m-9 6 3-3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v13Z"/></svg>
       <span class="hidden text-sm sm:inline">¿Asesoría o cotización? Escríbenos</span>
-      <span id="chatContador" class="absolute -right-1 -top-1 hidden h-6 min-w-6 rounded-full bg-oro px-1.5 text-center text-xs font-bold leading-6 text-noche-950">0</span>
+      <span id="chatContador" class="absolute -right-1 -top-1 hidden h-6 min-w-6 rounded-full bg-bella-700 px-1.5 text-center text-xs font-bold leading-6 text-white">0</span>
     </button>
   </div>
 `);
@@ -72,13 +72,13 @@ function dibujarMensaje(m) {
     const propio = m.autor === 'Visitante';
     const quien = m.autor === 'Salon' ? 'Asesora BellaStyle' : m.autor === 'Asistente' ? 'Asistente' : 'Tú';
     const burbujaTexto = propio
-        ? 'ml-auto bg-bella-500 text-white rounded-br-sm'
+        ? 'ml-auto bg-bella-200 text-tinta rounded-br-sm'
         : m.autor === 'Salon'
-            ? 'bg-oro/15 text-white rounded-bl-sm border border-oro/30'
-            : 'bg-white/10 text-white/90 rounded-bl-sm';
+            ? 'bg-oro/15 text-tinta rounded-bl-sm border border-oro/30'
+            : 'bg-white/70 text-tinta rounded-bl-sm border border-tinta/10';
     listaMensajes.insertAdjacentHTML('beforeend', `
         <div class="max-w-[85%] ${propio ? 'ml-auto text-right' : ''}">
-            <p class="mb-1 text-[11px] text-white/40">${quien} · ${m.hora}</p>
+            <p class="mb-1 text-[11px] text-tinta/80">${quien} · ${m.hora}</p>
             <p class="inline-block whitespace-pre-line rounded-2xl px-3 py-2 text-left text-sm ${burbujaTexto}">${escapar(m.texto)}</p>
         </div>`);
 }

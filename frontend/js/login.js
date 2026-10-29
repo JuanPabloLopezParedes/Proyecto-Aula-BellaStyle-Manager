@@ -18,8 +18,8 @@ function dibujarRoles() {
         const boton = document.createElement('button');
         boton.type = 'button';
         boton.textContent = ROLES[clave].titulo;
-        boton.className = 'rounded-lg px-1 py-2 text-xs font-semibold transition '
-            + (clave === rolActual ? 'bg-bella-500 text-white shadow' : 'text-white/60 hover:bg-white/10 hover:text-white');
+        boton.className = 'rounded-lg px-1 py-2.5 text-sm font-semibold transition sm:text-base '
+            + (clave === rolActual ? 'bg-bella-700 text-white shadow' : 'text-tinta/75 hover:bg-tinta/10 hover:text-tinta');
         boton.addEventListener('click', () => seleccionarRol(clave));
         lista.appendChild(boton);
     }
@@ -66,24 +66,23 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
     } else {
         mostrarAlerta(alerta, respuesta.message);
         boton.disabled = false;
-        boton.textContent = 'Iniciar sesión';
+        boton.textContent = 'Entrar';
     }
 });
 
-// Tarjeta de precios: muestra cuatro servicios con su precio real
+// Lista corta de precios: cuatro servicios con su precio real
 async function cargarPrecios() {
     const respuesta = await pedir('/servicios');
     const lista = document.getElementById('listaPrecios');
     if (!respuesta.success) {
-        lista.innerHTML = '<p class="col-span-2 text-sm text-white/40">Enciende el servidor para ver los precios.</p>';
+        lista.innerHTML = '<li class="py-3 text-sm text-tinta/80">Enciende el servidor para ver los precios.</li>';
         return;
     }
     lista.innerHTML = respuesta.data.slice(0, 4).map((s) => `
-        <div class="rounded-xl border border-white/10 bg-white/5 p-3">
-            <p class="text-sm font-semibold text-white">${escapar(s.nombre)}</p>
-            <p class="text-[11px] text-white/40">${s.duracion_min} minutos</p>
-            <p class="mt-1 font-bold text-oro">${pesos(s.precio)}</p>
-        </div>`).join('');
+        <li class="flex items-baseline justify-between gap-4 py-3">
+            <span class="text-tinta/80">${escapar(s.nombre)} <span class="text-xs text-tinta/45">· ${s.duracion_min} min</span></span>
+            <span class="font-semibold text-oro">${pesos(s.precio)}</span>
+        </li>`).join('');
 }
 
 seleccionarRol(rolActual);

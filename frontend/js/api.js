@@ -64,18 +64,18 @@ const ROLES = {
         titulo: 'Clienta',
         pregunta: '¿Eres clienta?',
         descripcion: 'Agenda tus citas y revisa tu historial.',
-        imagen: 'img/login_cliente.webp'
+        imagen: 'img/rol_clienta.svg'
     },
     estilista: {
         titulo: 'Estilista',
         pregunta: '¿Eres estilista?',
         descripcion: 'Consulta las citas que te asignaron.',
-        imagen: 'img/login_estilicista.webp'
+        imagen: 'img/rol_estilista.svg'
     },
     admin: {
         titulo: 'Administradora',
         pregunta: '¿Eres administradora?',
         descripcion: 'Gestiona el salón, el equipo y las citas.',
-        imagen: 'img/login_admin.jpg'
+        imagen: 'img/rol_admin.svg'
     }
 };

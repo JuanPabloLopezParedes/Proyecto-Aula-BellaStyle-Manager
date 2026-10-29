@@ -3,149 +3,92 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Iniciar sesión | BellaStyle</title>
-  <link rel="stylesheet" href="css/estilos.css">
+  <title>BellaStyle | Agenda tu cita</title>
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="apple-touch-icon" href="img/icono-180.png">
+  <meta name="description" content="BellaStyle: agenda tu cita en el salón de belleza en minutos.">
+  <meta name="theme-color" content="#f7d3e2">
+  <link rel="stylesheet" href="css/estilos.css?v=9">
+  <script src="js/tema.js?v=7"></script>
 </head>
 <body class="min-h-screen bg-noche-950">
 
-  <!-- Fondo decorativo -->
+  <!-- Fondo: un solo brillo suave (antes había varios y la página se veía "empañada") -->
   <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-    <div class="absolute -left-32 top-1/3 h-96 w-96 rounded-full bg-bella-600/20 blur-3xl motion-safe:animate-flotar"></div>
-    <div class="absolute -right-20 -top-20 h-[26rem] w-[26rem] rounded-full bg-bella-900/20 blur-3xl"></div>
+    <div class="absolute -right-40 -top-40 h-[28rem] w-[28rem] rounded-full bg-bella-100/60 blur-3xl"></div>
   </div>
 
-  <main class="mx-auto grid max-w-6xl gap-8 px-5 py-10 lg:grid-cols-[1fr_23.5rem] lg:gap-10 lg:py-14">
+  <main class="mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-5 py-10 lg:grid-cols-[1fr_28rem] lg:gap-14">
 
-    <!-- ===================== COLUMNA IZQUIERDA: presentación ===================== -->
-    <section class="order-2 lg:order-1">
+    <!-- ===================== IZQUIERDA: qué es y qué puedes hacer ===================== -->
+    <section class="sobre-video animate-aparecer">
 
       <!-- Logo -->
-      <a href="welcome.html" class="inline-flex animate-aparecer items-center gap-5 rounded-3xl border border-white/10 bg-white/[.04] p-5 pr-10">
-        <img src="img/bienvenido.jpg" alt="Logo BellaStyle" class="h-20 w-20 rounded-full bg-bella-100 p-1.5 mix-blend-normal opacity-90">
-        <span>
-          <span class="block font-titulo text-4xl font-bold text-white">BellaStyle</span>
-          <span class="mt-1 block border-t border-bella-400/50 pt-1 text-xs tracking-wide text-white/50">Tu estilo, a un clic</span>
-        </span>
+      <a href="welcome.html" class="inline-flex items-center gap-3">
+        <img src="img/logo.webp" alt="Logo BellaStyle" class="h-14 w-14 rounded-full shadow-md shadow-bella-300/50 ring-2 ring-white/60">
+        <span class="font-titulo text-3xl font-bold text-tinta">Bella<span class="text-bella-700">Style</span></span>
       </a>
-      <p class="mt-4 flex w-fit animate-aparecer items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-white/60 [animation-delay:.1s]">
-        &#10022; Agenda en línea · la estilista se asigna sola
+
+      <!-- Mensaje principal: una sola idea -->
+      <h1 class="mt-10 text-5xl font-bold leading-tight sm:text-6xl">Agenda tu cita<br>en minutos.</h1>
+      <p class="mt-4 max-w-md text-lg text-tinta/75">
+        Elige el servicio, el día y la hora. Nosotras te asignamos la estilista.
       </p>
 
-      <!-- Galería de servicios -->
-      <div class="mt-10 grid animate-aparecer grid-cols-2 gap-3 [animation-delay:.15s] sm:grid-cols-5">
-        <div class="galeria">
-          <svg class="h-8 w-8 text-bella-300/80" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></svg>
-          <span>Corte</span>
-        </div>
-        <div class="galeria">
-          <svg class="h-8 w-8 text-bella-300/80" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.5 0-.4-.2-.8-.4-1.1-.3-.3-.4-.6-.4-1 0-.8.7-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.4-4-8-9-8Z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="10.5" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></svg>
-          <span>Color y mechas</span>
-        </div>
-        <div class="galeria">
-          <svg class="h-8 w-8 text-bella-300/80" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path d="M12 2c3 3 5 6.5 5 10a5 5 0 0 1-10 0c0-3.5 2-7 5-10Z"/><path d="M12 22v-5"/></svg>
-          <span>Peinados</span>
-        </div>
-        <div class="galeria">
-          <svg class="h-8 w-8 text-bella-300/80" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path d="M9 21V10a3 3 0 0 1 6 0v11"/><path d="M9 14h6"/><path d="M10 6.5V4a2 2 0 0 1 4 0v2.5"/></svg>
-          <span>Manicure</span>
-        </div>
-        <div class="galeria col-span-2 sm:col-span-1">
-          <svg class="h-8 w-8 text-bella-300/80" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path d="M12 21c-4-2-7-5.5-7-10a7 7 0 0 1 7-7 7 7 0 0 1 7 7c0 4.5-3 8-7 10Z"/><path d="M12 8v6m-3-3h6"/></svg>
-          <span>Tratamientos</span>
-        </div>
+      <!-- Acción principal -->
+      <div class="mt-8 flex flex-wrap items-center gap-4">
+        <a href="register.html?rol=cliente" class="btn-primario px-7 py-3 text-base">Agendar mi cita &rarr;</a>
+        <a href="welcome.html" class="text-sm font-semibold text-tinta/80 hover:text-tinta">Conoce el salón</a>
       </div>
 
-      <!-- Mensaje principal -->
-      <h1 class="mt-10 animate-aparecer text-4xl font-bold leading-tight [animation-delay:.2s] sm:text-5xl">Tu salón de belleza en un solo lugar.</h1>
-      <p class="mt-4 max-w-2xl animate-aparecer text-white/60 [animation-delay:.25s]">
-        Cuando las citas se manejan por llamadas, cuadernos y chats sueltos, aparecen los cruces de horario, las citas olvidadas
-        y el trabajo mal repartido. BellaStyle organiza la agenda, el equipo y el catálogo del salón desde un mismo sistema.
-      </p>
-      <a href="register.html?rol=cliente" class="btn-primario mt-6 animate-aparecer px-6 py-3 text-base [animation-delay:.3s]">Crear mi cuenta &rarr;</a>
-
-      <!-- Beneficios -->
-      <div class="mt-10 grid animate-aparecer gap-4 [animation-delay:.35s] sm:grid-cols-3">
-        <div class="tarjeta p-5 text-center">
-          <span class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-bella-500/15 text-bella-300">&#10022;</span>
-          <h3 class="mt-3 font-sans text-base font-semibold text-white">Asignación automática</h3>
-          <p class="mt-1 text-sm text-white/50">Escoge la estilista libre que domina tu servicio.</p>
-        </div>
-        <div class="tarjeta p-5 text-center">
-          <span class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-bella-500/15 text-bella-300">&#9719;</span>
-          <h3 class="mt-3 font-sans text-base font-semibold text-white">Sin cruces de horario</h3>
-          <p class="mt-1 text-sm text-white/50">Valida horario, domingos y citas que se cruzan.</p>
-        </div>
-        <div class="tarjeta p-5 text-center">
-          <span class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-bella-500/15 text-bella-300">&#9993;</span>
-          <h3 class="mt-3 font-sans text-base font-semibold text-white">Chat de asesoría</h3>
-          <p class="mt-1 text-sm text-white/50">Pide una cotización sin necesidad de registrarte.</p>
-        </div>
+      <!-- Algunos precios (se cargan desde la base de datos en js/login.js) -->
+      <div class="mt-12 max-w-md">
+        <p class="etiqueta">Algunos precios</p>
+        <ul id="listaPrecios" class="divide-y divide-tinta/5 border-y border-tinta/5"></ul>
+        <p class="mt-3 text-sm text-tinta/80">Lunes a sábado · 8:00 a. m. a 7:00 p. m.</p>
       </div>
     </section>
 
-    <!-- ===================== COLUMNA DERECHA: login y precios ===================== -->
-    <aside class="order-1 space-y-6 lg:order-2">
+    <!-- ===================== DERECHA: iniciar sesión ===================== -->
+    <section class="tarjeta animate-aparecer p-7 shadow-2xl sm:p-8 shadow-bella-200/50 [animation-delay:.1s]">
+      <div class="flex items-center gap-4">
+        <img id="imagenRol" src="img/rol_clienta.svg" alt="" class="h-16 w-16 rounded-2xl object-cover shadow-sm">
+        <div>
+          <p class="text-sm uppercase tracking-wider text-tinta/80">Iniciar sesión como</p>
+          <h2 id="tituloRol" class="mt-1 text-4xl font-bold leading-none">Clienta</h2>
+        </div>
+      </div>
 
-      <!-- Inicio de sesión -->
-      <section class="tarjeta animate-aparecer bg-noche-900/90 p-6 shadow-2xl shadow-black/50">
-        <div class="flex items-center gap-3">
-          <img id="imagenRol" src="img/login_cliente.webp" alt="" class="h-12 w-12 rounded-xl object-cover ring-2 ring-bella-500/40">
-          <div>
-            <p class="text-xs uppercase tracking-wider text-white/40">Iniciar sesión como</p>
-            <h2 id="tituloRol" class="text-2xl font-bold leading-none">Clienta</h2>
+      <!-- Selector de rol (se llena desde js/login.js) -->
+      <div id="listaRoles" class="mt-6 grid grid-cols-3 gap-1 rounded-xl bg-tinta/5 p-1.5"></div>
+      <p id="descripcionRol" class="mt-3 text-base text-tinta/80"></p>
+
+      <div id="alerta" class="alerta mt-4"></div>
+
+      <form id="formLogin" class="mt-5 space-y-5">
+        <div>
+          <label for="usuario" class="etiqueta text-base">Usuario</label>
+          <input id="usuario" class="campo py-3.5 text-lg" type="text" autocomplete="username" required>
+        </div>
+        <div>
+          <label for="password" class="etiqueta text-base">Contraseña</label>
+          <div class="relative">
+            <input id="password" class="campo py-3.5 pr-24 text-lg" type="password" autocomplete="current-password" required>
+            <button type="button" id="verPassword" class="absolute inset-y-2 right-2 rounded-lg bg-bella-500/20 px-4 text-sm font-semibold text-bella-700 hover:bg-bella-500/30">Mostrar</button>
           </div>
         </div>
+        <button id="btnEntrar" type="submit" class="btn-primario w-full py-4 text-lg">Entrar</button>
+      </form>
 
-        <!-- Selector de rol (se llena desde js/login.js) -->
-        <div id="listaRoles" class="mt-5 grid grid-cols-3 gap-1 rounded-xl bg-white/5 p-1"></div>
-        <p id="descripcionRol" class="mt-2 text-xs text-white/40"></p>
-
-        <div id="alerta" class="alerta mt-4"></div>
-
-        <form id="formLogin" class="mt-4 space-y-4">
-          <div>
-            <label for="usuario" class="etiqueta">Usuario</label>
-            <input id="usuario" class="campo" type="text" autocomplete="username" required>
-          </div>
-          <div>
-            <label for="password" class="etiqueta">Contraseña</label>
-            <div class="relative">
-              <input id="password" class="campo pr-20" type="password" autocomplete="current-password" required>
-              <button type="button" id="verPassword" class="absolute inset-y-1.5 right-1.5 rounded-lg bg-bella-500/20 px-3 text-xs font-semibold text-bella-200 hover:bg-bella-500/30">Mostrar</button>
-            </div>
-          </div>
-          <button id="btnEntrar" type="submit" class="btn-primario w-full py-3">Entrar</button>
-        </form>
-
-        <div class="mt-5 space-y-1.5 text-center text-xs">
-          <a href="recuperar.html" class="block text-bella-300 underline-offset-4 hover:underline">¿Olvidaste tu contraseña?</a>
-          <a id="enlaceRegistro" href="register.html?rol=cliente" class="block text-bella-300 underline-offset-4 hover:underline">¿No tienes cuenta? Regístrate</a>
-          <a href="welcome.html" class="block text-white/40 hover:text-white">Conoce más de BellaStyle &rarr;</a>
-        </div>
-      </section>
-
-      <!-- Precios (se cargan desde la base de datos) -->
-      <section class="tarjeta animate-aparecer p-6 text-center [animation-delay:.1s]">
-        <h2 class="font-sans text-xl font-bold text-white">Precios claros,<br>sin sorpresas</h2>
-        <p class="mt-2 text-sm text-white/50">El precio queda guardado en tu cita el día que la agendas.</p>
-        <div id="listaPrecios" class="mt-5 grid grid-cols-2 gap-3"></div>
-        <ul class="mt-5 space-y-1.5 text-sm text-white/60">
-          <li><span class="text-emerald-300">&#10003;</span> Lunes a sábado, de 8:00 a. m. a 7:00 p. m.</li>
-          <li><span class="text-emerald-300">&#10003;</span> Reprograma o cancela desde tu panel</li>
-          <li><span class="text-emerald-300">&#10003;</span> Contraseña cifrada y cuenta personal</li>
-        </ul>
-      </section>
-    </aside>
+      <div class="mt-6 flex flex-wrap justify-between gap-2 text-base">
+        <a href="recuperar.html" class="text-tinta/80 hover:text-tinta">¿Olvidaste tu contraseña?</a>
+        <a id="enlaceRegistro" href="register.html?rol=cliente" class="font-semibold text-bella-700 hover:text-bella-800">Crear cuenta</a>
+      </div>
+    </section>
   </main>
 
-  <footer class="border-t border-white/5 py-8 text-center text-sm text-white/40">
-    <p class="font-titulo text-lg font-bold text-white/80">Bella<span class="text-bella-400">Style</span></p>
-    <p class="mt-2 space-x-4">
-      <a href="welcome.html" class="hover:text-white">Inicio</a>
-      <a href="welcome.html#servicios" class="hover:text-white">Servicios</a>
-      <a href="register.html?rol=cliente" class="hover:text-white">Crear cuenta</a>
-    </p>
-    <p class="mt-3 text-xs">BellaStyle Manager · Proyecto de Aula · Ingeniería de Sistemas</p>
+  <footer class="border-t border-tinta/5 py-6 text-center text-xs text-tinta/45">
+    BellaStyle Manager · Proyecto de Aula · Ingeniería de Sistemas
   </footer>
 
   <script src="js/api.js"></script>
