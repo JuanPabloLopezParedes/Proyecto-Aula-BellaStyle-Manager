@@ -37,11 +37,13 @@ async function asignarServicios(conexion, idEstilista, idsServicios) {
     }
 }
 
-// Consulta base: la estilista con la lista de servicios que realiza
+// Consulta base: la estilista con la lista de servicios que realiza y su promedio de calificación
 const SELECT_ESTILISTAS = `
     SELECT e.id_estilista, e.id_usuario, e.nombres, e.apellidos, e.especialidad, e.estado,
            GROUP_CONCAT(s.nombre ORDER BY s.nombre SEPARATOR ', ') AS servicios,
-           GROUP_CONCAT(s.id_servicio) AS ids_servicios
+           GROUP_CONCAT(s.id_servicio) AS ids_servicios,
+           (SELECT ROUND(AVG(c.calificacion), 1) FROM citas c WHERE c.id_estilista = e.id_estilista AND c.calificacion IS NOT NULL) AS promedio_calificacion,
+           (SELECT COUNT(*) FROM citas c WHERE c.id_estilista = e.id_estilista AND c.calificacion IS NOT NULL) AS total_calificaciones
     FROM estilistas e
     LEFT JOIN estilista_servicios es ON es.id_estilista = e.id_estilista
     LEFT JOIN servicios s ON s.id_servicio = es.id_servicio`;

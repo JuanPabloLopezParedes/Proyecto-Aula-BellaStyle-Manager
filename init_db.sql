@@ -40,13 +40,14 @@ CREATE TABLE usuarios (
 
 -- Datos de las clientas. id_usuario la une con su cuenta
 CREATE TABLE clientas (
-    id_clienta  INT AUTO_INCREMENT PRIMARY KEY,
-    id_usuario  INT UNIQUE,
-    nombres     VARCHAR(80) NOT NULL,
-    apellidos   VARCHAR(80) NOT NULL,
-    telefono    VARCHAR(30),
-    email       VARCHAR(120),
-    creado_en   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id_clienta    INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario    INT UNIQUE,
+    nombres       VARCHAR(80) NOT NULL,
+    apellidos     VARCHAR(80) NOT NULL,
+    telefono      VARCHAR(30),
+    email         VARCHAR(120),
+    ficha_tecnica TEXT,
+    creado_en     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_clientas_usuario FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE SET NULL
 );
 
@@ -103,16 +104,21 @@ CREATE TABLE estilista_servicios (
 
 -- Citas agendadas
 CREATE TABLE citas (
-    id_cita       INT AUTO_INCREMENT PRIMARY KEY,
-    id_cliente    INT NOT NULL,
-    id_estilista  INT NOT NULL,
-    id_servicio   INT NOT NULL,
-    fecha         DATE NOT NULL,
-    hora          TIME NOT NULL,
-    precio        DECIMAL(10,2) NOT NULL DEFAULT 0,
-    estado        ENUM('Pendiente','Confirmada','Finalizada','Cancelada') NOT NULL DEFAULT 'Pendiente',
-    observaciones TEXT,
-    creado_en     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id_cita                 INT AUTO_INCREMENT PRIMARY KEY,
+    id_cliente              INT NOT NULL,
+    id_estilista            INT NOT NULL,
+    id_servicio             INT NOT NULL,
+    fecha                   DATE NOT NULL,
+    hora                    TIME NOT NULL,
+    duracion_min            INT NOT NULL DEFAULT 60,
+    precio                  DECIMAL(10,2) NOT NULL DEFAULT 0,
+    producto_adicional      VARCHAR(120) DEFAULT NULL,
+    precio_producto         DECIMAL(10,2) NOT NULL DEFAULT 0,
+    estado                  ENUM('Pendiente','Confirmada','Finalizada','Cancelada') NOT NULL DEFAULT 'Pendiente',
+    observaciones           TEXT,
+    calificacion            TINYINT DEFAULT NULL,
+    comentario_calificacion VARCHAR(300) DEFAULT NULL,
+    creado_en               TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_citas_cliente   FOREIGN KEY (id_cliente)   REFERENCES clientas(id_clienta),
     CONSTRAINT fk_citas_estilista FOREIGN KEY (id_estilista) REFERENCES estilistas(id_estilista),
     CONSTRAINT fk_citas_servicio  FOREIGN KEY (id_servicio)  REFERENCES servicios(id_servicio)
@@ -159,16 +165,16 @@ INSERT INTO usuarios (id_usuario, nombre, username, password, rol, foto) VALUES
 (11, 'Gabriela Castillo', 'gabriela',  '$2a$10$wPH.tKFjr54oM.IzJVbSHOUYpEJjgJ43.CAekjbRWF3IpVt3P6csa', 'Clienta',        'img/login_cliente.webp'),
 (12, 'Sebastián Rojas',   'sebastian', '$2a$10$wPH.tKFjr54oM.IzJVbSHOUYpEJjgJ43.CAekjbRWF3IpVt3P6csa', 'Clienta',        'img/login_cliente.webp');
 
-INSERT INTO clientas (id_clienta, id_usuario, nombres, apellidos, telefono, email) VALUES
-(1, 5,    'César',     'Pestana',   '3001112233', 'cesar@correo.com'),
-(2, NULL, 'María',     'García',    '3014445566', 'maria@correo.com'),
-(3, NULL, 'Sofía',     'Restrepo',  '3027778899', 'sofia@correo.com'),
-(4, 9,    'Carolina',  'Herrera',   '3152223344', 'carolina@correo.com'),
-(5, 10,   'Natalia',   'Vega',      '3168889900', 'natalia@correo.com'),
-(6, 11,   'Gabriela',  'Castillo',  '3185554433', 'gabriela@correo.com'),
-(7, 12,   'Sebastián', 'Rojas',     '3046667788', 'sebastian@correo.com'),
-(8, NULL, 'Isabella',  'Navarro',   '3123339988', 'isabella@correo.com'),
-(9, NULL, 'Mariana',   'Ospina',    '3109991122', 'mariana@correo.com');
+INSERT INTO clientas (id_clienta, id_usuario, nombres, apellidos, telefono, email, ficha_tecnica) VALUES
+(1, 5,    'César',     'Pestana',   '3001112233', 'cesar@correo.com',     'Cuero cabelludo normal. Prefiere degradado medio con tijera en la parte superior y loción refrescante sin alcohol.'),
+(2, NULL, 'María',     'García',    '3014445566', 'maria@correo.com',     'Base natural castaño 5.0, fórmula habitual tinte 7.1 rubio cenizo con peróxido de 20 vol. Sensible al amoniaco.'),
+(3, NULL, 'Sofía',     'Restrepo',  '3027778899', 'sofia@correo.com',     'Uñas naturales delgadas; se recomienda nivelación con Base Rubber antes de semipermanente.'),
+(4, 9,    'Carolina',  'Herrera',   '3152223344', 'carolina@correo.com',  'Cabello largo ondulado con mechas Balayage tono miel. Usa tratamiento hidratante de argán cada mes.'),
+(5, 10,   'Natalia',   'Vega',      '3168889900', 'natalia@correo.com',   'Hebras finas con tendencia al frizz; excelente resultado con Bótox Capilar orgánico sin formol.'),
+(6, 11,   'Gabriela',  'Castillo',  '3185554433', 'gabriela@correo.com',  'Prefiere uñas acrílicas almendradas largo #2 y tonos pastel o francés clásico.'),
+(7, 12,   'Sebastián', 'Rojas',     '3046667788', 'sebastian@correo.com', 'Corte ejecutivo y perfilado de barba con toalla caliente y aceite de almendras.'),
+(8, NULL, 'Isabella',  'Navarro',   '3123339988', 'isabella@correo.com',  'Cabello rizado tipo 3B, requiere hidratación profunda antes de estilizado para eventos.'),
+(9, NULL, 'Mariana',   'Ospina',    '3109991122', 'mariana@correo.com',   'Piel sensible en pies; usar exfoliación suave de menta en PediSpa.');
 
 INSERT INTO estilistas (id_estilista, id_usuario, nombres, apellidos, especialidad) VALUES
 (1, 2, 'Laura',   'Estilista', 'Colorimetría y Balayage'),
@@ -252,20 +258,20 @@ INSERT INTO estilista_servicios (id_estilista, id_servicio) VALUES
 (5, 1), (5, 4), (5, 5),         -- Valeria: corte, peinado y manicure
 (6, 1), (6, 7);                 -- Andrés: corte (hombre/mujer) y tratamiento
 
-INSERT INTO citas (id_cliente, id_estilista, id_servicio, fecha, hora, precio, estado, observaciones) VALUES
-(1, 2, 1, '2026-10-28', '10:00:00',  35000, 'Finalizada', 'Especialidad elegida: Corte Bob / Long Bob (Lob) (Corte para Mujer)'),
-(2, 1, 2, '2026-10-28', '14:00:00', 120000, 'Finalizada', 'Especialidad elegida: Tinte Global (Tono Entero)'),
-(4, 3, 5, '2026-10-29', '09:30:00',  25000, 'Finalizada', 'Especialidad elegida: Uñas Acrílicas Esculpidas (Tipos de Uñas y Sistemas)'),
-(5, 4, 7, '2026-10-29', '11:00:00',  55000, 'Finalizada', 'Especialidad elegida: Bótox Capilar Antifrizz (Terapias Capilares)'),
-(7, 6, 1, '2026-10-30', '16:00:00',  35000, 'Finalizada', 'Especialidad elegida: Degradado / Fade (Corte para Hombre)'),
-(6, 1, 3, '2026-10-30', '09:00:00', 180000, 'Finalizada', 'Especialidad elegida: Balayage Hand-Painted (Técnicas de Diseño de Color)'),
-(3, 3, 5, '2026-10-30', '15:00:00',  25000, 'Cancelada',  'Cancelada por viaje de la clienta'),
-(1, 2, 4, '2026-11-03', '10:30:00',  60000, 'Confirmada', 'Especialidad elegida: Ondas Glamour / Ondas al Agua (Estilos de Peinado)'),
-(4, 3, 6, '2026-11-03', '14:00:00',  30000, 'Confirmada', 'Especialidad elegida: PediSpa Detox & Hidratación Profunda'),
-(5, 1, 3, '2026-11-04', '09:00:00', 180000, 'Pendiente',  'Especialidad elegida: Morena Iluminada (Caramelo / Avellana)'),
-(6, 2, 1, '2026-11-04', '11:30:00',  35000, 'Pendiente',  'Especialidad elegida: Corte en Capas Largas o Mariposa (Corte para Mujer)'),
-(7, 6, 1, '2026-11-05', '15:30:00',  35000, 'Confirmada', 'Especialidad elegida: Corte + Perfilado y Arreglo de Barba (Corte para Hombre)'),
-(8, 5, 4, '2026-11-06', '16:00:00',  60000, 'Pendiente',  'Especialidad elegida: Recogido Elegante (Novias, Grados y Gala)');
+INSERT INTO citas (id_cliente, id_estilista, id_servicio, fecha, hora, duracion_min, precio, producto_adicional, precio_producto, estado, observaciones, calificacion, comentario_calificacion) VALUES
+(1, 2, 1, '2026-10-28', '10:00:00',  50,  40000, NULL,                         0,     'Finalizada', 'Especialidad elegida: Corte Bob / Long Bob (Lob) (Corte para Mujer)', 5, 'Excelente atención de Diana, el corte quedó perfecto.'),
+(2, 1, 2, '2026-10-28', '14:00:00', 120, 148000, 'Shampoo Hidratante Argan',  28000, 'Finalizada', 'Especialidad elegida: Tinte Global (Tono Entero)', 5, 'El color quedó súper brillante y sin maltratar el cabello.'),
+(4, 3, 5, '2026-10-29', '09:30:00', 120,  85000, NULL,                         0,     'Finalizada', 'Especialidad elegida: Uñas Acrílicas Esculpidas (Tipos de Uñas y Sistemas)', 5, 'Paula es muy detallista, me encantaron las uñas.'),
+(5, 4, 7, '2026-10-29', '11:00:00', 105, 120000, NULL,                         0,     'Finalizada', 'Especialidad elegida: Bótox Capilar Antifrizz (Terapias Capilares)', 4, 'Muy buen resultado, me quitó todo el frizz.'),
+(7, 6, 1, '2026-10-30', '16:00:00',  45,  32000, NULL,                         0,     'Finalizada', 'Especialidad elegida: Degradado / Fade (Corte para Hombre)', 5, 'Degradado impecable y muy puntual.'),
+(6, 1, 3, '2026-10-30', '09:00:00', 150, 215000, 'Mascarilla Capilar Reparadora', 35000, 'Finalizada', 'Especialidad elegida: Balayage Hand-Painted (Técnicas de Diseño de Color)', 5, 'El mejor balayage que me han hecho en Cartagena.'),
+(3, 3, 5, '2026-10-30', '15:00:00',  45,  25000, NULL,                         0,     'Cancelada',  'Cancelada por viaje de la clienta', NULL, NULL),
+(1, 2, 4, '2026-11-03', '10:30:00',  60,  60000, NULL,                         0,     'Confirmada', 'Especialidad elegida: Ondas Glamour / Ondas al Agua (Estilos de Peinado)', NULL, NULL),
+(4, 3, 6, '2026-11-03', '14:00:00',  80,  60000, NULL,                         0,     'Confirmada', 'Especialidad elegida: PediSpa Detox & Hidratación Profunda', NULL, NULL),
+(5, 1, 3, '2026-11-04', '09:00:00', 135, 165000, NULL,                         0,     'Pendiente',  'Especialidad elegida: Morena Iluminada (Caramelo / Avellana)', NULL, NULL),
+(6, 2, 1, '2026-11-04', '11:30:00',  45,  38000, NULL,                         0,     'Pendiente',  'Especialidad elegida: Corte en Capas Largas o Mariposa (Corte para Mujer)', NULL, NULL),
+(7, 6, 1, '2026-11-05', '15:30:00',  55,  42000, NULL,                         0,     'Confirmada', 'Especialidad elegida: Corte + Perfilado y Arreglo de Barba (Corte para Hombre)', NULL, NULL),
+(8, 5, 4, '2026-11-06', '16:00:00',  75,  85000, NULL,                         0,     'Pendiente',  'Especialidad elegida: Recogido Elegante (Novias, Grados y Gala)', NULL, NULL);
 
 -- Conversaciones de ejemplo para la pestaña Mensajes del panel
 INSERT INTO conversaciones (id_conversacion, codigo, nombre, contacto, estado) VALUES

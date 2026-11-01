@@ -3,10 +3,16 @@
 const usuario = obtenerSesion();
 if (!usuario) window.location.href = 'index.html';
 
-let servicios = [];     // servicios disponibles (para agendar y registrar)
-let estilistas = [];    // estilistas activas (para agendar)
+let servicios = [];            // servicios disponibles (para agendar y registrar)
+let estilistas = [];           // estilistas activas (para agendar)
+let productosDisponibles = []; // productos activos con stock > 0
 let citasAdmin = [];
 let citasEstilistaLista = [];
+
+// Variables de especialidad seleccionada en el formulario de clienta
+let precioEspecialidadSeleccionada = null;
+let duracionEspecialidadSeleccionada = null;
+let ultimoCorreoAgendado = null;
 
 // ---------------------------------------------------------------
 // Utilidades de la página
@@ -52,6 +58,19 @@ function etiquetaEstado(estado) {
 function etiquetaActivo(estado) {
     const activo = estado === 'Activo' || estado === 'Disponible';
     return `<span class="estado ${activo ? 'estado-Finalizada' : 'bg-white/10 text-white/50'}">${estado}</span>`;
+}
+
+function renderizarEstrellas(calificacion, comentario = '') {
+    const n = Number(calificacion) || 0;
+    if (!n) return '';
+    const llenas = '★'.repeat(n) + '☆'.repeat(Math.max(0, 5 - n));
+    return `
+        <div class="mt-1">
+            <span class="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2 py-0.5 text-[11px] font-bold text-amber-300">
+                ${llenas} (${n}/5)
+            </span>
+            ${comentario ? `<span class="mt-0.5 block text-[11px] italic text-bella-100/80">"${escapar(comentario)}"</span>` : ''}
+        </div>`;
 }
 
 const COLORES = {
@@ -104,11 +123,20 @@ function activarBotones(tabla, recargar) {
 
 let alGuardarVentana = null;
 
-function abrirVentana(titulo, camposHtml, alGuardar) {
+function abrirVentana(titulo, camposHtml, alGuardar, textoGuardar = 'Guardar cambios') {
     document.getElementById('tituloVentana').textContent = titulo;
     document.getElementById('camposVentana').innerHTML = camposHtml;
     ocultarAlerta(document.getElementById('alertaVentana'));
     alGuardarVentana = alGuardar;
+    const btnSubmit = document.querySelector('#formVentana button[type="submit"]');
+    if (btnSubmit) {
+        if (alGuardar === null) {
+            btnSubmit.classList.add('hidden');
+        } else {
+            btnSubmit.classList.remove('hidden');
+            btnSubmit.textContent = textoGuardar;
+        }
+    }
     document.getElementById('ventana').showModal();
 }
 
@@ -123,11 +151,15 @@ document.getElementById('ventana').addEventListener('click', (e) => {
 
 document.getElementById('formVentana').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const respuesta = await alGuardarVentana();
-    if (respuesta.success) {
+    if (!alGuardarVentana) {
         cerrarVentana();
-        avisar(respuesta.message);
-    } else {
+        return;
+    }
+    const respuesta = await alGuardarVentana();
+    if (respuesta && respuesta.success) {
+        cerrarVentana();
+        if (respuesta.message) avisar(respuesta.message);
+    } else if (respuesta) {
         mostrarAlerta(document.getElementById('alertaVentana'), respuesta.message);
     }
 });
@@ -208,6 +240,240 @@ function resumirDescansos(estilista) {
     return descansos.length > 0 ? `Descansa: ${descansos.join(', ')}` : 'Lun a Sáb completo';
 }
 
+function buscarCitaEnMemoria(idCita) {
+    return (
+        citasClienta.find((c) => String(c.id) === String(idCita)) ||
+        citasEstilistaLista.find((c) => String(c.id) === String(idCita)) ||
+        citasAdmin.find((c) => String(c.id) === String(idCita))
+    );
+}
+
+// ---------------------------------------------------------------
+// Comprobante / Ticket imprimible + Vista previa del Correo enviado + Calificación + Ficha técnica
+// ---------------------------------------------------------------
+
+function verComprobanteCita(idCita) {
+    const c = buscarCitaEnMemoria(idCita);
+    if (!c) return avisar('No se encontró la cita');
+
+    const duracion = c.duracion_min || 60;
+    const precioProd = Number(c.precio_producto || 0);
+    const precioTotal = Number(c.precio || 0);
+    const precioServicio = Math.max(0, precioTotal - precioProd);
+
+    const htmlTicket = `
+        <div id="areaTicketImprimible" class="rounded-2xl border-2 border-dashed border-bella-400 bg-white p-5 text-pastel-tinta shadow-inner">
+            <div class="border-b border-bella-200 pb-3 text-center">
+                <p class="text-[11px] font-bold uppercase tracking-widest text-bella-700">BellaStyle Studio · Cartagena, Colombia</p>
+                <h4 class="mt-0.5 font-titulo text-2xl font-bold text-pastel-tinta">Comprobante de Cita #BS-${c.id}</h4>
+                <p class="mt-1 text-xs font-semibold text-pastel-subtinta">Estado actual: <strong>${escapar(c.estado)}</strong></p>
+            </div>
+            <dl class="mt-3 space-y-2 text-xs">
+                <div class="flex justify-between gap-2 border-b border-bella-100 pb-1.5">
+                    <dt class="font-bold text-pastel-subtinta">Clienta:</dt>
+                    <dd class="font-bold text-pastel-tinta text-right">${escapar(c.cliente)}</dd>
+                </div>
+                <div class="flex justify-between gap-2 border-b border-bella-100 pb-1.5">
+                    <dt class="font-bold text-pastel-subtinta">Fecha y hora:</dt>
+                    <dd class="font-bold text-bella-800 text-right">${escapar(c.fecha)} · ${escapar(c.hora)} (${duracion} min)</dd>
+                </div>
+                <div class="flex justify-between gap-2 border-b border-bella-100 pb-1.5">
+                    <dt class="font-bold text-pastel-subtinta">Profesional asignada:</dt>
+                    <dd class="font-semibold text-pastel-tinta text-right">${escapar(c.estilista)}</dd>
+                </div>
+                <div class="flex justify-between gap-2 border-b border-bella-100 pb-1.5">
+                    <dt class="font-bold text-pastel-subtinta">Servicio principal:</dt>
+                    <dd class="font-bold text-pastel-tinta text-right">${escapar(c.servicio)} (${pesos(precioServicio)})</dd>
+                </div>
+                ${c.observaciones ? `
+                <div class="border-b border-bella-100 pb-1.5">
+                    <dt class="font-bold text-pastel-subtinta">Especialidad / Detalle solicitado:</dt>
+                    <dd class="mt-0.5 font-medium text-pastel-tinta">${escapar(c.observaciones)}</dd>
+                </div>` : ''}
+                ${c.producto_adicional ? `
+                <div class="flex justify-between gap-2 border-b border-bella-100 pb-1.5">
+                    <dt class="font-bold text-pastel-subtinta">Producto adicional incluido:</dt>
+                    <dd class="font-bold text-emerald-900 text-right">${escapar(c.producto_adicional)} (+${pesos(precioProd)})</dd>
+                </div>` : ''}
+                <div class="flex items-center justify-between pt-2 text-sm">
+                    <dt class="font-bold uppercase tracking-wider text-pastel-tinta">Total a pagar en salón:</dt>
+                    <dd class="font-titulo text-2xl font-bold text-bella-800">${pesos(precioTotal)}</dd>
+                </div>
+            </dl>
+            <p class="mt-4 text-center text-[11px] text-pastel-subtinta">
+                Presenta este comprobante digital al llegar a tu cita · Atención Lun a Sáb 8:00 a 19:00
+            </p>
+        </div>
+        <div class="flex flex-wrap justify-end gap-2 pt-2">
+            <button type="button" id="btnImprimirComprobante" class="btn-principal py-2 text-xs">
+                🖨️ Imprimir / Guardar PDF
+            </button>
+        </div>`;
+
+    abrirVentana(`🧾 Comprobante de cita BS-${c.id}`, htmlTicket, null);
+
+    document.getElementById('btnImprimirComprobante')?.addEventListener('click', () => {
+        const ventanaImp = window.open('', '_blank', 'width=720,height=680');
+        if (!ventanaImp) return window.print();
+        ventanaImp.document.write(`
+            <!DOCTYPE html>
+            <html lang="es">
+            <head>
+                <meta charset="UTF-8">
+                <title>Comprobante BS-${c.id} · BellaStyle Studio</title>
+                <style>
+                    body { font-family: 'Segoe UI', Arial, sans-serif; padding: 32px; color: #24131c; background: #fff9fb; }
+                    .box { max-width: 520px; margin: 0 auto; border: 2px dashed #c94b7c; border-radius: 18px; padding: 24px; background: #fff; }
+                    h2 { margin: 6px 0; color: #541d37; }
+                    .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f4dce6; font-size: 14px; }
+                    .total { font-size: 20px; font-weight: bold; color: #9c2f5b; padding-top: 14px; display: flex; justify-content: space-between; }
+                </style>
+            </head>
+            <body>
+                <div class="box">
+                    <p style="text-align:center;font-size:11px;font-weight:bold;letter-spacing:2px;color:#9c2f5b;margin:0;">BELLASTYLE STUDIO · CARTAGENA</p>
+                    <h2 style="text-align:center;">Comprobante #BS-${c.id}</h2>
+                    <p style="text-align:center;font-size:12px;color:#624653;">Estado: ${escapar(c.estado)}</p>
+                    <div class="row"><strong>Clienta:</strong> <span>${escapar(c.cliente)}</span></div>
+                    <div class="row"><strong>Fecha y hora:</strong> <span>${escapar(c.fecha)} · ${escapar(c.hora)} (${duracion} min)</span></div>
+                    <div class="row"><strong>Estilista:</strong> <span>${escapar(c.estilista)}</span></div>
+                    <div class="row"><strong>Servicio:</strong> <span>${escapar(c.servicio)} (${pesos(precioServicio)})</span></div>
+                    ${c.observaciones ? `<div class="row"><strong>Detalle:</strong> <span>${escapar(c.observaciones)}</span></div>` : ''}
+                    ${c.producto_adicional ? `<div class="row"><strong>Producto adicional:</strong> <span>${escapar(c.producto_adicional)} (+${pesos(precioProd)})</span></div>` : ''}
+                    <div class="total"><span>Total:</span> <span>${pesos(precioTotal)}</span></div>
+                </div>
+                <script>window.onload = function(){ window.print(); };<\/script>
+            </body>
+            </html>`);
+        ventanaImp.document.close();
+    });
+}
+
+function mostrarModalCorreo(correo) {
+    if (!correo) return avisar('No hay correo disponible para esta cita');
+    const htmlVista = `
+        <div class="rounded-2xl border border-emerald-500/40 bg-pastel-menta p-3 text-xs text-pastel-tinta">
+            <p><strong>Para:</strong> ${escapar(correo.para)}</p>
+            <p class="mt-0.5"><strong>Asunto:</strong> ${escapar(correo.asunto)}</p>
+            <p class="mt-0.5 text-[11px] font-semibold text-emerald-950">✓ Notificación generada automáticamente al apartar la cita con el detalle completo del servicio</p>
+        </div>
+        <div class="max-h-[26rem] overflow-y-auto rounded-2xl border border-bella-300 bg-white p-2 shadow-inner">
+            ${correo.html}
+        </div>`;
+
+    abrirVentana('✉️ Correo de confirmación enviado a la clienta', htmlVista, null);
+}
+
+async function verCorreoCita(idCita) {
+    const res = await pedir(`/citas/${idCita}/correo`);
+    if (!res.success || !res.data) return avisar(res.message || 'No se pudo cargar el correo');
+    mostrarModalCorreo(res.data);
+}
+
+function calificarCita(idCita) {
+    const c = buscarCitaEnMemoria(idCita);
+    if (!c) return;
+    const calActual = Number(c.calificacion) || 5;
+
+    const htmlCalificar = `
+        <p class="text-xs font-semibold text-pastel-subtinta">
+            Cuéntanos cómo fue tu experiencia en <strong>${escapar(c.servicio)}</strong> con <strong>${escapar(c.estilista)}</strong>:
+        </p>
+        <div>
+            <label class="etiqueta-oscura">Calificación (1 a 5 estrellas)</label>
+            <div id="selectorEstrellasModal" class="flex gap-2 pt-1">
+                ${[1, 2, 3, 4, 5].map((n) => `
+                    <button type="button" data-estrella-val="${n}"
+                            class="flex-1 rounded-xl border py-2.5 text-sm font-bold transition ${
+                                n <= calActual
+                                    ? 'border-amber-500 bg-amber-400/30 text-amber-950 shadow-sm'
+                                    : 'border-bella-300 bg-pastel-perla text-pastel-subtinta'
+                            }">
+                        ${n} ★
+                    </button>`).join('')}
+            </div>
+            <input type="hidden" id="vCalificacion" value="${calActual}">
+        </div>
+        <div>
+            <label for="vComentarioCal" class="etiqueta-oscura">Reseña o comentario (opcional)</label>
+            <textarea id="vComentarioCal" rows="3" class="campo-pastel" placeholder="Ej. Me encantó el resultado y la puntualidad...">${escapar(c.comentario_calificacion || '')}</textarea>
+        </div>`;
+
+    abrirVentana(`★ Calificar servicio · BS-${c.id}`, htmlCalificar, async () => {
+        const respuesta = await pedir(`/citas/${c.id}/calificar`, 'PUT', {
+            calificacion: Number(valor('vCalificacion')),
+            comentario: valor('vComentarioCal')
+        });
+        if (respuesta.success) {
+            await cargarCitasClienta();
+        }
+        return respuesta;
+    }, 'Enviar calificación');
+
+    document.querySelectorAll('#selectorEstrellasModal button[data-estrella-val]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const elegida = Number(btn.dataset.estrellaVal);
+            document.getElementById('vCalificacion').value = elegida;
+            document.querySelectorAll('#selectorEstrellasModal button[data-estrella-val]').forEach((b) => {
+                const n = Number(b.dataset.estrellaVal);
+                b.className = `flex-1 rounded-xl border py-2.5 text-sm font-bold transition ${
+                    n <= elegida
+                        ? 'border-amber-500 bg-amber-400/30 text-amber-950 shadow-sm'
+                        : 'border-bella-300 bg-pastel-perla text-pastel-subtinta'
+                }`;
+            });
+        });
+    });
+}
+
+function editarFichaTecnica(idClienta) {
+    const clienta = clientasAdmin.find((x) => String(x.id_clienta) === String(idClienta));
+    if (!clienta) return;
+
+    abrirVentana(`📋 Ficha técnica capilar y de uñas · ${clienta.nombres} ${clienta.apellidos}`,
+        `<p class="text-xs font-semibold text-pastel-subtinta">
+            Registra fórmulas de tinte, alergias, sensibilidad en piel/cutícula, tipo de hebra o preferencias de la clienta. Tanto la Administradora como la Estilista pueden consultarla.
+        </p>
+        <div>
+            <label for="vFichaTecnica" class="etiqueta-oscura">Notas técnicas e historial personalizado</label>
+            <textarea id="vFichaTecnica" rows="5" class="campo-pastel" placeholder="Ej. Tono base 7.1, prefiere esmalte hipoalergénico, hebra fina...">${escapar(clienta.ficha_tecnica || '')}</textarea>
+        </div>`,
+        async () => {
+            const res = await pedir(`/clientas/${idClienta}/ficha`, 'PUT', {
+                ficha_tecnica: valor('vFichaTecnica')
+            });
+            if (res.success) {
+                await cargarClientasAdmin();
+            }
+            return res;
+        });
+}
+
+function verFichaClientaDesdeCita(idCita) {
+    const c = buscarCitaEnMemoria(idCita);
+    if (!c) return;
+
+    abrirVentana(`📋 Ficha técnica · ${c.cliente}`,
+        `<div class="rounded-xl border border-bella-300/70 bg-pastel-rosa p-3 text-xs text-pastel-tinta">
+            <p><strong>Clienta:</strong> ${escapar(c.cliente)} · <strong>Tel:</strong> ${escapar(c.cliente_telefono || '—')}</p>
+            <p class="mt-0.5"><strong>Cita actual:</strong> ${escapar(c.servicio)} (${escapar(c.observaciones || 'Estándar')})</p>
+        </div>
+        <div>
+            <label for="vFichaCita" class="etiqueta-oscura">Fórmula capilar, alergias y preferencias de la clienta</label>
+            <textarea id="vFichaCita" rows="5" class="campo-pastel" placeholder="Escribe aquí las notas técnicas de la clienta...">${escapar(c.ficha_tecnica || '')}</textarea>
+        </div>`,
+        async () => {
+            const res = await pedir(`/clientas/${c.id_cliente}/ficha`, 'PUT', {
+                ficha_tecnica: valor('vFichaCita')
+            });
+            if (res.success) {
+                if (usuario.rol === 'Estilista') await cargarCitasEstilista();
+                if (usuario.rol === 'Administradora') await cargarCitasAdmin();
+            }
+            return res;
+        });
+}
+
 // ---------------------------------------------------------------
 // Encabezado
 // ---------------------------------------------------------------
@@ -223,8 +489,8 @@ function prepararEncabezado() {
 
     const subtitulos = {
         Clienta: 'Elige tu especialidad favorita, consulta horarios en vivo y administra tus citas.',
-        Estilista: 'Revisa tus citas asignadas, especialidades solicitadas y tu comisión acumulada.',
-        Administradora: 'Control integral de citas, equipo, catálogo, inventario y mensajes.'
+        Estilista: 'Revisa tus citas asignadas, fichas técnicas de clientas y tu comisión acumulada.',
+        Administradora: 'Control integral de citas, equipo, catálogo, fichas técnicas, inventario y mensajes.'
     };
     document.getElementById('subtitulo').textContent = subtitulos[usuario.rol];
 
@@ -240,6 +506,50 @@ function prepararEncabezado() {
 let miPerfilClienta = null;
 let citasClienta = [];
 
+function actualizarResumenTotalCita() {
+    const selectSrv = document.getElementById('servicio');
+    const selectProd = document.getElementById('productoAdicional');
+    const cajaResumen = document.getElementById('resumenTotalCita');
+    if (!selectSrv || !cajaResumen) return;
+
+    const srv = servicios.find((s) => String(s.id_servicio) === String(selectSrv.value));
+    if (!srv) return;
+
+    const precioBase = precioEspecialidadSeleccionada !== null ? Number(precioEspecialidadSeleccionada) : Number(srv.precio);
+    const duracionBase = duracionEspecialidadSeleccionada !== null ? Number(duracionEspecialidadSeleccionada) : Number(srv.duracion_min);
+
+    const prod = selectProd && selectProd.value
+        ? productosDisponibles.find((p) => String(p.id_producto) === String(selectProd.value))
+        : null;
+    const precioProd = prod ? Number(prod.precio) : 0;
+    const total = precioBase + precioProd;
+
+    cajaResumen.innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-bella-900">Resumen estimado de tu cita</p>
+                <p class="text-xs font-semibold text-pastel-subtinta">
+                    Servicio (${duracionBase} min): <strong>${pesos(precioBase)}</strong>
+                    ${prod ? ` + ${escapar(prod.nombre)} (<strong>${pesos(precioProd)}</strong>)` : ''}
+                </p>
+            </div>
+            <p class="font-titulo text-2xl font-bold text-bella-800">${pesos(total)}</p>
+        </div>`;
+}
+
+// Llamada desde catalogo-modal.js cuando la clienta elige una especialidad específica
+window.aplicarEspecialidadEnFormulario = function ({ variedad, categoria, precio, duracion }) {
+    precioEspecialidadSeleccionada = precio ? Number(precio) : null;
+    duracionEspecialidadSeleccionada = duracion ? Number(duracion) : null;
+    const etiquetaVar = document.getElementById('variedadSeleccionada');
+    if (etiquetaVar) {
+        etiquetaVar.textContent = `✓ Especialidad: ${variedad} (${categoria}) · ${pesos(precioEspecialidadSeleccionada || 0)} · ${duracionEspecialidadSeleccionada || 60} min`;
+        etiquetaVar.classList.remove('hidden');
+    }
+    actualizarResumenTotalCita();
+    actualizarDisponibilidadHoras();
+};
+
 function filtrarEstilistas() {
     const idServicio = document.getElementById('servicio').value;
     const capacitadas = estilistas.filter((e) => (e.ids_servicios || '').split(',').includes(idServicio));
@@ -247,7 +557,8 @@ function filtrarEstilistas() {
         '<option value="">Asignación automática (Recomendado)</option>' +
         capacitadas.map((e) => {
             const notaDescanso = resumirDescansos(e);
-            return `<option value="${e.id_estilista}">${escapar(e.nombres + ' ' + e.apellidos)} · (${escapar(notaDescanso)})</option>`;
+            const cal = e.promedio_calificacion || '5.0';
+            return `<option value="${e.id_estilista}">${escapar(e.nombres + ' ' + e.apellidos)} ★${cal} · (${escapar(notaDescanso)})</option>`;
         }).join('');
 }
 
@@ -268,6 +579,7 @@ async function actualizarDisponibilidadHoras() {
         idUsuario: usuario.id
     });
     if (idEstilista) params.set('idEstilista', idEstilista);
+    if (duracionEspecialidadSeleccionada) params.set('duracionEspecialidad', duracionEspecialidadSeleccionada);
 
     const res = await pedir(`/citas/disponibilidad?${params.toString()}`);
     if (!res.success) return;
@@ -331,6 +643,17 @@ async function actualizarDisponibilidadHoras() {
     });
 }
 
+function poblarSelectProductosClienta() {
+    const selectProd = document.getElementById('productoAdicional');
+    if (!selectProd) return;
+    const conStock = productosDisponibles.filter((p) => Number(p.stock) > 0);
+    selectProd.innerHTML =
+        '<option value="">Sin producto adicional</option>' +
+        conStock.map((p) =>
+            `<option value="${p.id_producto}">${escapar(p.nombre)} · +${pesos(p.precio)} (${p.stock} disp.)</option>`
+        ).join('');
+}
+
 async function iniciarClienta() {
     const conEstilista = servicios.filter((s) =>
         estilistas.some((e) => (e.ids_servicios || '').split(',').includes(String(s.id_servicio))));
@@ -338,12 +661,17 @@ async function iniciarClienta() {
     select.innerHTML = conEstilista.map((s) =>
         `<option value="${s.id_servicio}">${escapar(s.nombre)} · ${pesos(s.precio)} · ${s.duracion_min} min</option>`).join('');
 
+    poblarSelectProductosClienta();
+
     const inputFecha = document.getElementById('fecha');
     inputFecha.min = fechaDeHoy();
     inputFecha.value = fechaDeHoy();
 
     select.addEventListener('change', (e) => {
+        precioEspecialidadSeleccionada = null;
+        duracionEspecialidadSeleccionada = null;
         filtrarEstilistas();
+        actualizarResumenTotalCita();
         actualizarDisponibilidadHoras();
         const etiquetaVar = document.getElementById('variedadSeleccionada');
         if (etiquetaVar) etiquetaVar.classList.add('hidden');
@@ -359,6 +687,7 @@ async function iniciarClienta() {
         }
     });
 
+    document.getElementById('productoAdicional')?.addEventListener('change', actualizarResumenTotalCita);
     document.getElementById('estilista').addEventListener('change', actualizarDisponibilidadHoras);
     inputFecha.addEventListener('change', actualizarDisponibilidadHoras);
 
@@ -415,14 +744,17 @@ async function iniciarClienta() {
                 filtrarEstilistas();
             }
             document.getElementById('observaciones').value = `Especialidad elegida: ${pref.variedad} (${pref.categoria})`;
+            precioEspecialidadSeleccionada = pref.precio ? Number(pref.precio) : null;
+            duracionEspecialidadSeleccionada = pref.duracion ? Number(pref.duracion) : null;
             const etiquetaVar = document.getElementById('variedadSeleccionada');
             if (etiquetaVar) {
-                etiquetaVar.textContent = `✓ Especialidad: ${pref.variedad} (${pref.categoria})`;
+                etiquetaVar.textContent = `✓ Especialidad: ${pref.variedad} (${pref.categoria})${precioEspecialidadSeleccionada ? ' · ' + pesos(precioEspecialidadSeleccionada) : ''}`;
                 etiquetaVar.classList.remove('hidden');
             }
         } catch (_) {}
     }
 
+    actualizarResumenTotalCita();
     await actualizarDisponibilidadHoras();
 
     document.getElementById('formCita').addEventListener('submit', agendarCita);
@@ -434,7 +766,9 @@ async function iniciarClienta() {
 async function agendarCita(e) {
     e.preventDefault();
     const alerta = document.getElementById('alertaCita');
+    const bannerCorreo = document.getElementById('bannerCorreoCita');
     ocultarAlerta(alerta);
+    if (bannerCorreo) bannerCorreo.classList.add('hidden');
 
     const fecha = document.getElementById('fecha').value;
     const hora = document.getElementById('hora').value;
@@ -442,21 +776,52 @@ async function agendarCita(e) {
         return mostrarAlerta(alerta, 'Selecciona una hora disponible para tu cita.');
     }
 
+    const idProducto = document.getElementById('productoAdicional')?.value || null;
+
     const respuesta = await pedir('/citas', 'POST', {
         idUsuario: usuario.id,
         idServicio: document.getElementById('servicio').value,
         idEstilista: document.getElementById('estilista').value || null,
         fecha,
         hora,
-        observaciones: document.getElementById('observaciones').value.trim()
+        observaciones: document.getElementById('observaciones').value.trim(),
+        idProducto,
+        precioEspecialidad: precioEspecialidadSeleccionada,
+        duracionEspecialidad: duracionEspecialidadSeleccionada
     });
 
     if (respuesta.success) {
         mostrarAlerta(alerta, respuesta.message, 'ok');
         avisar(respuesta.message);
         document.getElementById('observaciones').value = '';
+        if (document.getElementById('productoAdicional')) {
+            document.getElementById('productoAdicional').value = '';
+        }
+        precioEspecialidadSeleccionada = null;
+        duracionEspecialidadSeleccionada = null;
         const etiquetaVar = document.getElementById('variedadSeleccionada');
         if (etiquetaVar) etiquetaVar.classList.add('hidden');
+
+        // Mostrar confirmación del correo enviado con botón para abrirlo
+        if (respuesta.correo && bannerCorreo) {
+            ultimoCorreoAgendado = respuesta.correo;
+            bannerCorreo.innerHTML = `
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <p class="font-bold text-emerald-950">✉️ Correo enviado a ${escapar(respuesta.correo.para)}</p>
+                        <p class="text-[11px] font-medium text-pastel-subtinta">"Tu cita ha sido agendada para la fecha ${escapar(fecha)} a las ${escapar(hora)}..." con toda la descripción de tu servicio.</p>
+                    </div>
+                    <button type="button" id="btnVerUltimoCorreo" class="rounded-xl bg-bella-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700">
+                        ✉️ Ver correo enviado
+                    </button>
+                </div>`;
+            bannerCorreo.classList.remove('hidden');
+            document.getElementById('btnVerUltimoCorreo')?.addEventListener('click', () => mostrarModalCorreo(ultimoCorreoAgendado));
+        }
+
+        productosDisponibles = (await pedir('/productos')).data || [];
+        poblarSelectProductosClienta();
+        actualizarResumenTotalCita();
         await cargarCitasClienta();
         await actualizarDisponibilidadHoras();
     } else {
@@ -527,16 +892,25 @@ async function cargarCitasClienta() {
 
     tabla.innerHTML = citasClienta.length === 0 ? filaVacia(5, 'Todavía no tienes citas agendadas') : citasClienta.map((c) => {
         const activa = c.estado === 'Pendiente' || c.estado === 'Confirmada';
-        const acciones = activa
-            ? botonEditar('Reprogramar', 'reprogramarCita', c.id) + ' ' +
-              botonAccion('Cancelar', 'rojo', `/citas/${c.id}/estado`, { estado: 'Cancelada' })
-            : '';
+        let acciones =
+            botonEditar('🧾 Comprobante', 'verComprobanteCita', c.id) + ' ' +
+            botonEditar('✉️ Correo', 'verCorreoCita', c.id) + ' ';
+        if (activa) {
+            acciones +=
+                botonEditar('Reprogramar', 'reprogramarCita', c.id) + ' ' +
+                botonAccion('Cancelar', 'rojo', `/citas/${c.id}/estado`, { estado: 'Cancelada' });
+        } else if (c.estado === 'Finalizada') {
+            acciones += `<button class="btn-mini bg-amber-400/20 font-bold text-amber-300 hover:bg-amber-400/30" data-editar="calificarCita" data-id="${c.id}">★ ${c.calificacion ? 'Editar reseña' : 'Calificar'}</button>`;
+        }
         return `
             <tr>
                 <td>
                     <span class="font-semibold text-white">${escapar(c.servicio)}</span>
                     <span class="ml-1 text-xs font-bold text-oro">${pesos(c.precio)}</span>
+                    ${c.duracion_min ? `<span class="ml-1 text-[11px] text-white/50">(${c.duracion_min} min)</span>` : ''}
                     ${c.observaciones ? `<span class="mt-0.5 block text-xs text-bella-200">${escapar(c.observaciones)}</span>` : ''}
+                    ${c.producto_adicional ? `<span class="mt-0.5 block text-xs font-semibold text-emerald-300">🧴 Incluye: ${escapar(c.producto_adicional)} (+${pesos(c.precio_producto)})</span>` : ''}
+                    ${renderizarEstrellas(c.calificacion, c.comentario_calificacion)}
                 </td>
                 <td class="whitespace-nowrap">${c.fecha} · ${c.hora}</td>
                 <td>${escapar(c.estilista)}</td>
@@ -573,7 +947,9 @@ async function cargarMiPerfilEstilista() {
 
     const insigniaEsp = document.getElementById('insigniaEspecialidadEstilista');
     if (insigniaEsp && miPerfilEstilista) {
-        insigniaEsp.textContent = `✦ Especialización: ${miPerfilEstilista.especialidad || 'Estilista profesional'}`;
+        const prom = miPerfilEstilista.promedio_calificacion || '5.0';
+        const totalCal = miPerfilEstilista.total_calificaciones || 0;
+        insigniaEsp.textContent = `✦ Especialización: ${miPerfilEstilista.especialidad || 'Estilista profesional'} · ★ ${prom} (${totalCal} reseñas)`;
     }
 
     dibujarMiHorarioPersonal();
@@ -647,7 +1023,9 @@ function dibujarCitasEstilista() {
 
     const tabla = document.getElementById('tablaCitasEstilista');
     tabla.innerHTML = citas.length === 0 ? filaVacia(6, 'No hay citas que coincidan') : citas.map((c) => {
-        let acciones = '';
+        let acciones =
+            botonEditar('📋 Ficha clienta', 'verFichaClientaDesdeCita', c.id) + ' ' +
+            botonEditar('🧾 Comprobante', 'verComprobanteCita', c.id) + ' ';
         if (c.estado === 'Pendiente') {
             acciones += botonAccion('Confirmar', 'azul', `/citas/${c.id}/estado`, { estado: 'Confirmada' }) + ' ';
         }
@@ -658,10 +1036,15 @@ function dibujarCitasEstilista() {
         return `
             <tr>
                 <td class="font-mono text-xs text-white/50">BS-${c.id}</td>
-                <td class="font-medium text-white">${escapar(c.cliente)}</td>
+                <td>
+                    <span class="font-medium text-white">${escapar(c.cliente)}</span>
+                    ${c.ficha_tecnica ? `<span class="mt-0.5 block text-[11px] text-bella-200">📋 ${escapar(c.ficha_tecnica)}</span>` : ''}
+                </td>
                 <td>
                     <span>${escapar(c.servicio)}</span>
                     ${c.observaciones ? `<span class="block text-xs text-bella-200">${escapar(c.observaciones)}</span>` : ''}
+                    ${c.producto_adicional ? `<span class="block text-xs font-semibold text-emerald-300">🧴 ${escapar(c.producto_adicional)}</span>` : ''}
+                    ${renderizarEstrellas(c.calificacion, c.comentario_calificacion)}
                 </td>
                 <td class="whitespace-nowrap">${c.fecha} · ${c.hora}</td>
                 <td>${etiquetaEstado(c.estado)}</td>
@@ -748,7 +1131,9 @@ function dibujarCitasAdmin() {
     const tabla = document.getElementById('tablaCitasAdmin');
 
     tabla.innerHTML = citas.length === 0 ? filaVacia(7, 'No se encontraron citas con ese filtro') : citas.map((c) => {
-        let acciones = '';
+        let acciones =
+            botonEditar('🧾 Comprobante', 'verComprobanteCita', c.id) + ' ' +
+            botonEditar('✉️ Correo', 'verCorreoCita', c.id) + ' ';
         if (c.estado === 'Pendiente') {
             acciones += botonAccion('Confirmar', 'azul', `/citas/${c.id}/estado`, { estado: 'Confirmada' }) + ' ';
         }
@@ -759,11 +1144,16 @@ function dibujarCitasAdmin() {
         return `
             <tr>
                 <td class="font-mono text-xs text-white/50">BS-${c.id}</td>
-                <td class="font-medium text-white">${escapar(c.cliente)}</td>
+                <td>
+                    <span class="font-medium text-white">${escapar(c.cliente)}</span>
+                    ${c.ficha_tecnica ? `<span class="mt-0.5 block text-[11px] text-bella-200">📋 ${escapar(c.ficha_tecnica)}</span>` : ''}
+                </td>
                 <td>
                     <span>${escapar(c.servicio)}</span>
                     <span class="ml-1 text-xs font-bold text-oro">${pesos(c.precio)}</span>
                     ${c.observaciones ? `<span class="block text-xs text-bella-200">${escapar(c.observaciones)}</span>` : ''}
+                    ${c.producto_adicional ? `<span class="block text-xs font-semibold text-emerald-300">🧴 ${escapar(c.producto_adicional)} (+${pesos(c.precio_producto)})</span>` : ''}
+                    ${renderizarEstrellas(c.calificacion, c.comentario_calificacion)}
                 </td>
                 <td>${escapar(c.estilista)}</td>
                 <td class="whitespace-nowrap">${c.fecha} · ${c.hora}</td>
@@ -775,22 +1165,93 @@ function dibujarCitasAdmin() {
     activarBotones(tabla, cargarCitasAdmin);
 }
 
+// Agendamiento directo por la Administradora (para atención telefónica o presencial)
+function abrirModalNuevaCitaAdmin() {
+    if (clientasAdmin.length === 0) {
+        return avisar('Primero registra al menos una clienta');
+    }
+    const serviciosDisp = servicios.filter((s) =>
+        estilistas.some((e) => (e.ids_servicios || '').split(',').includes(String(s.id_servicio))));
+    const prodsStock = productosAdmin.filter((p) => p.estado === 'Activo' && Number(p.stock) > 0);
+
+    const html = `
+        <p class="text-xs font-semibold text-pastel-subtinta">
+            Agenda una cita directamente a nombre de una clienta y envíale su correo de confirmación automático.
+        </p>
+        <div>
+            <label for="admClienta" class="etiqueta-oscura">Clienta</label>
+            <select id="admClienta" class="campo-pastel" required>
+                ${clientasAdmin.map((c) => `<option value="${c.id_clienta}">${escapar(c.nombres + ' ' + c.apellidos)} (${escapar(c.email || c.telefono || 'Sin correo')})</option>`).join('')}
+            </select>
+        </div>
+        <div>
+            <label for="admServicio" class="etiqueta-oscura">Servicio</label>
+            <select id="admServicio" class="campo-pastel" required>
+                ${serviciosDisp.map((s) => `<option value="${s.id_servicio}">${escapar(s.nombre)} · ${pesos(s.precio)} · ${s.duracion_min} min</option>`).join('')}
+            </select>
+        </div>
+        <div>
+            <label for="admProducto" class="etiqueta-oscura">Producto adicional (opcional)</label>
+            <select id="admProducto" class="campo-pastel">
+                <option value="">Sin producto adicional</option>
+                ${prodsStock.map((p) => `<option value="${p.id_producto}">${escapar(p.nombre)} · +${pesos(p.precio)} (${p.stock} disp.)</option>`).join('')}
+            </select>
+        </div>
+        <div>
+            <label for="admEstilista" class="etiqueta-oscura">Estilista</label>
+            <select id="admEstilista" class="campo-pastel">
+                <option value="">Asignación automática (Recomendado)</option>
+                ${estilistas.map((e) => `<option value="${e.id_estilista}">${escapar(e.nombres + ' ' + e.apellidos)} · (${escapar(resumirDescansos(e))})</option>`).join('')}
+            </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+            ${campo('admFecha', 'Fecha', fechaDeHoy(), 'date', `min="${fechaDeHoy()}" required`)}
+            <div>
+                <label for="admHora" class="etiqueta-oscura">Hora</label>
+                <select id="admHora" class="campo-pastel">${opcionesHora('10:00')}</select>
+            </div>
+        </div>
+        ${campo('admObservaciones', 'Especialidad / Observaciones', '', 'text', 'placeholder="Ej. Balayage caramelo, Uñas acrílicas francesas..."')}`;
+
+    abrirVentana('+ Agendar cita directa a clienta', html, async () => {
+        const res = await pedir('/citas', 'POST', {
+            idClienta: Number(valor('admClienta')),
+            idServicio: Number(valor('admServicio')),
+            idEstilista: valor('admEstilista') ? Number(valor('admEstilista')) : null,
+            idProducto: valor('admProducto') ? Number(valor('admProducto')) : null,
+            fecha: valor('admFecha'),
+            hora: valor('admHora'),
+            observaciones: valor('admObservaciones')
+        });
+        if (res.success) {
+            await cargarCitasAdmin();
+            await cargarProductosAdmin();
+            if (res.correo) {
+                setTimeout(() => mostrarModalCorreo(res.correo), 250);
+            }
+        }
+        return res;
+    }, 'Confirmar y enviar correo');
+}
+
 // Exporta las citas filtradas a un archivo CSV compatible con Excel
 function exportarCitasCSV() {
     const citas = obtenerCitasFiltradasAdmin();
     if (citas.length === 0) return avisar('No hay citas para exportar');
 
-    const encabezados = ['Codigo', 'Clienta', 'Servicio', 'Especialidad_Observaciones', 'Estilista', 'Fecha', 'Hora', 'Precio', 'Estado'];
+    const encabezados = ['Codigo', 'Clienta', 'Servicio', 'Especialidad_Observaciones', 'Producto_Adicional', 'Estilista', 'Fecha', 'Hora', 'Precio_Total', 'Estado', 'Calificacion'];
     const filas = citas.map((c) => [
         `BS-${c.id}`,
         c.cliente,
         c.servicio,
         c.observaciones || '',
+        c.producto_adicional || '',
         c.estilista,
         c.fecha,
         c.hora,
         c.precio,
-        c.estado
+        c.estado,
+        c.calificacion ? `${c.calificacion}/5` : ''
     ].map((val) => `"${String(val).replace(/"/g, '""')}"`).join(','));
 
     const csv = '\uFEFF' + [encabezados.join(','), ...filas].join('\r\n');
@@ -888,7 +1349,7 @@ function dibujarCalendarioDisponibilidadAdmin() {
                         <p class="font-bold text-pastel-tinta">${escapar(e.nombres + ' ' + e.apellidos)}</p>
                         ${badge}
                     </div>
-                    <p class="mt-1 text-xs font-semibold text-bella-900">${escapar(e.especialidad || 'Estilista profesional')}</p>
+                    <p class="mt-1 text-xs font-semibold text-bella-900">${escapar(e.especialidad || 'Estilista profesional')} · ★ ${e.promedio_calificacion || '5.0'}</p>
                     <p class="mt-0.5 text-[11px] text-pastel-subtinta">${escapar(e.servicios || 'Sin servicios')}</p>
                 </div>
                 <div class="mt-3 flex items-center justify-between border-t border-bella-300/50 pt-2">
@@ -915,9 +1376,14 @@ async function cargarEstilistasAdmin() {
             ? botonAccion('Desactivar', 'rojo', `/estilistas/${e.id_estilista}/estado`, { estado: 'Inactivo' })
             : botonAccion('Activar', 'verde', `/estilistas/${e.id_estilista}/estado`, { estado: 'Activo' });
         const btnAsignarHorario = `<button class="btn-mini bg-pastel-rosa font-bold text-bella-900 hover:bg-bella-200" data-editar="editarHorarioEstilista" data-id="${e.id_estilista}">Asignar horario</button>`;
+        const prom = e.promedio_calificacion || '5.0';
+        const totalCal = e.total_calificaciones || 0;
         return `
             <tr>
-                <td class="font-semibold text-white">${escapar(e.nombres + ' ' + e.apellidos)}</td>
+                <td>
+                    <span class="font-semibold text-white">${escapar(e.nombres + ' ' + e.apellidos)}</span>
+                    <span class="mt-0.5 block text-xs font-bold text-amber-300">★ ${prom} <span class="font-normal text-white/50">(${totalCal} reseñas)</span></span>
+                </td>
                 <td>
                     <span class="inline-block rounded-lg bg-bella-500/15 px-2.5 py-1 text-xs font-semibold text-bella-200">
                         ${escapar(e.especialidad || 'Estilista profesional')}
@@ -1054,13 +1520,19 @@ async function cargarClientasAdmin() {
     clientasAdmin = (await pedir('/clientas')).data || [];
     const tabla = document.getElementById('tablaClientas');
 
-    tabla.innerHTML = clientasAdmin.length === 0 ? filaVacia(5) : clientasAdmin.map((c) => `
+    tabla.innerHTML = clientasAdmin.length === 0 ? filaVacia(6) : clientasAdmin.map((c) => `
         <tr>
             <td class="font-medium text-white">${escapar(c.nombres + ' ' + c.apellidos)}</td>
             <td>${escapar(c.telefono || '—')}</td>
             <td>${escapar(c.email || '—')}</td>
+            <td class="max-w-xs text-xs text-bella-100/85">
+                ${c.ficha_tecnica ? escapar(c.ficha_tecnica) : '<span class="text-white/40">Sin notas registradas</span>'}
+            </td>
             <td>${c.id_usuario ? '<span class="estado estado-Finalizada">Con cuenta</span>' : '<span class="estado bg-white/10 text-white/50">Sin cuenta</span>'}</td>
-            <td class="text-right">${botonEditar('Editar', 'editarClienta', c.id_clienta)}</td>
+            <td class="whitespace-nowrap text-right">
+                <button class="btn-mini bg-pastel-rosa font-bold text-bella-900 hover:bg-bella-200" data-editar="editarFichaTecnica" data-id="${c.id_clienta}">📋 Ficha técnica</button>
+                ${botonEditar('Editar', 'editarClienta', c.id_clienta)}
+            </td>
         </tr>`).join('');
 
     activarBotones(tabla, cargarClientasAdmin);
@@ -1356,6 +1828,7 @@ function iniciarAdmin() {
     document.getElementById('filtroEstado').addEventListener('change', dibujarCitasAdmin);
     document.getElementById('buscarCitaAdmin')?.addEventListener('input', dibujarCitasAdmin);
     document.getElementById('btnExportarCitas')?.addEventListener('click', exportarCitasCSV);
+    document.getElementById('btnNuevaCitaAdmin')?.addEventListener('click', abrirModalNuevaCitaAdmin);
     document.getElementById('btnNuevoServicio').addEventListener('click', () => editarServicio(''));
     document.getElementById('btnNuevoProducto').addEventListener('click', () => editarProducto(''));
 
@@ -1375,7 +1848,19 @@ function iniciarAdmin() {
     prepararChatAdmin();
 }
 
-const EDITORES = { reprogramarCita, editarServiciosEstilista, editarHorarioEstilista, editarClienta, editarServicio, editarProducto };
+const EDITORES = {
+    reprogramarCita,
+    editarServiciosEstilista,
+    editarHorarioEstilista,
+    editarClienta,
+    editarFichaTecnica,
+    verFichaClientaDesdeCita,
+    verComprobanteCita,
+    verCorreoCita,
+    calificarCita,
+    editarServicio,
+    editarProducto
+};
 
 // ---------------------------------------------------------------
 // Inicio
@@ -1386,6 +1871,7 @@ async function iniciar() {
 
     servicios = (await pedir('/servicios')).data || [];
     estilistas = (await pedir('/estilistas')).data || [];
+    productosDisponibles = (await pedir('/productos')).data || [];
 
     if (usuario.rol === 'Clienta') iniciarClienta();
     if (usuario.rol === 'Estilista') iniciarEstilista();

@@ -309,6 +309,8 @@ function abrirModalServicio(nombreServicio, opciones = {}) {
                         data-elegir-variedad="${escapar(op.nombre)}"
                         data-elegir-categoria="${escapar(grupo.categoria)}"
                         data-elegir-precio="${op.precio}"
+                        data-elegir-duracion="${op.duracion}"
+                        data-elegir-detalle="${escapar(op.detalle)}"
                         class="rounded-lg bg-bella-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700">
                   ${enPanelClienta ? 'Elegir este tipo' : 'Quiero este'}
                 </button>
@@ -323,9 +325,12 @@ function abrirModalServicio(nombreServicio, opciones = {}) {
         boton.addEventListener('click', () => {
             const variedad = boton.dataset.elegirVariedad;
             const categoria = boton.dataset.elegirCategoria;
+            const precio = Number(boton.dataset.elegirPrecio) || 0;
+            const duracion = Number(boton.dataset.elegirDuracion) || 60;
+            const detalleTexto = boton.dataset.elegirDetalle || '';
 
             if (typeof opciones.alSeleccionarVariedad === 'function') {
-                opciones.alSeleccionarVariedad({ variedad, categoria, nombreServicio: detalle.titulo, idServicio: opciones.idServicio });
+                opciones.alSeleccionarVariedad({ variedad, categoria, precio, duracion, detalle: detalleTexto, nombreServicio: detalle.titulo, idServicio: opciones.idServicio });
                 dialog.close();
                 return;
             }
@@ -336,7 +341,6 @@ function abrirModalServicio(nombreServicio, opciones = {}) {
                     if (opciones.idServicio) {
                         selectServicio.value = String(opciones.idServicio);
                     } else {
-                        // Busca en el select la opción que coincida con la categoría actual del modal
                         const primeraClave = detalle.claves[0] || limpiarTextoCatalogo(detalle.titulo).split(' ')[0];
                         for (const opt of selectServicio.options) {
                             if (limpiarTextoCatalogo(opt.textContent).includes(primeraClave)) {
@@ -347,23 +351,30 @@ function abrirModalServicio(nombreServicio, opciones = {}) {
                     }
                     selectServicio.dispatchEvent(new Event('change'));
                 }
-                const obs = document.getElementById('observaciones');
-                if (obs) {
-                    obs.value = `Especialidad elegida: ${variedad} (${categoria})`;
-                }
-                const etiquetaVar = document.getElementById('variedadSeleccionada');
-                if (etiquetaVar) {
-                    etiquetaVar.textContent = `✓ Especialidad: ${variedad} (${categoria})`;
-                    etiquetaVar.classList.remove('hidden');
+                if (typeof window.aplicarEspecialidadEnFormulario === 'function') {
+                    window.aplicarEspecialidadEnFormulario({ variedad, categoria, precio, duracion, detalle: detalleTexto });
+                } else {
+                    const obs = document.getElementById('observaciones');
+                    if (obs) {
+                        obs.value = `Especialidad elegida: ${variedad} (${categoria}) — ${detalleTexto}`;
+                    }
+                    const etiquetaVar = document.getElementById('variedadSeleccionada');
+                    if (etiquetaVar) {
+                        etiquetaVar.textContent = `✓ Especialidad: ${variedad} · ${pesos(precio)} · ${duracion} min`;
+                        etiquetaVar.classList.remove('hidden');
+                    }
                 }
                 dialog.close();
                 document.getElementById('fecha')?.focus();
             } else {
-                // Guarda la especialidad elegida y lleva al cliente a iniciar sesión
+                // Guarda la especialidad elegida con su precio y duración y lleva al cliente a iniciar sesión
                 sessionStorage.setItem('bellaVariedadPreferida', JSON.stringify({
                     servicio: detalle.titulo,
                     variedad,
-                    categoria
+                    categoria,
+                    precio,
+                    duracion,
+                    detalle: detalleTexto
                 }));
                 dialog.close();
                 window.location.href = 'index.html?rol=cliente';

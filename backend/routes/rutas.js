@@ -8,43 +8,47 @@ const citas = require('../controllers/citasController');
 const catalogo = require('../controllers/catalogoController');
 const gestion = require('../controllers/gestionController');
 const chat = require('../controllers/chatController');
+const { protegerRuta } = require('../utils/token');
 
 // Autenticación
 router.post('/login', auth.login);
 router.post('/register', auth.registrar);
 router.post('/recuperar-password', auth.recuperarPassword);
 
-// Citas y disponibilidad en tiempo real
-router.get('/citas', citas.listar);
+// Citas, disponibilidad en tiempo real, correo de confirmación y calificación
+router.get('/citas', protegerRuta(), citas.listar);
 router.get('/citas/disponibilidad', citas.disponibilidad);
-router.post('/citas', citas.crear);
-router.put('/citas/:id/estado', citas.cambiarEstado);
-router.put('/citas/:id/reprogramar', citas.reprogramar);
+router.get('/citas/:id/correo', protegerRuta(), citas.verCorreoCita);
+router.post('/citas', protegerRuta(), citas.crear);
+router.put('/citas/:id/estado', protegerRuta(), citas.cambiarEstado);
+router.put('/citas/:id/reprogramar', protegerRuta(), citas.reprogramar);
+router.put('/citas/:id/calificar', protegerRuta(['Clienta', 'Administradora']), citas.calificar);
 
 // Servicios
 router.get('/servicios', catalogo.servicios);
-router.post('/servicios', gestion.crearServicio);
-router.put('/servicios/:id', gestion.editarServicio);
-router.put('/servicios/:id/estado', gestion.estadoServicio);
+router.post('/servicios', protegerRuta(['Administradora']), gestion.crearServicio);
+router.put('/servicios/:id', protegerRuta(['Administradora']), gestion.editarServicio);
+router.put('/servicios/:id/estado', protegerRuta(['Administradora']), gestion.estadoServicio);
 
 // Productos
 router.get('/productos', catalogo.productos);
-router.post('/productos', gestion.crearProducto);
-router.put('/productos/:id', gestion.editarProducto);
-router.put('/productos/:id/estado', gestion.estadoProducto);
+router.post('/productos', protegerRuta(['Administradora']), gestion.crearProducto);
+router.put('/productos/:id', protegerRuta(['Administradora']), gestion.editarProducto);
+router.put('/productos/:id/estado', protegerRuta(['Administradora']), gestion.estadoProducto);
 
-// Estilistas
+// Estilistas y horarios semanales
 router.get('/estilistas', catalogo.estilistas);
-router.get('/estilistas/usuario/:idUsuario', catalogo.estilistaPorUsuario);
+router.get('/estilistas/usuario/:idUsuario', protegerRuta(), catalogo.estilistaPorUsuario);
 router.get('/estilistas/:id/horario', catalogo.horarioDeEstilista);
-router.put('/estilistas/:id/estado', gestion.estadoEstilista);
-router.put('/estilistas/:id/servicios', gestion.serviciosEstilista);
-router.put('/estilistas/:id/horario', gestion.horarioEstilista);
+router.put('/estilistas/:id/estado', protegerRuta(['Administradora']), gestion.estadoEstilista);
+router.put('/estilistas/:id/servicios', protegerRuta(['Administradora', 'Estilista']), gestion.serviciosEstilista);
+router.put('/estilistas/:id/horario', protegerRuta(['Administradora']), gestion.horarioEstilista);
 
-// Clientas
-router.get('/clientas', catalogo.clientas);
-router.get('/clientas/usuario/:idUsuario', catalogo.clientaPorUsuario);
-router.put('/clientas/:id', gestion.editarClienta);
+// Clientas y ficha técnica capilar
+router.get('/clientas', protegerRuta(['Administradora', 'Estilista']), catalogo.clientas);
+router.get('/clientas/usuario/:idUsuario', protegerRuta(), catalogo.clientaPorUsuario);
+router.put('/clientas/:id', protegerRuta(), gestion.editarClienta);
+router.put('/clientas/:id/ficha', protegerRuta(['Administradora', 'Estilista']), gestion.fichaTecnicaClienta);
 
 // Chat de la página de inicio (visitante sin cuenta)
 router.post('/chat', chat.iniciar);
@@ -52,9 +56,9 @@ router.get('/chat/:codigo', chat.verMensajes);
 router.post('/chat/:codigo/mensajes', chat.enviarVisitante);
 
 // Chat: pestaña Mensajes de la administradora
-router.get('/conversaciones', chat.listar);
-router.get('/conversaciones/:id/mensajes', chat.abrir);
-router.post('/conversaciones/:id/responder', chat.responder);
-router.put('/conversaciones/:id/estado', chat.cambiarEstado);
+router.get('/conversaciones', protegerRuta(['Administradora']), chat.listar);
+router.get('/conversaciones/:id/mensajes', protegerRuta(['Administradora']), chat.abrir);
+router.post('/conversaciones/:id/responder', protegerRuta(['Administradora']), chat.responder);
+router.put('/conversaciones/:id/estado', protegerRuta(['Administradora']), chat.cambiarEstado);
 
 module.exports = router;

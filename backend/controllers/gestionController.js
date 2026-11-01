@@ -244,9 +244,19 @@ async function editarClienta(req, res) {
     } catch (err) { errorServidor(res, err); }
 }
 
+// PUT /api/clientas/:id/ficha   Recibe: { ficha_tecnica }
+async function fichaTecnicaClienta(req, res) {
+    const ficha = typeof req.body.ficha_tecnica === 'string' ? req.body.ficha_tecnica.trim().slice(0, 800) : '';
+    try {
+        const ok = await clienteModel.actualizarFichaTecnica(req.params.id, ficha);
+        if (!ok) return res.status(404).json({ success: false, message: 'La clienta no existe.' });
+        res.json({ success: true, message: 'Ficha técnica capilar y de cuidado guardada.' });
+    } catch (err) { errorServidor(res, err); }
+}
+
 module.exports = {
     crearServicio, editarServicio, estadoServicio,
     crearProducto, editarProducto, estadoProducto,
     estadoEstilista, serviciosEstilista, horarioEstilista,
-    editarClienta
+    editarClienta, fichaTecnicaClienta
 };

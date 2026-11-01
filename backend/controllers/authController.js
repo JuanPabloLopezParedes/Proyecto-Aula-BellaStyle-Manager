@@ -1,10 +1,11 @@
-// Controlador de autenticación: login, registro y recuperar contraseña
+// Controlador de autenticación: login (con token firmado HMAC-SHA256), registro y recuperar contraseña
 const bcrypt = require('bcryptjs');
 const db = require('../config/db');
 const config = require('../config/config');
 const usuarioModel = require('../models/usuarioModel');
 const clienteModel = require('../models/clienteModel');
 const estilistaModel = require('../models/estilistaModel');
+const { firmarToken } = require('../utils/token');
 const { nombreValido, usuarioValido, passwordValida, telefonoValido, emailValido, separarNombre } = require('../utils/validators');
 
 // Nombre del rol en el frontend -> nombre del rol en la base de datos
@@ -42,13 +43,16 @@ async function login(req, res) {
             return res.status(403).json({ success: false, message: 'Esta cuenta no pertenece a este portal.' });
         }
 
+        const token = firmarToken(usuario);
+
         return res.json({
             success: true,
             user: {
                 id: usuario.id_usuario,
                 nombre: usuario.nombre,
                 rol: usuario.rol,
-                foto: usuario.foto
+                foto: usuario.foto,
+                token
             }
         });
     } catch (err) {
@@ -78,7 +82,6 @@ async function registrar(req, res) {
     if (!passwordValida(password)) {
         return res.status(400).json({ success: false, message: 'La contraseña debe tener al menos 6 caracteres.' });
     }
-    // Teléfono y correo son opcionales, pero si se escriben deben tener formato válido
     if (telefono && !telefonoValido(telefono)) {
         return res.status(400).json({ success: false, message: 'El teléfono solo puede tener números y espacios (7 a 20).' });
     }
@@ -104,7 +107,7 @@ async function registrar(req, res) {
         return res.status(409).json({ success: false, message: 'Ese nombre de usuario ya está en uso.' });
     }
 
-    // 3. Se guarda todo en una transacción: si algo falla, no queda nada a medias
+    // 3. Se guarda todo en una transacción
     const conexion = await db.getConnection();
     try {
         await conexion.beginTransaction();
@@ -125,7 +128,7 @@ async function registrar(req, res) {
 
         if (rolBD === 'Estilista') {
             const idEstilista = await estilistaModel.crear(conexion, {
-                idUsuario, nombres, apellidos, especialidad: 'General'
+                idUsuario, nombres, apellidos, especialidad: 'Estilista Profesional'
             });
             await estilistaModel.asignarServicios(conexion, idEstilista, servicios);
         }
@@ -142,8 +145,6 @@ async function registrar(req, res) {
 }
 
 // POST /api/recuperar-password
-// Versión simple para el proyecto: cambia la contraseña con el nombre de usuario.
-// En un sistema real se enviaría un enlace al correo.
 async function recuperarPassword(req, res) {
     const { username, nuevaPassword } = req.body;
 

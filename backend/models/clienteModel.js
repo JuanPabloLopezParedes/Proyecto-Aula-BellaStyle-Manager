@@ -14,6 +14,11 @@ async function buscarPorUsuario(idUsuario) {
     return filas[0] || null;
 }
 
+async function buscarPorId(idClienta) {
+    const [filas] = await db.query('SELECT * FROM clientas WHERE id_clienta = ?', [idClienta]);
+    return filas[0] || null;
+}
+
 async function listar() {
     const [filas] = await db.query('SELECT * FROM clientas ORDER BY nombres');
     return filas;
@@ -27,4 +32,12 @@ async function actualizar(idClienta, { nombres, apellidos, telefono, email }) {
     return resultado.affectedRows > 0;
 }
 
-module.exports = { crear, buscarPorUsuario, listar, actualizar };
+async function actualizarFichaTecnica(idClienta, fichaTecnica) {
+    const [resultado] = await db.query(
+        'UPDATE clientas SET ficha_tecnica = ? WHERE id_clienta = ?',
+        [fichaTecnica || null, idClienta]
+    );
+    return resultado.affectedRows > 0;
+}
+
+module.exports = { crear, buscarPorUsuario, buscarPorId, listar, actualizar, actualizarFichaTecnica };

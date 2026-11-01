@@ -18,15 +18,15 @@ const datos = {
         { id_usuario: 12, nombre: 'Gabriela Pineda',  username: 'gabriela',  password: '$2a$10$wPH.tKFjr54oM.IzJVbSHOUYpEJjgJ43.CAekjbRWF3IpVt3P6csa', rol: 'Clienta',        foto: 'img/login_cliente.webp' }
     ],
     clientas: [
-        { id_clienta: 1, id_usuario: 5,    nombres: 'César',     apellidos: 'Pestana',   telefono: '3001112233', email: 'cesar@correo.com' },
-        { id_clienta: 2, id_usuario: null, nombres: 'María',     apellidos: 'García',    telefono: '3014445566', email: 'maria@correo.com' },
-        { id_clienta: 3, id_usuario: null, nombres: 'Sofía',     apellidos: 'Restrepo',  telefono: '3027778899', email: 'sofia@correo.com' },
-        { id_clienta: 4, id_usuario: 9,    nombres: 'Mariana',   apellidos: 'López',     telefono: '3102345678', email: 'mariana.lopez@correo.com' },
-        { id_clienta: 5, id_usuario: 10,   nombres: 'Andrés',    apellidos: 'Morales',   telefono: '3158765432', email: 'andres.morales@correo.com' },
-        { id_clienta: 6, id_usuario: 11,   nombres: 'Isabela',   apellidos: 'Vergara',   telefono: '3209988776', email: 'isabela.vergara@correo.com' },
-        { id_clienta: 7, id_usuario: 12,   nombres: 'Gabriela',  apellidos: 'Pineda',    telefono: '3045566778', email: 'gabriela.pineda@correo.com' },
-        { id_clienta: 8, id_usuario: null, nombres: 'Daniela',   apellidos: 'Castillo',  telefono: '3183344556', email: 'daniela.castillo@correo.com' },
-        { id_clienta: 9, id_usuario: null, nombres: 'Sebastián', apellidos: 'Barrios',   telefono: '3126655443', email: 'sebastian.barrios@correo.com' }
+        { id_clienta: 1, id_usuario: 5,    nombres: 'César',     apellidos: 'Pestana',   telefono: '3001112233', email: 'cesar@correo.com',           ficha_tecnica: 'Cuero cabelludo normal. Prefiere degradado medio con tijera en la parte superior y loción refrescante sin alcohol.' },
+        { id_clienta: 2, id_usuario: null, nombres: 'María',     apellidos: 'García',    telefono: '3014445566', email: 'maria@correo.com',           ficha_tecnica: 'Base natural castaño 5.0, fórmula habitual tinte 7.1 rubio cenizo con peróxido de 20 vol. Sensible al amoniaco.' },
+        { id_clienta: 3, id_usuario: null, nombres: 'Sofía',     apellidos: 'Restrepo',  telefono: '3027778899', email: 'sofia@correo.com',           ficha_tecnica: 'Uñas naturales delgadas; se recomienda nivelación con Base Rubber antes de semipermanente.' },
+        { id_clienta: 4, id_usuario: 9,    nombres: 'Mariana',   apellidos: 'López',     telefono: '3102345678', email: 'mariana.lopez@correo.com',   ficha_tecnica: 'Cabello largo ondulado con mechas Balayage tono miel. Usa tratamiento hidratante de argán cada mes.' },
+        { id_clienta: 5, id_usuario: 10,   nombres: 'Andrés',    apellidos: 'Morales',   telefono: '3158765432', email: 'andres.morales@correo.com',  ficha_tecnica: 'Corte ejecutivo a tijera y perfilado de barba con toalla tibia y aceite de almendras.' },
+        { id_clienta: 6, id_usuario: 11,   nombres: 'Isabela',   apellidos: 'Vergara',   telefono: '3209988776', email: 'isabela.vergara@correo.com', ficha_tecnica: 'Hebras finas con tendencia al frizz; excelente resultado con Bótox Capilar orgánico sin formol.' },
+        { id_clienta: 7, id_usuario: 12,   nombres: 'Gabriela',  apellidos: 'Pineda',    telefono: '3045566778', email: 'gabriela.pineda@correo.com', ficha_tecnica: 'Prefiere uñas acrílicas almendradas largo #2 y tonos pastel o francés clásico.' },
+        { id_clienta: 8, id_usuario: null, nombres: 'Daniela',   apellidos: 'Castillo',  telefono: '3183344556', email: 'daniela.castillo@correo.com',ficha_tecnica: 'Cabello rizado tipo 3B, requiere hidratación profunda antes de estilizado para eventos.' },
+        { id_clienta: 9, id_usuario: null, nombres: 'Sebastián', apellidos: 'Barrios',   telefono: '3126655443', email: 'sebastian.barrios@correo.com',ficha_tecnica: 'Prefiere Fade clásico bajo y cera mate de fijación media.' }
     ],
     estilistas: [
         { id_estilista: 1, id_usuario: 2, nombres: 'Laura',     apellidos: 'Estilista', especialidad: 'Colorimetría, Balayage y Rubios',     estado: 'Activo' },
@@ -124,19 +124,19 @@ const datos = {
         { id_estilista: 6, id_servicio: 6 }
     ],
     citas: [
-        { id_cita: 1,  id_cliente: 1, id_estilista: 2, id_servicio: 1, fecha: '2026-05-25', hora: '10:00:00', precio: 35000,  estado: 'Finalizada', observaciones: 'Especialidad elegida: Fade Clásico / Degradado (Corte para Hombre)' },
-        { id_cita: 2,  id_cliente: 2, id_estilista: 1, id_servicio: 2, fecha: '2026-05-26', hora: '14:00:00', precio: 120000, estado: 'Finalizada', observaciones: 'Especialidad elegida: Tinte Completo Global (Coloración Tradicional)' },
-        { id_cita: 3,  id_cliente: 3, id_estilista: 3, id_servicio: 5, fecha: '2026-05-27', hora: '09:00:00', precio: 25000,  estado: 'Cancelada',  observaciones: 'Canceló por viaje laboral' },
-        { id_cita: 4,  id_cliente: 4, id_estilista: 1, id_servicio: 3, fecha: '2026-06-02', hora: '09:30:00', precio: 180000, estado: 'Finalizada', observaciones: 'Especialidad elegida: Balayage Francés (Técnicas de Iluminación)' },
-        { id_cita: 5,  id_cliente: 5, id_estilista: 2, id_servicio: 1, fecha: '2026-06-03', hora: '11:00:00', precio: 35000,  estado: 'Finalizada', observaciones: 'Especialidad elegida: Corte Ejecutivo a Tijera (Corte para Hombre)' },
-        { id_cita: 6,  id_cliente: 6, id_estilista: 4, id_servicio: 7, fecha: '2026-06-05', hora: '15:00:00', precio: 55000,  estado: 'Finalizada', observaciones: 'Especialidad elegida: Botox Capilar Rejuvenecedor (Alisado y Restauración)' },
-        { id_cita: 7,  id_cliente: 7, id_estilista: 3, id_servicio: 6, fecha: '2026-06-06', hora: '10:30:00', precio: 30000,  estado: 'Finalizada', observaciones: 'Especialidad elegida: Pedicure Spa Detox (Cuidado y Bienestar de Pies)' },
-        { id_cita: 8,  id_cliente: 1, id_estilista: 2, id_servicio: 1, fecha: '2026-11-04', hora: '10:00:00', precio: 35000,  estado: 'Confirmada', observaciones: 'Especialidad elegida: Corte + Perfilado de Barba (Corte para Hombre)' },
-        { id_cita: 9,  id_cliente: 4, id_estilista: 5, id_servicio: 4, fecha: '2026-11-05', hora: '16:00:00', precio: 60000,  estado: 'Confirmada', observaciones: 'Especialidad elegida: Recogido de Gala / Novia (Eventos y Celebraciones)' },
-        { id_cita: 10, id_cliente: 6, id_estilista: 3, id_servicio: 5, fecha: '2026-11-06', hora: '11:30:00', precio: 25000,  estado: 'Pendiente',  observaciones: 'Especialidad elegida: Uñas Acrílicas Esculpidas (Sistemas y Diseños de Uñas)' },
-        { id_cita: 11, id_cliente: 7, id_estilista: 1, id_servicio: 3, fecha: '2026-11-07', hora: '09:00:00', precio: 180000, estado: 'Confirmada', observaciones: 'Especialidad elegida: Babylights Sutiles (Técnicas de Iluminación)' },
-        { id_cita: 12, id_cliente: 8, id_estilista: 4, id_servicio: 7, fecha: '2026-11-07', hora: '14:30:00', precio: 55000,  estado: 'Pendiente',  observaciones: 'Especialidad elegida: Hidratación Profunda con Argán (Terapias Capilares)' },
-        { id_cita: 13, id_cliente: 5, id_estilista: 2, id_servicio: 1, fecha: '2026-11-10', hora: '15:30:00', precio: 35000,  estado: 'Pendiente',  observaciones: 'Especialidad elegida: Pompadour / Texturizado Moderno (Corte para Hombre)' }
+        { id_cita: 1,  id_cliente: 1, id_estilista: 2, id_servicio: 1, fecha: '2026-05-25', hora: '10:00:00', duracion_min: 45,  precio: 35000,  producto_adicional: null, precio_producto: 0, estado: 'Finalizada', observaciones: 'Especialidad elegida: Fade Clásico / Degradado (Corte para Hombre)', calificacion: 5, comentario_calificacion: 'Excelente atención de Diana, el corte quedó impecable.' },
+        { id_cita: 2,  id_cliente: 2, id_estilista: 1, id_servicio: 2, fecha: '2026-05-26', hora: '14:00:00', duracion_min: 120, precio: 148000, producto_adicional: 'Shampoo Hidratante Argán', precio_producto: 28000, estado: 'Finalizada', observaciones: 'Especialidad elegida: Tinte Completo Global (Coloración Tradicional)', calificacion: 5, comentario_calificacion: 'El tono quedó súper parejo y luminoso.' },
+        { id_cita: 3,  id_cliente: 3, id_estilista: 3, id_servicio: 5, fecha: '2026-05-27', hora: '09:00:00', duracion_min: 45,  precio: 25000,  producto_adicional: null, precio_producto: 0, estado: 'Cancelada',  observaciones: 'Canceló por viaje laboral', calificacion: null, comentario_calificacion: null },
+        { id_cita: 4,  id_cliente: 4, id_estilista: 1, id_servicio: 3, fecha: '2026-06-02', hora: '09:30:00', duracion_min: 150, precio: 215000, producto_adicional: 'Mascarilla Capilar Nutritiva', precio_producto: 35000, estado: 'Finalizada', observaciones: 'Especialidad elegida: Balayage Francés (Técnicas de Iluminación)', calificacion: 5, comentario_calificacion: 'Laura tiene manos mágicas para los rubios.' },
+        { id_cita: 5,  id_cliente: 5, id_estilista: 2, id_servicio: 1, fecha: '2026-06-03', hora: '11:00:00', duracion_min: 35,  precio: 28000,  producto_adicional: null, precio_producto: 0, estado: 'Finalizada', observaciones: 'Especialidad elegida: Corte Ejecutivo a Tijera (Corte para Hombre)', calificacion: 5, comentario_calificacion: 'Muy puntual y profesional.' },
+        { id_cita: 6,  id_cliente: 6, id_estilista: 4, id_servicio: 7, fecha: '2026-06-05', hora: '15:00:00', duracion_min: 105, precio: 120000, producto_adicional: null, precio_producto: 0, estado: 'Finalizada', observaciones: 'Especialidad elegida: Botox Capilar Rejuvenecedor (Alisado y Restauración)', calificacion: 4, comentario_calificacion: 'Me dejó el cabello súper sedoso y sin frizz.' },
+        { id_cita: 7,  id_cliente: 7, id_estilista: 3, id_servicio: 6, fecha: '2026-06-06', hora: '10:30:00', duracion_min: 80,  precio: 60000,  producto_adicional: null, precio_producto: 0, estado: 'Finalizada', observaciones: 'Especialidad elegida: Pedicure Spa Detox (Cuidado y Bienestar de Pies)', calificacion: 5, comentario_calificacion: 'El masaje y exfoliación de Paula son los mejores.' },
+        { id_cita: 8,  id_cliente: 1, id_estilista: 2, id_servicio: 1, fecha: '2026-11-04', hora: '10:00:00', duracion_min: 55,  precio: 42000,  producto_adicional: null, precio_producto: 0, estado: 'Confirmada', observaciones: 'Especialidad elegida: Corte + Perfilado de Barba (Corte para Hombre)', calificacion: null, comentario_calificacion: null },
+        { id_cita: 9,  id_cliente: 4, id_estilista: 5, id_servicio: 4, fecha: '2026-11-05', hora: '16:00:00', duracion_min: 75,  precio: 85000,  producto_adicional: null, precio_producto: 0, estado: 'Confirmada', observaciones: 'Especialidad elegida: Recogido de Gala / Novia (Eventos y Celebraciones)', calificacion: null, comentario_calificacion: null },
+        { id_cita: 10, id_cliente: 6, id_estilista: 3, id_servicio: 5, fecha: '2026-11-06', hora: '11:30:00', duracion_min: 120, precio: 85000,  producto_adicional: null, precio_producto: 0, estado: 'Pendiente',  observaciones: 'Especialidad elegida: Uñas Acrílicas Esculpidas (Sistemas y Diseños de Uñas)', calificacion: null, comentario_calificacion: null },
+        { id_cita: 11, id_cliente: 7, id_estilista: 1, id_servicio: 3, fecha: '2026-11-07', hora: '09:00:00', duracion_min: 165, precio: 195000, producto_adicional: null, precio_producto: 0, estado: 'Confirmada', observaciones: 'Especialidad elegida: Babylights Sutiles (Técnicas de Iluminación)', calificacion: null, comentario_calificacion: null },
+        { id_cita: 12, id_cliente: 8, id_estilista: 4, id_servicio: 7, fecha: '2026-11-07', hora: '14:30:00', duracion_min: 60,  precio: 55000,  producto_adicional: null, precio_producto: 0, estado: 'Pendiente',  observaciones: 'Especialidad elegida: Hidratación Profunda con Argán (Terapias Capilares)', calificacion: null, comentario_calificacion: null },
+        { id_cita: 13, id_cliente: 5, id_estilista: 2, id_servicio: 1, fecha: '2026-11-10', hora: '15:30:00', duracion_min: 45,  precio: 35000,  producto_adicional: null, precio_producto: 0, estado: 'Pendiente',  observaciones: 'Especialidad elegida: Pompadour / Texturizado Moderno (Corte para Hombre)', calificacion: null, comentario_calificacion: null }
     ],
     conversaciones: [
         { id_conversacion: 1, codigo: '0123456789abcdef0123456789abcdef', nombre: 'Valentina Ruiz',   contacto: '3105556677',               estado: 'Abierta', actualizado_en: new Date() },
@@ -168,10 +168,18 @@ function armarEstilistas(soloActivas = false, idUsuario = null) {
         const rel = datos.estilista_servicios.filter((es) => es.id_estilista === e.id_estilista);
         const srvs = rel.map((es) => datos.servicios.find((s) => s.id_servicio === es.id_servicio)).filter(Boolean);
         srvs.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+        const calificadas = datos.citas.filter((c) => c.id_estilista === e.id_estilista && c.calificacion !== null && c.calificacion !== undefined);
+        const promedio_calificacion = calificadas.length > 0
+            ? Number((calificadas.reduce((acc, c) => acc + Number(c.calificacion), 0) / calificadas.length).toFixed(1))
+            : null;
+
         return {
             ...e,
             servicios: srvs.map((s) => s.nombre).join(', ') || null,
-            ids_servicios: srvs.map((s) => s.id_servicio).join(',') || null
+            ids_servicios: srvs.map((s) => s.id_servicio).join(',') || null,
+            promedio_calificacion,
+            total_calificaciones: calificadas.length
         };
     }).sort((a, b) => a.nombres.localeCompare(b.nombres));
 }
@@ -180,19 +188,28 @@ function armarCitas(filtroFn = () => true) {
     return datos.citas
         .filter(filtroFn)
         .map((c) => {
-            const cl = datos.clientas.find((x) => x.id_clienta === Number(c.id_cliente)) || { nombres: '', apellidos: '' };
+            const cl = datos.clientas.find((x) => x.id_clienta === Number(c.id_cliente)) || { nombres: '', apellidos: '', email: '', telefono: '', ficha_tecnica: '' };
             const es = datos.estilistas.find((x) => x.id_estilista === Number(c.id_estilista)) || { nombres: '', apellidos: '' };
-            const sr = datos.servicios.find((x) => x.id_servicio === Number(c.id_servicio)) || { nombre: '' };
+            const sr = datos.servicios.find((x) => x.id_servicio === Number(c.id_servicio)) || { nombre: '', duracion_min: 60 };
             return {
                 id: c.id_cita,
+                id_cliente: c.id_cliente,
                 cliente: `${cl.nombres} ${cl.apellidos}`.trim(),
+                cliente_email: cl.email || '',
+                cliente_telefono: cl.telefono || '',
+                ficha_tecnica: cl.ficha_tecnica || '',
                 estilista: `${es.nombres} ${es.apellidos}`.trim(),
                 servicio: sr.nombre,
+                duracion_min: c.duracion_min || sr.duracion_min || 60,
                 precio: c.precio,
+                producto_adicional: c.producto_adicional || null,
+                precio_producto: c.precio_producto || 0,
                 fecha: String(c.fecha).slice(0, 10),
                 hora: String(c.hora).slice(0, 5),
                 estado: c.estado,
-                observaciones: c.observaciones
+                observaciones: c.observaciones,
+                calificacion: c.calificacion ?? null,
+                comentario_calificacion: c.comentario_calificacion ?? null
             };
         })
         .sort((a, b) => (b.fecha + b.hora).localeCompare(a.fecha + a.hora));
@@ -256,6 +273,9 @@ async function query(sql, params = []) {
     if (s.startsWith('SELECT * FROM productos ORDER BY nombre')) {
         return [datos.productos.slice().sort((a, b) => a.nombre.localeCompare(b.nombre))];
     }
+    if (s.startsWith('SELECT * FROM productos WHERE id_producto = ?')) {
+        return [datos.productos.filter((x) => String(x.id_producto) === String(params[0]))];
+    }
     if (s.startsWith('INSERT INTO productos')) {
         const id_producto = datos.productos.length + 1;
         datos.productos.push({ id_producto, nombre: params[0], precio: Number(params[1]), stock: Number(params[2]), estado: 'Activo' });
@@ -264,6 +284,11 @@ async function query(sql, params = []) {
     if (s.startsWith('UPDATE productos SET nombre = ?')) {
         const pr = datos.productos.find((x) => String(x.id_producto) === String(params[3]));
         if (pr) { pr.nombre = params[0]; pr.precio = Number(params[1]); pr.stock = Number(params[2]); }
+        return [{ affectedRows: pr ? 1 : 0 }];
+    }
+    if (s.startsWith('UPDATE productos SET stock = stock - 1 WHERE id_producto = ?')) {
+        const pr = datos.productos.find((x) => String(x.id_producto) === String(params[0]));
+        if (pr && pr.stock > 0) pr.stock -= 1;
         return [{ affectedRows: pr ? 1 : 0 }];
     }
     if (s.startsWith('UPDATE productos SET estado = ?')) {
@@ -276,18 +301,31 @@ async function query(sql, params = []) {
     if (s.startsWith('INSERT INTO clientas')) {
         const id_clienta = datos.clientas.length + 1;
         const [id_usuario, nombres, apellidos, telefono, email] = params;
-        datos.clientas.push({ id_clienta, id_usuario, nombres, apellidos, telefono, email });
+        datos.clientas.push({ id_clienta, id_usuario, nombres, apellidos, telefono, email, ficha_tecnica: '' });
         return [{ insertId: id_clienta, affectedRows: 1 }];
     }
     if (s.startsWith('SELECT * FROM clientas WHERE id_usuario = ?')) {
         return [datos.clientas.filter((c) => String(c.id_usuario) === String(params[0]))];
+    }
+    if (s.startsWith('SELECT * FROM clientas WHERE id_clienta = ?')) {
+        return [datos.clientas.filter((c) => String(c.id_clienta) === String(params[0]))];
     }
     if (s.startsWith('SELECT * FROM clientas ORDER BY nombres')) {
         return [datos.clientas.slice().sort((a, b) => a.nombres.localeCompare(b.nombres))];
     }
     if (s.startsWith('UPDATE clientas SET nombres = ?')) {
         const cl = datos.clientas.find((c) => String(c.id_clienta) === String(params[4]));
-        if (cl) { cl.nombres = params[0]; cl.apellidos = params[1]; cl.telefono = params[2]; cl.email = params[3]; }
+        if (cl) {
+            cl.nombres = params[0];
+            cl.apellidos = params[1];
+            cl.telefono = params[2];
+            cl.email = params[3];
+        }
+        return [{ affectedRows: cl ? 1 : 0 }];
+    }
+    if (s.startsWith('UPDATE clientas SET ficha_tecnica = ? WHERE id_clienta = ?')) {
+        const cl = datos.clientas.find((c) => String(c.id_clienta) === String(params[1]));
+        if (cl) cl.ficha_tecnica = params[0];
         return [{ affectedRows: cl ? 1 : 0 }];
     }
 
@@ -401,7 +439,7 @@ async function query(sql, params = []) {
         return [[{
             ...c,
             id_usuario_clienta: cl ? cl.id_usuario : null,
-            duracion_min: sr ? sr.duracion_min : 60
+            duracion_min: c.duracion_min || (sr ? sr.duracion_min : 60)
         }]];
     }
     if (s.includes('WHERE c.id_estilista = ? AND c.fecha = ?')) {
@@ -410,7 +448,7 @@ async function query(sql, params = []) {
             .filter((c) => String(c.id_estilista) === String(idEst) && String(c.fecha).slice(0, 10) === String(fecha) && c.estado !== 'Cancelada' && String(c.id_cita) !== String(excluirId))
             .map((c) => {
                 const sr = datos.servicios.find((x) => x.id_servicio === Number(c.id_servicio));
-                return { hora: String(c.hora).slice(0, 5), duracion_min: sr ? sr.duracion_min : 60 };
+                return { hora: String(c.hora).slice(0, 5), duracion_min: c.duracion_min || (sr ? sr.duracion_min : 60) };
             });
         return [filas];
     }
@@ -420,19 +458,42 @@ async function query(sql, params = []) {
             .filter((c) => String(c.id_cliente) === String(idCli) && String(c.fecha).slice(0, 10) === String(fecha) && c.estado !== 'Cancelada' && String(c.id_cita) !== String(excluirId))
             .map((c) => {
                 const sr = datos.servicios.find((x) => x.id_servicio === Number(c.id_servicio));
-                return { hora: String(c.hora).slice(0, 5), duracion_min: sr ? sr.duracion_min : 60 };
+                return { hora: String(c.hora).slice(0, 5), duracion_min: c.duracion_min || (sr ? sr.duracion_min : 60) };
             });
         return [filas];
     }
     if (s.startsWith('INSERT INTO citas')) {
         const id_cita = datos.citas.length + 1;
-        const [id_cliente, id_estilista, id_servicio, fecha, hora, precio, observaciones] = params;
-        datos.citas.push({ id_cita, id_cliente: Number(id_cliente), id_estilista: Number(id_estilista), id_servicio: Number(id_servicio), fecha, hora, precio: Number(precio), observaciones, estado: 'Pendiente' });
+        const [id_cliente, id_estilista, id_servicio, fecha, hora, duracion_min, precio, producto_adicional, precio_producto, observaciones] = params;
+        datos.citas.push({
+            id_cita,
+            id_cliente: Number(id_cliente),
+            id_estilista: Number(id_estilista),
+            id_servicio: Number(id_servicio),
+            fecha,
+            hora,
+            duracion_min: Number(duracion_min) || 60,
+            precio: Number(precio),
+            producto_adicional: producto_adicional || null,
+            precio_producto: Number(precio_producto) || 0,
+            observaciones,
+            estado: 'Pendiente',
+            calificacion: null,
+            comentario_calificacion: null
+        });
         return [{ insertId: id_cita, affectedRows: 1 }];
     }
     if (s.startsWith('UPDATE citas SET estado = ? WHERE id_cita = ?')) {
         const c = datos.citas.find((x) => String(x.id_cita) === String(params[1]));
         if (c) c.estado = params[0];
+        return [{ affectedRows: c ? 1 : 0 }];
+    }
+    if (s.startsWith('UPDATE citas SET calificacion = ?, comentario_calificacion = ? WHERE id_cita = ?')) {
+        const c = datos.citas.find((x) => String(x.id_cita) === String(params[2]));
+        if (c) {
+            c.calificacion = Number(params[0]);
+            c.comentario_calificacion = params[1] || null;
+        }
         return [{ affectedRows: c ? 1 : 0 }];
     }
     if (s.startsWith("UPDATE citas SET fecha = ?, hora = ?, estado = 'Pendiente'")) {

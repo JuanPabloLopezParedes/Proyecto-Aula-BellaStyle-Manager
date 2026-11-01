@@ -15,7 +15,7 @@
 
 @layer base {
   body {
-    @apply bg-noche-950 font-sans text-bella-50/95 antialiased;
+    @apply bg-noche-950 font-sans text-bella-50/95 antialiased transition-colors duration-300;
   }
   h1, h2, h3 {
     @apply font-titulo;
@@ -34,8 +34,7 @@
   }
 }
 
-/* Componentes reutilizables: en vez de repetir 15 clases en cada botón,
-   se define una sola clase (.btn-primario) con @apply */
+/* Componentes reutilizables */
 @layer components {
 
   /* Tarjetas de colores de la galería del login */
@@ -70,8 +69,7 @@
     @apply rounded-2xl border border-white/10 bg-noche-900/75 backdrop-blur-md;
   }
 
-  /* Componentes en tonos pasteles de alto contraste y baja luminosidad (descanso visual)
-     para Login, Registro y Recuperar contraseña: fondo crema-rosa mate y letras oscuras */
+  /* Componentes en tonos pasteles de alto contraste y baja luminosidad (descanso visual) */
   .tarjeta-pastel {
     @apply rounded-3xl border border-bella-300/60 bg-pastel-crema/95 text-pastel-tinta shadow-2xl shadow-black/70 backdrop-blur-md;
   }
@@ -124,7 +122,6 @@
   .pestana-activa {
     @apply bg-bella-500/25 text-bella-200 font-semibold;
   }
-  /* Elementos que aparecen al hacer scroll (js en welcome.html les agrega "visible") */
   .revelar {
     @apply translate-y-8 opacity-0 transition duration-700 ease-out;
   }
@@ -135,3 +132,156 @@
     @apply bg-gradient-to-r from-bella-300 via-oro to-bella-300 bg-[length:200%_auto] bg-clip-text text-transparent motion-safe:animate-brillo;
   }
 }
+
+/* =====================================================================
+   MODO CLARO PASTEL PROFESIONAL (html.tema-claro)
+   ===================================================================== */
+html.tema-claro body {
+  background-color: #f8eef3 !important;
+  color: #1e1017 !important;
+}
+
+html.tema-claro input[type='date'],
+html.tema-claro input[type='time'] {
+  color-scheme: light;
+}
+
+html.tema-claro select option {
+  background-color: #fdf6f9;
+  color: #1e1017;
+}
+
+/* Fondo decorativo en modo claro */
+html.tema-claro .from-noche-950,
+html.tema-claro .via-noche-900\/95,
+html.tema-claro .to-noche-950 {
+  --tw-gradient-from: #f9eef4 !important;
+  --tw-gradient-via: #f3e1ec !important;
+  --tw-gradient-to: #f9eef4 !important;
+}
+
+html.tema-claro header {
+  background-color: rgba(253, 246, 249, 0.92) !important;
+  border-color: rgba(219, 39, 119, 0.2) !important;
+}
+
+html.tema-claro footer {
+  border-color: rgba(219, 39, 119, 0.2) !important;
+  color: #47303c !important;
+}
+
+/* Tarjetas, navegación de pestañas y bloques en modo claro */
+html.tema-claro .tarjeta,
+html.tema-claro .galeria,
+html.tema-claro #pestanas,
+html.tema-claro .bg-noche-900\/85,
+html.tema-claro .bg-noche-900\/80,
+html.tema-claro .bg-noche-900\/75,
+html.tema-claro .bg-noche-900\/90 {
+  background-color: rgba(255, 251, 253, 0.94) !important;
+  border-color: rgba(219, 39, 119, 0.25) !important;
+  color: #1e1017 !important;
+  box-shadow: 0 10px 28px -8px rgba(90, 28, 59, 0.12) !important;
+}
+
+html.tema-claro .tarjeta-pastel {
+  box-shadow: 0 12px 32px -8px rgba(90, 28, 59, 0.16) !important;
+}
+
+/* Tipografía en modo claro para máximo contraste y lectura cómoda */
+html.tema-claro .text-bella-50,
+html.tema-claro .text-white,
+html.tema-claro .text-white\/90 {
+  color: #1e1017 !important;
+}
+
+/* Mantiene texto blanco dentro de botones primarios o insignias de acento oscuro */
+html.tema-claro .btn-primario,
+html.tema-claro .btn-primario *,
+html.tema-claro .bg-bella-500,
+html.tema-claro .bg-bella-600 {
+  color: #ffffff !important;
+}
+
+html.tema-claro .text-bella-100,
+html.tema-claro .text-bella-100\/85,
+html.tema-claro .text-bella-100\/80,
+html.tema-claro .text-bella-100\/75,
+html.tema-claro .text-bella-100\/70,
+html.tema-claro .text-bella-100\/60,
+html.tema-claro .text-bella-200,
+html.tema-claro .text-bella-200\/80,
+html.tema-claro .text-bella-200\/75,
+html.tema-claro .text-bella-200\/70,
+html.tema-claro .text-bella-200\/60,
+html.tema-claro .text-white\/80,
+html.tema-claro .text-white\/75,
+html.tema-claro .text-white\/70,
+html.tema-claro .text-white\/60,
+html.tema-claro .text-white\/50,
+html.tema-claro .text-white\/40 {
+  color: #47303c !important;
+}
+
+html.tema-claro .text-bella-300,
+html.tema-claro .text-bella-400 {
+  color: #be185d !important;
+}
+
+html.tema-claro .text-oro {
+  color: #9a5b13 !important;
+}
+
+/* Campos y botones secundarios en modo claro */
+html.tema-claro .campo {
+  background-color: #fdf6f9 !important;
+  border-color: rgba(219, 39, 119, 0.35) !important;
+  color: #1e1017 !important;
+}
+html.tema-claro .campo::placeholder {
+  color: rgba(71, 48, 60, 0.55) !important;
+}
+
+html.tema-claro .btn-secundario {
+  background-color: #f8e5ee !important;
+  border-color: rgba(219, 39, 119, 0.35) !important;
+  color: #1e1017 !important;
+}
+html.tema-claro .btn-secundario:hover {
+  background-color: #f2d0e0 !important;
+}
+
+/* Tablas y pestañas en modo claro */
+html.tema-claro .tabla th {
+  border-color: rgba(219, 39, 119, 0.2) !important;
+  color: #591c3b !important;
+  background-color: rgba(248, 229, 238, 0.55);
+}
+html.tema-claro .tabla td {
+  border-color: rgba(219, 39, 119, 0.12) !important;
+  color: #1e1017 !important;
+}
+html.tema-claro .tabla tbody tr:hover {
+  background-color: rgba(248, 229, 238, 0.55) !important;
+}
+
+html.tema-claro .pestana {
+  color: #47303c !important;
+}
+html.tema-claro .pestana-activa {
+  background-color: #db2777 !important;
+  color: #ffffff !important;
+}
+
+/* Estados legibles sobre fondo claro */
+html.tema-claro .estado-Pendiente  { background-color: #fef3c7 !important; color: #92400e !important; border-color: #f59e0b !important; }
+html.tema-claro .estado-Confirmada { background-color: #e0f2fe !important; color: #075985 !important; border-color: #0ea5e9 !important; }
+html.tema-claro .estado-Finalizada { background-color: #d1fae5 !important; color: #065f46 !important; border-color: #10b981 !important; }
+html.tema-claro .estado-Cancelada  { background-color: #fee2e2 !important; color: #991b1b !important; border-color: #ef4444 !important; }
+
+html.tema-claro .bg-sky-500\/15     { background-color: #e0f2fe !important; color: #0369a1 !important; }
+html.tema-claro .bg-emerald-500\/15 { background-color: #d1fae5 !important; color: #047857 !important; }
+html.tema-claro .bg-red-500\/15     { background-color: #fee2e2 !important; color: #b91c1c !important; }
+html.tema-claro .bg-white\/10       { background-color: #f3dce7 !important; color: #1e1017 !important; }
+html.tema-claro .bg-white\/5        { background-color: #f9ebf2 !important; color: #1e1017 !important; }
+html.tema-claro .texto-brillo       { background-image: linear-gradient(90deg, #9d174d, #b45309, #9d174d) !important; }
