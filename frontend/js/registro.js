@@ -3,7 +3,7 @@
 let rolActual = new URLSearchParams(window.location.search).get('rol');
 if (!ROLES[rolActual]) rolActual = 'cliente';
 
-// Botones para cambiar de rol
+// Botones para cambiar de rol con contraste pastel y letras oscuras
 function dibujarSelector() {
     const selector = document.getElementById('selectorRol');
     selector.innerHTML = '';
@@ -11,7 +11,10 @@ function dibujarSelector() {
         const boton = document.createElement('button');
         boton.type = 'button';
         boton.textContent = ROLES[clave].titulo;
-        boton.className = 'pestana ' + (clave === rolActual ? 'pestana-activa' : '');
+        boton.className = 'rounded-lg px-2 py-2 text-xs font-bold transition '
+            + (clave === rolActual
+                ? 'bg-bella-600 text-white shadow-sm'
+                : 'text-pastel-tinta/75 hover:bg-bella-200/70 hover:text-pastel-tinta');
         boton.addEventListener('click', () => cambiarRol(clave));
         selector.appendChild(boton);
     }
@@ -32,17 +35,17 @@ function cambiarRol(clave) {
     history.replaceState(null, '', '?rol=' + clave);
 }
 
-// Casillas de servicios (para estilistas)
+// Casillas de servicios (para estilistas) en tonos pasteles con letra oscura
 async function cargarServicios() {
     const contenedor = document.getElementById('listaServicios');
     const respuesta = await pedir('/servicios');
     if (!respuesta.success) {
-        contenedor.innerHTML = '<p class="text-sm text-red-300">No se pudieron cargar los servicios.</p>';
+        contenedor.innerHTML = '<p class="text-sm font-semibold text-red-900">No se pudieron cargar los servicios.</p>';
         return;
     }
     contenedor.innerHTML = respuesta.data.map((s) => `
-        <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm transition hover:border-bella-400/50 has-[:checked]:border-bella-400 has-[:checked]:bg-bella-500/10">
-            <input type="checkbox" name="servicio" value="${s.id_servicio}" class="accent-bella-500">
+        <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-bella-300/80 bg-pastel-perla/75 px-3 py-2.5 text-sm font-semibold text-pastel-tinta transition hover:border-bella-500 has-[:checked]:border-bella-600 has-[:checked]:bg-pastel-rosa">
+            <input type="checkbox" name="servicio" value="${s.id_servicio}" class="accent-bella-600 h-4 w-4">
             ${escapar(s.nombre)}
         </label>`).join('');
 }

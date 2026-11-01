@@ -35,10 +35,16 @@ function cerrarSesion() {
 }
 
 // Muestra un mensaje en una caja de alerta (tipo: 'error' u 'ok')
+// Soporta tarjetas con tema pastel (data-tema="pastel") para máximo contraste con letra oscura
 function mostrarAlerta(caja, mensaje, tipo = 'error') {
+    const esPastel = caja.dataset.tema === 'pastel';
     caja.textContent = mensaje;
-    caja.classList.remove('hidden', 'alerta-error', 'alerta-ok');
-    caja.classList.add('block', tipo === 'ok' ? 'alerta-ok' : 'alerta-error');
+    caja.classList.remove('hidden', 'alerta-error', 'alerta-ok', 'alerta-pastel-error', 'alerta-pastel-ok');
+    if (esPastel) {
+        caja.classList.add('block', tipo === 'ok' ? 'alerta-pastel-ok' : 'alerta-pastel-error');
+    } else {
+        caja.classList.add('block', tipo === 'ok' ? 'alerta-ok' : 'alerta-error');
+    }
 }
 
 function ocultarAlerta(caja) {

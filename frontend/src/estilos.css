@@ -15,7 +15,7 @@
 
 @layer base {
   body {
-    @apply bg-noche-950 font-sans text-white/90 antialiased;
+    @apply bg-noche-950 font-sans text-bella-50/95 antialiased;
   }
   h1, h2, h3 {
     @apply font-titulo;
@@ -40,8 +40,8 @@
 
   /* Tarjetas de colores de la galería del login */
   .galeria {
-    @apply flex h-28 flex-col justify-between rounded-2xl sm:h-auto sm:aspect-[4/5] border border-white/10 bg-white/[.03] p-4 text-sm
-           font-semibold text-white/80 transition duration-300 hover:-translate-y-1 hover:border-bella-400/30;
+    @apply flex h-28 flex-col justify-between rounded-2xl sm:h-auto sm:aspect-[4/5] border border-bella-200/15 bg-noche-900/80 p-4 text-sm
+           font-semibold text-bella-100/90 transition duration-300 hover:-translate-y-1 hover:border-bella-300/40 hover:bg-noche-800/80;
   }
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold
@@ -49,7 +49,7 @@
            disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primario {
-    @apply btn bg-gradient-to-r from-bella-500 to-bella-700 text-white shadow-lg shadow-bella-900/40
+    @apply btn bg-gradient-to-r from-bella-500 to-bella-700 text-white shadow-lg shadow-bella-900/50
            hover:from-bella-400 hover:to-bella-600 active:scale-[.98];
   }
   .btn-secundario {
@@ -59,49 +59,70 @@
     @apply rounded-lg px-2.5 py-1 text-xs font-semibold transition;
   }
   .campo {
-    @apply w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white
-           placeholder:text-white/30 transition
+    @apply w-full rounded-xl border border-white/15 bg-white/[.07] px-4 py-2.5 text-sm text-white
+           placeholder:text-white/40 transition
            focus:border-bella-400 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-bella-500/30;
   }
   .etiqueta {
-    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/50;
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider text-bella-200/75;
   }
   .tarjeta {
-    @apply rounded-2xl border border-white/10 bg-white/[.04] backdrop-blur-sm;
+    @apply rounded-2xl border border-white/10 bg-noche-900/75 backdrop-blur-md;
   }
+
+  /* Componentes en tonos pasteles de alto contraste y baja luminosidad (descanso visual)
+     para Login, Registro y Recuperar contraseña: fondo crema-rosa mate y letras oscuras */
+  .tarjeta-pastel {
+    @apply rounded-3xl border border-bella-300/60 bg-pastel-crema/95 text-pastel-tinta shadow-2xl shadow-black/70 backdrop-blur-md;
+  }
+  .etiqueta-oscura {
+    @apply mb-1.5 block text-xs font-bold uppercase tracking-wider text-pastel-subtinta;
+  }
+  .campo-pastel {
+    @apply w-full rounded-xl border border-bella-300/80 bg-pastel-perla/75 px-4 py-2.5 text-sm font-medium text-pastel-tinta
+           placeholder:text-pastel-subtinta/60 transition shadow-inner
+           focus:border-bella-600 focus:bg-bella-50 focus:outline-none focus:ring-2 focus:ring-bella-500/30;
+  }
+  .alerta-pastel-error {
+    @apply border-red-400/60 bg-red-100/90 text-red-950 font-medium;
+  }
+  .alerta-pastel-ok {
+    @apply border-emerald-400/60 bg-emerald-100/90 text-emerald-950 font-medium;
+  }
+
   .alerta {
     @apply hidden rounded-xl border px-4 py-3 text-sm;
   }
   .alerta-error {
-    @apply border-red-400/30 bg-red-500/10 text-red-300;
+    @apply border-red-400/40 bg-red-950/60 text-red-200 font-medium;
   }
   .alerta-ok {
-    @apply border-emerald-400/30 bg-emerald-500/10 text-emerald-300;
+    @apply border-emerald-400/40 bg-emerald-950/60 text-emerald-200 font-medium;
   }
   .estado {
     @apply inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold;
   }
-  .estado-Pendiente  { @apply bg-amber-400/15 text-amber-300; }
-  .estado-Confirmada { @apply bg-sky-400/15 text-sky-300; }
-  .estado-Finalizada { @apply bg-emerald-400/15 text-emerald-300; }
-  .estado-Cancelada  { @apply bg-red-400/15 text-red-300; }
+  .estado-Pendiente  { @apply bg-amber-400/15 text-amber-200 border border-amber-400/20; }
+  .estado-Confirmada { @apply bg-sky-400/15 text-sky-200 border border-sky-400/20; }
+  .estado-Finalizada { @apply bg-emerald-400/15 text-emerald-200 border border-emerald-400/20; }
+  .estado-Cancelada  { @apply bg-red-400/15 text-red-200 border border-red-400/20; }
   .tabla {
     @apply w-full text-left text-sm;
   }
   .tabla th {
-    @apply border-b border-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-white/40;
+    @apply border-b border-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-bella-200/60;
   }
   .tabla td {
-    @apply border-b border-white/5 px-4 py-3 text-white/80;
+    @apply border-b border-white/5 px-4 py-3 text-white/90;
   }
   .tabla tbody tr {
-    @apply transition hover:bg-white/[.03];
+    @apply transition hover:bg-white/[.04];
   }
   .pestana {
-    @apply whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium text-white/50 transition hover:text-white;
+    @apply whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium text-white/65 transition hover:text-white;
   }
   .pestana-activa {
-    @apply bg-bella-500/15 text-bella-300;
+    @apply bg-bella-500/25 text-bella-200 font-semibold;
   }
   /* Elementos que aparecen al hacer scroll (js en welcome.html les agrega "visible") */
   .revelar {

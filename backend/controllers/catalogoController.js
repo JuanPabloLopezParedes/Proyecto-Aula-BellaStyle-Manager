@@ -19,7 +19,7 @@ function responderLista(consultaActivos, consultaTodos = consultaActivos) {
     };
 }
 
-// GET /api/estilistas/usuario/:idUsuario  (perfil de la estilista que inició sesión)
+// GET /api/estilistas/usuario/:idUsuario  (perfil de la estilista que inició sesión, incluye su horario)
 async function estilistaPorUsuario(req, res) {
     try {
         const estilista = await estilistaModel.buscarPorUsuario(req.params.idUsuario);
@@ -28,6 +28,17 @@ async function estilistaPorUsuario(req, res) {
     } catch (err) {
         console.error('Error en catálogo:', err.message);
         res.status(500).json({ success: false, message: 'Error al consultar la base de datos.' });
+    }
+}
+
+// GET /api/estilistas/:id/horario  (horario semanal de una estilista específica)
+async function horarioDeEstilista(req, res) {
+    try {
+        const horario = await estilistaModel.obtenerHorario(req.params.id);
+        res.json({ success: true, data: horario });
+    } catch (err) {
+        console.error('Error al consultar horario:', err.message);
+        res.status(500).json({ success: false, message: 'Error al consultar el horario.' });
     }
 }
 
@@ -49,5 +60,6 @@ module.exports = {
     clientas: responderLista(clienteModel.listar),
     productos: responderLista(productoModel.listarActivos, productoModel.listarTodos),
     estilistaPorUsuario,
+    horarioDeEstilista,
     clientaPorUsuario
 };

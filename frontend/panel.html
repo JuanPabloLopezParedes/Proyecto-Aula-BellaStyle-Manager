@@ -6,81 +6,118 @@
   <title>Panel | BellaStyle</title>
   <link rel="stylesheet" href="css/estilos.css">
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen bg-noche-950">
 
   <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-    <div class="absolute -right-40 -top-40 h-[30rem] w-[30rem] rounded-full bg-bella-700/20 blur-3xl"></div>
+    <div class="absolute inset-0 bg-gradient-to-b from-noche-950 via-noche-900/95 to-noche-950"></div>
+    <div class="absolute -right-40 -top-40 h-[30rem] w-[30rem] rounded-full bg-bella-700/15 blur-3xl"></div>
   </div>
 
-  <!-- Barra superior -->
-  <header class="sticky top-0 z-20 border-b border-white/10 bg-noche-950/80 backdrop-blur">
-    <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-3">
-      <a href="welcome.html" class="font-titulo text-2xl font-bold">Bella<span class="text-bella-400">Style</span></a>
-      <div class="flex items-center gap-3">
-        <img id="fotoUsuario" src="" alt="" class="hidden h-9 w-9 rounded-full object-cover ring-2 ring-bella-500/50 sm:block">
-        <div class="hidden text-right leading-tight sm:block">
-          <p id="nombreUsuario" class="text-sm font-semibold"></p>
-          <p id="rolUsuario" class="text-xs text-bella-300"></p>
+  <!-- Barra superior responsive -->
+  <header class="sticky top-0 z-20 border-b border-white/10 bg-noche-950/90 backdrop-blur-md">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:px-6">
+      <a href="welcome.html" class="font-titulo text-2xl font-bold text-bella-50">Bella<span class="text-bella-400">Style</span></a>
+      <div class="flex items-center gap-2.5 sm:gap-3">
+        <img id="fotoUsuario" src="" alt="" class="h-9 w-9 rounded-full object-cover ring-2 ring-bella-500/50">
+        <div class="text-right leading-tight">
+          <p id="nombreUsuario" class="max-w-[9rem] truncate text-xs font-semibold text-bella-50 sm:max-w-none sm:text-sm"></p>
+          <p id="rolUsuario" class="text-[11px] font-medium text-bella-300 sm:text-xs"></p>
         </div>
-        <button id="btnSalir" class="btn-secundario px-3 py-1.5">Salir</button>
+        <button id="btnSalir" class="btn-secundario px-3 py-1.5 text-xs sm:text-sm">Salir</button>
       </div>
     </div>
   </header>
 
-  <main class="mx-auto max-w-7xl px-5 py-8">
-    <div class="animate-aparecer">
-      <h1 id="saludo" class="text-4xl font-bold"></h1>
-      <p id="subtitulo" class="mt-1 text-white/50"></p>
+  <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+    <div class="animate-aparecer flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h1 id="saludo" class="text-3xl font-bold text-bella-50 sm:text-4xl"></h1>
+        <p id="subtitulo" class="mt-1 text-sm text-bella-100/70"></p>
+      </div>
     </div>
 
     <!-- ===================== CLIENTA ===================== -->
-    <section data-rol="Clienta" class="mt-8 hidden grid-cols-1 gap-6 lg:grid-cols-5">
-      <div class="tarjeta p-6 lg:col-span-2">
-        <h2 class="text-2xl font-bold">Agendar cita</h2>
-        <div id="alertaCita" class="alerta mt-4"></div>
-        <form id="formCita" class="mt-5 space-y-4">
+    <section data-rol="Clienta" class="mt-6 hidden grid-cols-1 gap-6 lg:grid-cols-12">
+      <!-- Métricas rápidas de la clienta -->
+      <div id="metricasClienta" class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:col-span-12"></div>
+
+      <!-- Formulario de agendar en tarjeta pastel suave con letra oscura para máxima claridad -->
+      <div class="tarjeta-pastel p-5 sm:p-6 lg:col-span-5">
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="text-2xl font-bold text-pastel-tinta">Agendar cita</h2>
+          <span class="rounded-full bg-bella-600/15 px-2.5 py-0.5 text-[11px] font-bold text-bella-900">En línea</span>
+        </div>
+
+        <div id="alertaCita" data-tema="pastel" class="alerta mt-4"></div>
+
+        <form id="formCita" class="mt-4 space-y-4">
           <div>
-            <label for="servicio" class="etiqueta">Servicio</label>
-            <select id="servicio" class="campo" required></select>
+            <div class="flex items-center justify-between">
+              <label for="servicio" class="etiqueta-oscura">1. Servicio</label>
+              <button type="button" id="btnVerTiposServicio" class="mb-1.5 rounded-lg bg-bella-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm transition hover:bg-bella-700">
+                &#10022; Ver tipos y estilos &rarr;
+              </button>
+            </div>
+            <select id="servicio" class="campo-pastel" required></select>
+            <p id="variedadSeleccionada" class="mt-2 hidden rounded-xl border border-bella-500/50 bg-pastel-rosa px-3 py-1.5 text-xs font-bold text-bella-900"></p>
           </div>
+
+          <!-- Botones rápidos de servicios para abrir la pantalla emergente de variedades -->
+          <div class="rounded-2xl border border-bella-300/70 bg-pastel-perla/70 p-3">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-pastel-subtinta">Explora los tipos de cada servicio:</p>
+            <div id="botonesCatalogoClienta" class="mt-2 flex flex-wrap gap-1.5"></div>
+          </div>
+
           <div>
-            <label for="estilista" class="etiqueta">Estilista</label>
-            <select id="estilista" class="campo">
-              <option value="">Asignación automática</option>
+            <label for="estilista" class="etiqueta-oscura">2. Estilista</label>
+            <select id="estilista" class="campo-pastel">
+              <option value="">Asignación automática (Recomendado)</option>
             </select>
-            <p class="mt-1 text-xs text-white/40">Si no eliges, el sistema asigna la estilista disponible con menos citas.</p>
+            <p class="mt-1 text-[11px] font-medium text-pastel-subtinta">Si no eliges, el sistema asigna la estilista disponible con menos citas.</p>
           </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label for="fecha" class="etiqueta">Fecha</label>
-              <input id="fecha" type="date" class="campo" required>
-            </div>
-            <div>
-              <label for="hora" class="etiqueta">Hora</label>
-              <select id="hora" class="campo" required></select>
-            </div>
-          </div>
+
           <div>
-            <label for="observaciones" class="etiqueta">Observaciones (opcional)</label>
-            <textarea id="observaciones" rows="2" class="campo" placeholder="Ej: tengo el cabello largo"></textarea>
+            <label for="fecha" class="etiqueta-oscura">3. Fecha (Lunes a Sábado)</label>
+            <input id="fecha" type="date" class="campo-pastel [color-scheme:light]" required>
           </div>
-          <button type="submit" class="btn-primario w-full py-3">Agendar</button>
+
+          <div>
+            <div class="flex items-center justify-between">
+              <label for="hora" class="etiqueta-oscura">4. Hora disponible</label>
+              <span id="estadoDisponibilidad" class="text-[11px] font-bold text-bella-800"></span>
+            </div>
+            <!-- Cuadrícula interactiva de horarios en tiempo real -->
+            <div id="grillaHoras" class="mt-1 grid grid-cols-4 gap-1.5 sm:grid-cols-5"></div>
+            <select id="hora" class="sr-only" required></select>
+          </div>
+
+          <div>
+            <label for="observaciones" class="etiqueta-oscura">5. Observaciones o detalle (opcional)</label>
+            <textarea id="observaciones" rows="2" class="campo-pastel" placeholder="Ej: Corte Bob o uñas acrílicas almendradas"></textarea>
+          </div>
+          <button type="submit" class="btn-primario w-full py-3 text-base shadow-md">Confirmar y Agendar Cita</button>
         </form>
 
-        <div class="mt-8 border-t border-white/10 pt-6">
+        <div class="mt-6 border-t border-bella-300/60 pt-5">
           <div class="flex items-center justify-between">
-            <h3 class="text-xl font-bold">Mis datos</h3>
-            <button id="btnEditarMisDatos" class="btn-mini bg-white/10 text-white hover:bg-white/15">Editar</button>
+            <h3 class="text-lg font-bold text-pastel-tinta">Mis datos de contacto</h3>
+            <button id="btnEditarMisDatos" class="btn-mini bg-bella-600/15 text-bella-900 hover:bg-bella-600/25">Editar datos</button>
           </div>
-          <dl id="misDatos" class="mt-3 space-y-1 text-sm text-white/60"></dl>
+          <dl id="misDatos" class="mt-2.5 space-y-1 text-xs font-medium text-pastel-subtinta sm:text-sm"></dl>
         </div>
       </div>
 
-      <div class="tarjeta overflow-hidden lg:col-span-3">
-        <h2 class="p-6 pb-2 text-2xl font-bold">Mis citas</h2>
+      <!-- Historial de citas de la clienta -->
+      <div class="tarjeta overflow-hidden lg:col-span-7">
+        <div class="flex flex-wrap items-center justify-between gap-2 p-5 pb-3 sm:p-6 sm:pb-3">
+          <div>
+            <h2 class="text-2xl font-bold text-bella-50">Mis citas</h2>
+            <p class="text-xs text-bella-200/70">Puedes reprogramar o cancelar tus citas activas cuando lo necesites.</p>
+          </div>
+        </div>
         <div class="overflow-x-auto">
           <table class="tabla">
-            <thead><tr><th>Servicio</th><th>Fecha</th><th>Estilista</th><th>Estado</th><th></th></tr></thead>
+            <thead><tr><th>Servicio y especialidad</th><th>Fecha y hora</th><th>Estilista</th><th>Estado</th><th>Acciones</th></tr></thead>
             <tbody id="tablaCitasClienta"></tbody>
           </table>
         </div>
@@ -88,20 +125,37 @@
     </section>
 
     <!-- ===================== ESTILISTA ===================== -->
-    <section data-rol="Estilista" class="mt-8 hidden">
-      <div id="metricasEstilista" class="grid grid-cols-2 gap-4 lg:grid-cols-4"></div>
-      <div class="tarjeta mt-6 flex flex-wrap items-center justify-between gap-3 p-6">
-        <div>
-          <h2 class="text-2xl font-bold">Mis servicios</h2>
-          <p id="misServicios" class="mt-1 text-sm text-white/60"></p>
+    <section data-rol="Estilista" class="mt-6 hidden">
+      <div id="metricasEstilista" class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"></div>
+
+      <!-- Tarjeta exclusiva del horario laboral personal de la estilista autenticada -->
+      <div class="tarjeta-pastel mt-6 p-5 sm:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="inline-block rounded-full bg-bella-600/15 px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-bella-900">Agenda personal</span>
+            <h2 class="mt-1 text-2xl font-bold text-pastel-tinta">Mi horario laboral y días de descanso</h2>
+            <p id="resumenMiHorario" class="text-xs font-medium text-pastel-subtinta">Horario semanal asignado por la administración del salón.</p>
+          </div>
+          <span id="insigniaEspecialidadEstilista" class="rounded-xl border border-bella-400/50 bg-pastel-rosa px-3 py-1.5 text-xs font-bold text-bella-900"></span>
         </div>
-        <button id="btnEditarMisServicios" class="btn-secundario">Editar mis servicios</button>
+        <div id="miHorarioEstilista" class="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6"></div>
+      </div>
+
+      <div class="tarjeta mt-6 flex flex-wrap items-center justify-between gap-3 p-5 sm:p-6">
+        <div>
+          <h2 class="text-2xl font-bold text-bella-50">Mis especialidades y servicios activos</h2>
+          <p id="misServicios" class="mt-1 text-sm text-bella-100/75"></p>
+        </div>
+        <button id="btnEditarMisServicios" class="btn-secundario text-xs sm:text-sm">Editar mis servicios</button>
       </div>
       <div class="tarjeta mt-6 overflow-hidden">
-        <h2 class="p-6 pb-2 text-2xl font-bold">Citas asignadas</h2>
+        <div class="flex flex-wrap items-center justify-between gap-3 p-5 pb-3 sm:p-6 sm:pb-3">
+          <h2 class="text-2xl font-bold text-bella-50">Citas asignadas</h2>
+          <input id="buscarCitaEstilista" type="search" class="campo w-full sm:w-64 py-2 text-xs" placeholder="Buscar por clienta o servicio...">
+        </div>
         <div class="overflow-x-auto">
           <table class="tabla">
-            <thead><tr><th>Código</th><th>Clienta</th><th>Servicio</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
+            <thead><tr><th>Código</th><th>Clienta</th><th>Servicio y detalle</th><th>Fecha y hora</th><th>Estado</th><th>Acciones</th></tr></thead>
             <tbody id="tablaCitasEstilista"></tbody>
           </table>
         </div>
@@ -109,10 +163,10 @@
     </section>
 
     <!-- ===================== ADMINISTRADORA ===================== -->
-    <section data-rol="Administradora" class="mt-8 hidden">
-      <div id="metricasAdmin" class="grid grid-cols-2 gap-4 lg:grid-cols-4"></div>
+    <section data-rol="Administradora" class="mt-6 hidden">
+      <div id="metricasAdmin" class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"></div>
 
-      <nav id="pestanas" class="mt-8 flex gap-1 overflow-x-auto rounded-xl bg-white/5 p-1">
+      <nav id="pestanas" class="mt-6 flex gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-noche-900/90 p-1.5">
         <button class="pestana pestana-activa" data-pestana="citas">Citas</button>
         <button class="pestana" data-pestana="estilistas">Estilistas</button>
         <button class="pestana" data-pestana="clientas">Clientas</button>
@@ -128,48 +182,100 @@
       <div class="tarjeta mt-4 overflow-hidden">
         <!-- Citas -->
         <div data-panel="citas">
-          <div class="flex flex-wrap items-center justify-between gap-3 p-6 pb-2">
-            <h2 class="text-2xl font-bold">Todas las citas</h2>
-            <select id="filtroEstado" class="campo w-auto py-2">
-              <option value="">Todos los estados</option>
-              <option>Pendiente</option>
-              <option>Confirmada</option>
-              <option>Finalizada</option>
-              <option>Cancelada</option>
-            </select>
+          <div class="flex flex-wrap items-center justify-between gap-3 p-5 pb-3 sm:p-6 sm:pb-3">
+            <h2 class="text-2xl font-bold text-bella-50">Control de citas</h2>
+            <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+              <input id="buscarCitaAdmin" type="search" class="campo flex-1 py-2 text-xs sm:w-56" placeholder="Buscar clienta, estilista o servicio...">
+              <select id="filtroEstado" class="campo w-auto py-2 text-xs">
+                <option value="">Todos los estados</option>
+                <option>Pendiente</option>
+                <option>Confirmada</option>
+                <option>Finalizada</option>
+                <option>Cancelada</option>
+              </select>
+              <button type="button" id="btnExportarCitas" class="btn-secundario px-3 py-2 text-xs" title="Descargar reporte compatible con Excel">
+                &#8681; Exportar CSV
+              </button>
+            </div>
           </div>
           <div class="overflow-x-auto">
             <table class="tabla">
-              <thead><tr><th>Código</th><th>Clienta</th><th>Servicio</th><th>Estilista</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
+              <thead><tr><th>Código</th><th>Clienta</th><th>Servicio y detalle</th><th>Estilista</th><th>Fecha y hora</th><th>Estado</th><th>Acciones</th></tr></thead>
               <tbody id="tablaCitasAdmin"></tbody>
             </table>
           </div>
         </div>
 
         <!-- Estilistas -->
-        <div data-panel="estilistas" class="hidden overflow-x-auto">
-          <table class="tabla">
-            <thead><tr><th>Nombre</th><th>Servicios que realiza</th><th>Estado</th><th></th></tr></thead>
-            <tbody id="tablaEstilistas"></tbody>
-          </table>
+        <div data-panel="estilistas" class="hidden">
+          <div class="flex flex-wrap items-center justify-between gap-3 p-5 pb-3 sm:p-6 sm:pb-3">
+            <div>
+              <h2 class="text-2xl font-bold text-bella-50">Equipo de estilistas y horarios</h2>
+              <p class="text-xs text-bella-200/70">Administra la especialización, servicios, horario semanal y días de descanso de cada estilista.</p>
+            </div>
+          </div>
+
+          <!-- Calendario interactivo para consultar qué estilistas están disponibles en una fecha -->
+          <div class="mx-5 mb-5 rounded-2xl border border-bella-300/70 bg-pastel-crema p-4 text-pastel-tinta shadow-md sm:mx-6 sm:p-5">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-bella-800">&#128197; Calendario de disponibilidad por día</span>
+                <h3 class="text-lg font-bold text-pastel-tinta">Consulta qué estilistas trabajan o descansan según la fecha</h3>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <label for="fechaCalendarioAdmin" class="text-xs font-bold text-pastel-tinta">Seleccionar fecha:</label>
+                <input id="fechaCalendarioAdmin" type="date" class="campo-pastel w-auto py-1.5 text-xs [color-scheme:light]">
+                <select id="filtroDisponibilidadDia" class="campo-pastel w-auto py-1.5 text-xs">
+                  <option value="todas">Ver todas las estilistas</option>
+                  <option value="disponibles">Solo disponibles ese día</option>
+                  <option value="descanso">En día de descanso</option>
+                </select>
+              </div>
+            </div>
+            <p id="resumenCalendarioAdmin" class="mt-2 text-xs font-semibold text-pastel-subtinta"></p>
+            <div id="tarjetasCalendarioEstilistas" class="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3"></div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="tabla">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Especialización</th>
+                  <th>Servicios que realiza</th>
+                  <th>Horario semanal y descanso</th>
+                  <th>Estado</th>
+                  <th class="text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tablaEstilistas"></tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Clientas -->
         <div data-panel="clientas" class="hidden overflow-x-auto">
+          <div class="p-5 pb-2 sm:p-6 sm:pb-2">
+            <h2 class="text-2xl font-bold text-bella-50">Directorio de clientas</h2>
+          </div>
           <table class="tabla">
-            <thead><tr><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Cuenta</th><th></th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Cuenta</th><th>Acciones</th></tr></thead>
             <tbody id="tablaClientas"></tbody>
           </table>
         </div>
 
         <!-- Servicios -->
         <div data-panel="servicios" class="hidden">
-          <div class="flex justify-end p-4 pb-0">
-            <button id="btnNuevoServicio" class="btn-primario py-2">+ Nuevo servicio</button>
+          <div class="flex flex-wrap items-center justify-between gap-2 p-5 pb-2 sm:p-6 sm:pb-2">
+            <div>
+              <h2 class="text-2xl font-bold text-bella-50">Catálogo de servicios</h2>
+              <p class="text-xs text-bella-200/70">Presiona "Ver tipos" para visualizar las especialidades de cada categoría.</p>
+            </div>
+            <button id="btnNuevoServicio" class="btn-primario py-2 text-xs sm:text-sm">+ Nuevo servicio</button>
           </div>
           <div class="overflow-x-auto">
             <table class="tabla">
-              <thead><tr><th>Servicio</th><th>Precio</th><th>Duración</th><th>Estado</th><th></th></tr></thead>
+              <thead><tr><th>Servicio</th><th>Precio base</th><th>Duración</th><th>Estado</th><th>Acciones</th></tr></thead>
               <tbody id="tablaServicios"></tbody>
             </table>
           </div>
@@ -177,12 +283,16 @@
 
         <!-- Productos -->
         <div data-panel="productos" class="hidden">
-          <div class="flex justify-end p-4 pb-0">
-            <button id="btnNuevoProducto" class="btn-primario py-2">+ Nuevo producto</button>
+          <div class="flex flex-wrap items-center justify-between gap-2 p-5 pb-2 sm:p-6 sm:pb-2">
+            <div>
+              <h2 class="text-2xl font-bold text-bella-50">Inventario de productos</h2>
+              <p class="text-xs text-bella-200/70">Control rápido de unidades en stock y precios.</p>
+            </div>
+            <button id="btnNuevoProducto" class="btn-primario py-2 text-xs sm:text-sm">+ Nuevo producto</button>
           </div>
           <div class="overflow-x-auto">
             <table class="tabla">
-              <thead><tr><th>Producto</th><th>Precio</th><th>Stock</th><th>Estado</th><th></th></tr></thead>
+              <thead><tr><th>Producto</th><th>Precio</th><th>Stock disponible</th><th>Estado</th><th>Acciones</th></tr></thead>
               <tbody id="tablaProductos"></tbody>
             </table>
           </div>
@@ -190,13 +300,13 @@
 
         <!-- Mensajes del chat de la página de inicio -->
         <div data-panel="mensajes" class="hidden">
-          <div class="grid md:grid-cols-[18rem_1fr]">
+          <div class="grid md:grid-cols-[19rem_1fr]">
             <div class="border-b border-white/10 md:border-b-0 md:border-r">
-              <p class="p-4 pb-2 text-xs font-semibold uppercase tracking-wider text-white/40">Conversaciones</p>
+              <p class="p-4 pb-2 text-xs font-semibold uppercase tracking-wider text-bella-200/70">Conversaciones</p>
               <ul id="listaConversaciones" class="max-h-[30rem] overflow-y-auto"></ul>
             </div>
-            <div class="flex min-h-[30rem] flex-col">
-              <div id="cabeceraConversacion" class="border-b border-white/10 p-4 text-white/40">Selecciona una conversación para leerla y responder.</div>
+            <div class="flex min-h-[28rem] flex-col">
+              <div id="cabeceraConversacion" class="border-b border-white/10 p-4 text-sm text-bella-200/60">Selecciona una conversación para leerla y responder.</div>
               <div id="mensajesAdmin" class="max-h-[24rem] flex-1 space-y-3 overflow-y-auto p-4"></div>
               <form id="formResponder" class="hidden gap-2 border-t border-white/10 p-3">
                 <input id="textoRespuesta" class="campo py-2" maxlength="500" placeholder="Escribe tu respuesta..." autocomplete="off">
@@ -207,8 +317,8 @@
         </div>
 
         <!-- Registrar usuario -->
-        <div data-panel="nuevo" class="hidden p-6">
-          <h2 class="text-2xl font-bold">Registrar estilista o clienta</h2>
+        <div data-panel="nuevo" class="hidden p-5 sm:p-6">
+          <h2 class="text-2xl font-bold text-bella-50">Registrar estilista o clienta</h2>
           <div id="alertaNuevo" class="alerta mt-4"></div>
           <form id="formNuevo" class="mt-5 grid max-w-2xl gap-4 sm:grid-cols-2">
             <div>
@@ -235,7 +345,7 @@
               <div id="nuevoServicios" class="grid gap-2 sm:grid-cols-3"></div>
             </div>
             <div class="sm:col-span-2">
-              <button type="submit" class="btn-primario">Registrar</button>
+              <button type="submit" class="btn-primario">Registrar cuenta</button>
             </div>
           </form>
         </div>
@@ -243,23 +353,24 @@
     </section>
   </main>
 
-  <!-- Ventana para crear y editar (se llena desde js/panel.js) -->
-  <dialog id="ventana" class="w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-white/10 bg-noche-900 p-0 text-white shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm">
+  <!-- Ventana emergente en tono pastel con letra oscura para crear y editar -->
+  <dialog id="ventana" class="w-[calc(100%-1.5rem)] max-w-xl rounded-3xl border border-bella-300/70 bg-pastel-crema p-0 text-pastel-tinta shadow-2xl backdrop:bg-black/75 backdrop:backdrop-blur-sm">
     <form id="formVentana" class="p-6">
-      <h2 id="tituloVentana" class="text-2xl font-bold"></h2>
-      <div id="alertaVentana" class="alerta mt-4"></div>
+      <h2 id="tituloVentana" class="text-2xl font-bold text-pastel-tinta"></h2>
+      <div id="alertaVentana" data-tema="pastel" class="alerta mt-4"></div>
       <div id="camposVentana" class="mt-5 space-y-4"></div>
       <div class="mt-6 flex justify-end gap-2">
-        <button type="button" id="btnCerrarVentana" class="btn-secundario">Cancelar</button>
-        <button type="submit" class="btn-primario">Guardar</button>
+        <button type="button" id="btnCerrarVentana" class="rounded-xl border border-bella-400/60 bg-pastel-perla px-4 py-2 text-xs font-bold text-pastel-tinta transition hover:bg-bella-200">Cancelar</button>
+        <button type="submit" class="btn-primario px-5 py-2 text-xs">Guardar cambios</button>
       </div>
     </form>
   </dialog>
 
   <!-- Aviso flotante -->
-  <div id="aviso" class="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 translate-y-4 rounded-xl bg-noche-800 px-5 py-3 text-sm opacity-0 shadow-2xl ring-1 ring-white/10 transition duration-300"></div>
+  <div id="aviso" class="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 translate-y-4 rounded-xl border border-bella-300/60 bg-pastel-crema px-5 py-3 text-sm font-bold text-pastel-tinta opacity-0 shadow-2xl transition duration-300"></div>
 
   <script src="js/api.js"></script>
+  <script src="js/catalogo-modal.js"></script>
   <script src="js/panel.js"></script>
 </body>
 </html>

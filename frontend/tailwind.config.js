@@ -11,25 +11,35 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Paleta propia del salón
+        // Paleta propia del salón (tonos pastel de lujo y fondos mate cálidos)
         bella: {
-          50:  '#fdf2f8',
-          100: '#fce7f3',
-          200: '#fbcfe8',
-          300: '#f9a8d4',
-          400: '#f472b6',
-          500: '#e0428f',
-          600: '#c42a75',
-          700: '#a01f5f',
-          800: '#7a1a4a',
-          900: '#4a1030',
+          50:  '#fdf4f7',
+          100: '#fbe8ef',
+          200: '#f5d0df',
+          300: '#ebb0c8',
+          400: '#dc85a9',
+          500: '#c75b89',
+          600: '#ab406e',
+          700: '#8d2f58',
+          800: '#6e2445',
+          900: '#4a182f',
+        },
+        pastel: {
+          crema:    '#f3e9eb',
+          perla:    '#eadce0',
+          rosa:     '#f2d7e2',
+          lavanda:  '#e4dcf2',
+          menta:    '#d8efe6',
+          durazno:  '#f7e3d4',
+          tinta:    '#1e1017',
+          subtinta: '#47303c',
         },
         noche: {
-          800: '#1f0f1a',
-          900: '#140a11',
-          950: '#0c060a',
+          800: '#1c0e17',
+          900: '#11080e',
+          950: '#090408',
         },
-        oro: '#d9b36c',
+        oro: '#d4af7a',
       },
       fontFamily: {
         titulo: ['"Cormorant Garamond"', 'serif'],

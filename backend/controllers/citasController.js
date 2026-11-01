@@ -1,4 +1,4 @@
-// Controlador de citas: listar, crear (con asignación automática), reprogramar y cambiar estado
+// Controlador de citas: listar, consultar disponibilidad en vivo (respetando turnos y descansos), crear, reprogramar y cambiar estado
 const citaModel = require('../models/citaModel');
 const clienteModel = require('../models/clienteModel');
 const servicioModel = require('../models/servicioModel');
@@ -19,16 +19,41 @@ function seCruzan(inicioA, finA, inicioB, finB) {
     return inicioA < finB && inicioB < finA;
 }
 
-// Revisa si la estilista está libre entre inicio y fin.
+// Revisa si la estilista trabaja ese día dentro de su turno y si está libre entre inicio y fin.
 // Devuelve también cuántas citas tiene ese día (sirve para repartir el trabajo).
 // excluirId: al reprogramar, la propia cita no se cuenta.
 async function revisarDisponibilidad(idEstilista, fecha, inicio, fin, excluirId = 0) {
+    const diaSemana = new Date(fecha + 'T12:00:00').getDay();
+    const turno = await estilistaModel.obtenerTurnoDia(idEstilista, diaSemana);
+
+    if (!turno.trabaja) {
+        return {
+            libre: false,
+            carga: 999,
+            motivo: 'La estilista tiene día de descanso en esa fecha. Por favor elige otro día u otra estilista.'
+        };
+    }
+
+    const inicioTurno = aMinutos(turno.hora_inicio);
+    const finTurno = aMinutos(turno.hora_fin);
+    if (inicio < inicioTurno || fin > finTurno) {
+        return {
+            libre: false,
+            carga: 999,
+            motivo: `La estilista atiende ese día de ${turno.hora_inicio} a ${turno.hora_fin}.`
+        };
+    }
+
     const citas = await citaModel.ocupadasDelDia(idEstilista, fecha, excluirId);
     const ocupada = citas.some((c) => {
         const otroInicio = aMinutos(c.hora);
         return seCruzan(inicio, fin, otroInicio, otroInicio + c.duracion_min);
     });
-    return { libre: !ocupada, carga: citas.length };
+    return {
+        libre: !ocupada,
+        carga: citas.length,
+        motivo: ocupada ? 'La estilista ya tiene una cita en ese horario.' : null
+    };
 }
 
 // Revisa si la clienta ya tiene otra cita que se cruce con ese horario
@@ -60,6 +85,105 @@ function validarFechaHora(fecha, hora) {
 // La cita completa debe caber entre 8:00 y 19:00
 function fueraDeHorario(inicio, fin) {
     return inicio < APERTURA || fin > CIERRE;
+}
+
+// GET /api/citas/disponibilidad?fecha=2026-11-02&idServicio=1&idEstilista=2&idUsuario=5
+// Devuelve la lista de bloques horarios del día indicando cuáles están libres y cuántas estilistas hay disponibles
+async function disponibilidad(req, res) {
+    const { fecha, idServicio, idEstilista, idUsuario, excluirId } = req.query;
+    if (!fecha || !idServicio) {
+        return res.status(400).json({ success: false, message: 'Falta fecha o servicio.' });
+    }
+
+    const dia = new Date(fecha + 'T12:00:00');
+    if (isNaN(dia) || dia.getDay() === 0) {
+        return res.json({ success: true, domingo: true, data: [] });
+    }
+    const diaSemana = dia.getDay();
+
+    try {
+        const servicio = await servicioModel.buscarPorId(idServicio);
+        if (!servicio) {
+            return res.status(404).json({ success: false, message: 'El servicio no existe.' });
+        }
+
+        const candidatas = idEstilista
+            ? [{ id_estilista: Number(idEstilista) }]
+            : await estilistaModel.capacitadasPara(idServicio);
+
+        let citasClienta = [];
+        if (idUsuario) {
+            const clienta = await clienteModel.buscarPorUsuario(idUsuario);
+            if (clienta) {
+                citasClienta = await citaModel.ocupadasClientaDelDia(clienta.id_clienta, fecha, Number(excluirId) || 0);
+            }
+        }
+
+        // Consultamos una sola vez las citas del día y el turno laboral de cada estilista candidata
+        const mapaCitasEstilista = new Map();
+        const mapaTurnoEstilista = new Map();
+        for (const est of candidatas) {
+            const ocupadas = await citaModel.ocupadasDelDia(est.id_estilista, fecha, Number(excluirId) || 0);
+            const turno = await estilistaModel.obtenerTurnoDia(est.id_estilista, diaSemana);
+            mapaCitasEstilista.set(est.id_estilista, ocupadas);
+            mapaTurnoEstilista.set(est.id_estilista, turno);
+        }
+
+        // Si escogió una estilista específica y ese día tiene descanso, informamos directamente
+        if (idEstilista) {
+            const turnoElegida = mapaTurnoEstilista.get(Number(idEstilista));
+            if (turnoElegida && !turnoElegida.trabaja) {
+                return res.json({
+                    success: true,
+                    domingo: false,
+                    descansoEstilista: true,
+                    duracion: servicio.duracion_min,
+                    data: []
+                });
+            }
+        }
+
+        const horarios = [];
+        for (let minutos = 8 * 60; minutos <= 18 * 60 + 30; minutos += 30) {
+            const fin = minutos + servicio.duracion_min;
+            if (fueraDeHorario(minutos, fin)) continue;
+
+            const h = String(Math.floor(minutos / 60)).padStart(2, '0');
+            const m = String(minutos % 60).padStart(2, '0');
+            const horaTexto = `${h}:${m}`;
+
+            const cruceClienta = citasClienta.some((c) => {
+                const otroInicio = aMinutos(c.hora);
+                return seCruzan(minutos, fin, otroInicio, otroInicio + c.duracion_min);
+            });
+
+            let estilistasLibres = 0;
+            for (const est of candidatas) {
+                const turno = mapaTurnoEstilista.get(est.id_estilista);
+                if (!turno || !turno.trabaja) continue;
+                if (minutos < aMinutos(turno.hora_inicio) || fin > aMinutos(turno.hora_fin)) continue;
+
+                const ocupadas = mapaCitasEstilista.get(est.id_estilista) || [];
+                const ocupada = ocupadas.some((c) => {
+                    const otroInicio = aMinutos(c.hora);
+                    return seCruzan(minutos, fin, otroInicio, otroInicio + c.duracion_min);
+                });
+                if (!ocupada) estilistasLibres++;
+            }
+
+            horarios.push({
+                hora: horaTexto,
+                disponible: !cruceClienta && estilistasLibres > 0,
+                estilistasLibres,
+                motivo: cruceClienta ? 'Ya tienes cita a esta hora' : (estilistasLibres === 0 ? 'Sin estilista en turno / Ocupado' : 'Disponible')
+            });
+        }
+
+        res.json({ success: true, domingo: false, descansoEstilista: false, duracion: servicio.duracion_min, data: horarios });
+    } catch (err) {
+        console.error('Error al consultar disponibilidad:', err.message);
+        res.status(500).json({ success: false, message: 'No se pudo consultar la disponibilidad.' });
+    }
 }
 
 // GET /api/citas?rol=Clienta&idUsuario=3
@@ -123,15 +247,15 @@ async function crear(req, res) {
         let elegida = null;
 
         if (idEstilista) {
-            // La clienta escogió estilista: solo se revisa que esté libre
-            const { libre } = await revisarDisponibilidad(idEstilista, fecha, inicio, fin);
+            // La clienta escogió estilista: se revisa que trabaje ese día en ese turno y esté libre
+            const { libre, motivo } = await revisarDisponibilidad(idEstilista, fecha, inicio, fin);
             if (!libre) {
-                return res.status(409).json({ success: false, message: 'La estilista ya tiene una cita en ese horario.' });
+                return res.status(409).json({ success: false, message: motivo || 'La estilista no está disponible en ese horario.' });
             }
             elegida = { id_estilista: Number(idEstilista) };
         } else {
-            // Asignación automática: de las estilistas que saben hacer el servicio
-            // y están libres, se escoge la que tenga menos citas ese día.
+            // Asignación automática: de las estilistas que saben hacer el servicio,
+            // trabajan ese día y están libres, se escoge la que tenga menos citas ese día.
             const candidatas = await estilistaModel.capacitadasPara(idServicio);
             let menorCarga = Infinity;
             for (const estilista of candidatas) {
@@ -142,7 +266,7 @@ async function crear(req, res) {
                 }
             }
             if (!elegida) {
-                return res.status(409).json({ success: false, message: 'No hay estilistas libres para ese servicio a esa hora. Prueba otro horario.' });
+                return res.status(409).json({ success: false, message: 'No hay estilistas en turno o libres para ese servicio a esa hora. Prueba otro horario.' });
             }
         }
 
@@ -213,9 +337,9 @@ async function reprogramar(req, res) {
             });
         }
 
-        const { libre } = await revisarDisponibilidad(cita.id_estilista, fecha, inicio, fin, cita.id_cita);
+        const { libre, motivo } = await revisarDisponibilidad(cita.id_estilista, fecha, inicio, fin, cita.id_cita);
         if (!libre) {
-            return res.status(409).json({ success: false, message: 'La estilista ya tiene una cita en ese horario.' });
+            return res.status(409).json({ success: false, message: motivo || 'La estilista ya tiene una cita en ese horario.' });
         }
         if (await clientaTieneCruce(cita.id_cliente, fecha, inicio, fin, cita.id_cita)) {
             return res.status(409).json({ success: false, message: 'Ya tienes otra cita en ese horario.' });
@@ -229,4 +353,4 @@ async function reprogramar(req, res) {
     }
 }
 
-module.exports = { listar, crear, reprogramar, cambiarEstado };
+module.exports = { listar, disponibilidad, crear, reprogramar, cambiarEstado };

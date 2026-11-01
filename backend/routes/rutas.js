@@ -14,8 +14,9 @@ router.post('/login', auth.login);
 router.post('/register', auth.registrar);
 router.post('/recuperar-password', auth.recuperarPassword);
 
-// Citas
+// Citas y disponibilidad en tiempo real
 router.get('/citas', citas.listar);
+router.get('/citas/disponibilidad', citas.disponibilidad);
 router.post('/citas', citas.crear);
 router.put('/citas/:id/estado', citas.cambiarEstado);
 router.put('/citas/:id/reprogramar', citas.reprogramar);
@@ -35,8 +36,10 @@ router.put('/productos/:id/estado', gestion.estadoProducto);
 // Estilistas
 router.get('/estilistas', catalogo.estilistas);
 router.get('/estilistas/usuario/:idUsuario', catalogo.estilistaPorUsuario);
+router.get('/estilistas/:id/horario', catalogo.horarioDeEstilista);
 router.put('/estilistas/:id/estado', gestion.estadoEstilista);
 router.put('/estilistas/:id/servicios', gestion.serviciosEstilista);
+router.put('/estilistas/:id/horario', gestion.horarioEstilista);
 
 // Clientas
 router.get('/clientas', catalogo.clientas);

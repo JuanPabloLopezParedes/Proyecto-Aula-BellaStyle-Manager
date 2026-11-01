@@ -8,138 +8,204 @@
 </head>
 <body class="min-h-screen bg-noche-950">
 
-  <!-- Fondo decorativo -->
+  <!-- Fondo decorativo ligeramente oscurecido y con resplandor pastel suave -->
   <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-    <div class="absolute -left-32 top-1/3 h-96 w-96 rounded-full bg-bella-600/20 blur-3xl motion-safe:animate-flotar"></div>
+    <div class="absolute inset-0 bg-gradient-to-b from-noche-950 via-noche-900/95 to-noche-950"></div>
+    <div class="absolute -left-32 top-1/3 h-96 w-96 rounded-full bg-bella-700/15 blur-3xl motion-safe:animate-flotar"></div>
     <div class="absolute -right-20 -top-20 h-[26rem] w-[26rem] rounded-full bg-bella-900/20 blur-3xl"></div>
   </div>
 
-  <main class="mx-auto grid max-w-6xl gap-8 px-5 py-10 lg:grid-cols-[1fr_23.5rem] lg:gap-10 lg:py-14">
+  <main class="mx-auto grid max-w-6xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_25rem] lg:gap-10 lg:py-12">
 
     <!-- ===================== COLUMNA IZQUIERDA: presentación ===================== -->
     <section class="order-2 lg:order-1">
 
       <!-- Logo -->
-      <a href="welcome.html" class="inline-flex animate-aparecer items-center gap-5 rounded-3xl border border-white/10 bg-white/[.04] p-5 pr-10">
-        <img src="img/bienvenido.jpg" alt="Logo BellaStyle" class="h-20 w-20 rounded-full bg-bella-100 p-1.5 mix-blend-normal opacity-90">
-        <span>
-          <span class="block font-titulo text-4xl font-bold text-white">BellaStyle</span>
-          <span class="mt-1 block border-t border-bella-400/50 pt-1 text-xs tracking-wide text-white/50">Tu estilo, a un clic</span>
-        </span>
-      </a>
-      <p class="mt-4 flex w-fit animate-aparecer items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-white/60 [animation-delay:.1s]">
-        &#10022; Agenda en línea · la estilista se asigna sola
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <a href="welcome.html" class="inline-flex animate-aparecer items-center gap-4 rounded-3xl border border-bella-300/25 bg-noche-900/85 p-4 pr-8 shadow-xl transition hover:border-bella-300/45 sm:gap-5 sm:p-5 sm:pr-10">
+          <img src="img/bienvenido.jpg" alt="Logo BellaStyle" class="h-16 w-16 rounded-full bg-pastel-crema p-1.5 mix-blend-normal opacity-95 shadow-md sm:h-20 sm:w-20">
+          <span>
+            <span class="block font-titulo text-3xl font-bold text-bella-50 sm:text-4xl">BellaStyle</span>
+            <span class="mt-1 block border-t border-bella-400/50 pt-1 text-xs font-medium tracking-wide text-bella-200/80">Tu estilo, a un clic</span>
+          </span>
+        </a>
+        <a href="welcome.html" class="rounded-xl border border-bella-300/25 bg-noche-900/75 px-4 py-2 text-xs font-semibold text-bella-100 transition hover:border-bella-300/50 hover:text-white">
+          Explorar portada &rarr;
+        </a>
+      </div>
+
+      <p class="mt-4 flex w-fit animate-aparecer items-center gap-2 rounded-full border border-bella-300/25 bg-noche-900/80 px-3.5 py-1.5 text-xs font-semibold text-bella-200 [animation-delay:.1s]">
+        &#10022; Presiona cualquier servicio para ver todos los estilos y tipos disponibles
       </p>
 
-      <!-- Galería de servicios -->
-      <div class="mt-10 grid animate-aparecer grid-cols-2 gap-3 [animation-delay:.15s] sm:grid-cols-5">
-        <div class="galeria">
-          <svg class="h-8 w-8 text-bella-300/80" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></svg>
-          <span>Corte</span>
-        </div>
-        <div class="galeria">
-          <svg class="h-8 w-8 text-bella-300/80" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.5 0-.4-.2-.8-.4-1.1-.3-.3-.4-.6-.4-1 0-.8.7-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.4-4-8-9-8Z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="10.5" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></svg>
-          <span>Color y mechas</span>
-        </div>
-        <div class="galeria">
-          <svg class="h-8 w-8 text-bella-300/80" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path d="M12 2c3 3 5 6.5 5 10a5 5 0 0 1-10 0c0-3.5 2-7 5-10Z"/><path d="M12 22v-5"/></svg>
-          <span>Peinados</span>
-        </div>
-        <div class="galeria">
-          <svg class="h-8 w-8 text-bella-300/80" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path d="M9 21V10a3 3 0 0 1 6 0v11"/><path d="M9 14h6"/><path d="M10 6.5V4a2 2 0 0 1 4 0v2.5"/></svg>
-          <span>Manicure</span>
-        </div>
-        <div class="galeria col-span-2 sm:col-span-1">
-          <svg class="h-8 w-8 text-bella-300/80" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path d="M12 21c-4-2-7-5.5-7-10a7 7 0 0 1 7-7 7 7 0 0 1 7 7c0 4.5-3 8-7 10Z"/><path d="M12 8v6m-3-3h6"/></svg>
-          <span>Tratamientos</span>
-        </div>
+      <!-- Galería interactiva de servicios (al presionar abre ventana emergente con los tipos) -->
+      <div class="mt-6 grid animate-aparecer grid-cols-2 gap-3 [animation-delay:.15s] sm:grid-cols-5">
+        <button type="button" data-abrir-servicio="Corte de Cabello" class="galeria cursor-pointer text-left">
+          <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-pastel-rosa/90 text-bella-800 shadow-sm">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></svg>
+          </span>
+          <div>
+            <span class="block text-bella-50">Corte</span>
+            <span class="text-[11px] font-normal text-bella-300">Mujer y Hombre &rarr;</span>
+          </div>
+        </button>
+        <button type="button" data-abrir-servicio="Mechas / Balayage" class="galeria cursor-pointer text-left">
+          <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-pastel-lavanda/90 text-bella-800 shadow-sm">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.5 0-.4-.2-.8-.4-1.1-.3-.3-.4-.6-.4-1 0-.8.7-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.4-4-8-9-8Z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="10.5" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></svg>
+          </span>
+          <div>
+            <span class="block text-bella-50">Color y mechas</span>
+            <span class="text-[11px] font-normal text-bella-300">Ver técnicas &rarr;</span>
+          </div>
+        </button>
+        <button type="button" data-abrir-servicio="Peinado para Evento" class="galeria cursor-pointer text-left">
+          <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-pastel-durazno/90 text-bella-800 shadow-sm">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2c3 3 5 6.5 5 10a5 5 0 0 1-10 0c0-3.5 2-7 5-10Z"/><path d="M12 22v-5"/></svg>
+          </span>
+          <div>
+            <span class="block text-bella-50">Peinados</span>
+            <span class="text-[11px] font-normal text-bella-300">Ver estilos &rarr;</span>
+          </div>
+        </button>
+        <button type="button" data-abrir-servicio="Manicure" class="galeria cursor-pointer text-left">
+          <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-pastel-menta/90 text-bella-800 shadow-sm">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 21V10a3 3 0 0 1 6 0v11"/><path d="M9 14h6"/><path d="M10 6.5V4a2 2 0 0 1 4 0v2.5"/></svg>
+          </span>
+          <div>
+            <span class="block text-bella-50">Uñas y Manicure</span>
+            <span class="text-[11px] font-normal text-bella-300">Ver tipos de uñas &rarr;</span>
+          </div>
+        </button>
+        <button type="button" data-abrir-servicio="Tratamiento Capilar" class="galeria col-span-2 cursor-pointer text-left sm:col-span-1">
+          <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-pastel-rosa/90 text-bella-800 shadow-sm">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 21c-4-2-7-5.5-7-10a7 7 0 0 1 7-7 7 7 0 0 1 7 7c0 4.5-3 8-7 10Z"/><path d="M12 8v6m-3-3h6"/></svg>
+          </span>
+          <div>
+            <span class="block text-bella-50">Tratamientos</span>
+            <span class="text-[11px] font-normal text-bella-300">Ver terapias &rarr;</span>
+          </div>
+        </button>
       </div>
 
       <!-- Mensaje principal -->
-      <h1 class="mt-10 animate-aparecer text-4xl font-bold leading-tight [animation-delay:.2s] sm:text-5xl">Tu salón de belleza en un solo lugar.</h1>
-      <p class="mt-4 max-w-2xl animate-aparecer text-white/60 [animation-delay:.25s]">
+      <h1 class="mt-8 animate-aparecer text-3xl font-bold leading-tight text-bella-50 [animation-delay:.2s] sm:mt-10 sm:text-5xl">Tu salón de belleza en un solo lugar.</h1>
+      <p class="mt-3 max-w-2xl animate-aparecer text-sm leading-relaxed text-bella-100/80 [animation-delay:.25s] sm:mt-4 sm:text-base">
         Cuando las citas se manejan por llamadas, cuadernos y chats sueltos, aparecen los cruces de horario, las citas olvidadas
         y el trabajo mal repartido. BellaStyle organiza la agenda, el equipo y el catálogo del salón desde un mismo sistema.
       </p>
-      <a href="register.html?rol=cliente" class="btn-primario mt-6 animate-aparecer px-6 py-3 text-base [animation-delay:.3s]">Crear mi cuenta &rarr;</a>
+      <div class="mt-6 flex flex-wrap gap-3 animate-aparecer [animation-delay:.3s]">
+        <a href="register.html?rol=cliente" class="btn-primario px-6 py-3 text-base">Crear mi cuenta &rarr;</a>
+        <button type="button" id="btnExplorarCatalogo" class="btn-secundario px-5 py-3 text-sm">Ver catálogo de especialidades</button>
+      </div>
 
       <!-- Beneficios -->
-      <div class="mt-10 grid animate-aparecer gap-4 [animation-delay:.35s] sm:grid-cols-3">
-        <div class="tarjeta p-5 text-center">
-          <span class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-bella-500/15 text-bella-300">&#10022;</span>
-          <h3 class="mt-3 font-sans text-base font-semibold text-white">Asignación automática</h3>
-          <p class="mt-1 text-sm text-white/50">Escoge la estilista libre que domina tu servicio.</p>
+      <div class="mt-8 grid animate-aparecer gap-4 [animation-delay:.35s] sm:mt-10 sm:grid-cols-3">
+        <div class="tarjeta p-5 text-center border-bella-300/20">
+          <span class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-pastel-rosa text-bella-800 font-bold shadow-sm">&#10022;</span>
+          <h3 class="mt-3 font-sans text-base font-semibold text-bella-50">Asignación automática</h3>
+          <p class="mt-1 text-sm text-bella-100/75">Escoge la estilista libre que domina tu servicio.</p>
         </div>
-        <div class="tarjeta p-5 text-center">
-          <span class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-bella-500/15 text-bella-300">&#9719;</span>
-          <h3 class="mt-3 font-sans text-base font-semibold text-white">Sin cruces de horario</h3>
-          <p class="mt-1 text-sm text-white/50">Valida horario, domingos y citas que se cruzan.</p>
+        <div class="tarjeta p-5 text-center border-bella-300/20">
+          <span class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-pastel-lavanda text-bella-800 font-bold shadow-sm">&#9719;</span>
+          <h3 class="mt-3 font-sans text-base font-semibold text-bella-50">Sin cruces de horario</h3>
+          <p class="mt-1 text-sm text-bella-100/75">Muestra horarios disponibles en tiempo real.</p>
         </div>
-        <div class="tarjeta p-5 text-center">
-          <span class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-bella-500/15 text-bella-300">&#9993;</span>
-          <h3 class="mt-3 font-sans text-base font-semibold text-white">Chat de asesoría</h3>
-          <p class="mt-1 text-sm text-white/50">Pide una cotización sin necesidad de registrarte.</p>
+        <div class="tarjeta p-5 text-center border-bella-300/20">
+          <span class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-pastel-menta text-bella-800 font-bold shadow-sm">&#9993;</span>
+          <h3 class="mt-3 font-sans text-base font-semibold text-bella-50">Chat de asesoría</h3>
+          <p class="mt-1 text-sm text-bella-100/75">Pide una cotización sin necesidad de registrarte.</p>
         </div>
       </div>
     </section>
 
-    <!-- ===================== COLUMNA DERECHA: login y precios ===================== -->
+    <!-- ===================== COLUMNA DERECHA: login (pastel suave con letra oscura) y precios ===================== -->
     <aside class="order-1 space-y-6 lg:order-2">
 
-      <!-- Inicio de sesión -->
-      <section class="tarjeta animate-aparecer bg-noche-900/90 p-6 shadow-2xl shadow-black/50">
-        <div class="flex items-center gap-3">
-          <img id="imagenRol" src="img/login_cliente.webp" alt="" class="h-12 w-12 rounded-xl object-cover ring-2 ring-bella-500/40">
+      <!-- Inicio de sesión: tarjeta en tono pastel crema-rosa mate con letras oscuras nítidas -->
+      <section class="tarjeta-pastel animate-aparecer p-5 sm:p-7">
+        <div class="flex items-center gap-3.5">
+          <img id="imagenRol" src="img/login_cliente.webp" alt="" class="h-14 w-14 rounded-2xl object-cover ring-2 ring-bella-500/50 shadow-md">
           <div>
-            <p class="text-xs uppercase tracking-wider text-white/40">Iniciar sesión como</p>
-            <h2 id="tituloRol" class="text-2xl font-bold leading-none">Clienta</h2>
+            <p class="text-xs font-bold uppercase tracking-wider text-pastel-subtinta">Iniciar sesión como</p>
+            <h2 id="tituloRol" class="text-3xl font-bold leading-none text-pastel-tinta">Clienta</h2>
           </div>
         </div>
 
         <!-- Selector de rol (se llena desde js/login.js) -->
-        <div id="listaRoles" class="mt-5 grid grid-cols-3 gap-1 rounded-xl bg-white/5 p-1"></div>
-        <p id="descripcionRol" class="mt-2 text-xs text-white/40"></p>
+        <div id="listaRoles" class="mt-4 grid grid-cols-3 gap-1.5 rounded-xl border border-bella-300/60 bg-pastel-perla/90 p-1"></div>
+        <p id="descripcionRol" class="mt-2 text-xs font-medium text-pastel-subtinta"></p>
 
-        <div id="alerta" class="alerta mt-4"></div>
+        <div id="alerta" data-tema="pastel" class="alerta mt-4"></div>
 
         <form id="formLogin" class="mt-4 space-y-4">
           <div>
-            <label for="usuario" class="etiqueta">Usuario</label>
-            <input id="usuario" class="campo" type="text" autocomplete="username" required>
+            <label for="usuario" class="etiqueta-oscura">Usuario</label>
+            <input id="usuario" class="campo-pastel" type="text" placeholder="Escribe tu usuario" autocomplete="username" required>
           </div>
           <div>
-            <label for="password" class="etiqueta">Contraseña</label>
+            <label for="password" class="etiqueta-oscura">Contraseña</label>
             <div class="relative">
-              <input id="password" class="campo pr-20" type="password" autocomplete="current-password" required>
-              <button type="button" id="verPassword" class="absolute inset-y-1.5 right-1.5 rounded-lg bg-bella-500/20 px-3 text-xs font-semibold text-bella-200 hover:bg-bella-500/30">Mostrar</button>
+              <input id="password" class="campo-pastel pr-20" type="password" placeholder="••••••••" autocomplete="current-password" required>
+              <button type="button" id="verPassword" class="absolute inset-y-1.5 right-1.5 rounded-lg bg-bella-200/80 px-3 text-xs font-bold text-bella-900 transition hover:bg-bella-300">Mostrar</button>
             </div>
           </div>
-          <button id="btnEntrar" type="submit" class="btn-primario w-full py-3">Entrar</button>
+          <button id="btnEntrar" type="submit" class="btn-primario w-full py-3 text-base shadow-md">Entrar</button>
         </form>
 
-        <div class="mt-5 space-y-1.5 text-center text-xs">
-          <a href="recuperar.html" class="block text-bella-300 underline-offset-4 hover:underline">¿Olvidaste tu contraseña?</a>
-          <a id="enlaceRegistro" href="register.html?rol=cliente" class="block text-bella-300 underline-offset-4 hover:underline">¿No tienes cuenta? Regístrate</a>
-          <a href="welcome.html" class="block text-white/40 hover:text-white">Conoce más de BellaStyle &rarr;</a>
+        <!-- Acceso rápido de demostración con 1 clic para pruebas prácticas -->
+        <div class="mt-4 rounded-2xl border border-bella-300/70 bg-pastel-perla/80 p-3">
+          <p class="text-[11px] font-bold uppercase tracking-wider text-pastel-subtinta">&#9889; Acceso rápido de prueba (1 clic):</p>
+          <div class="mt-2 grid grid-cols-3 gap-1.5">
+            <button type="button" data-demo-rol="cliente" data-demo-user="cliente" data-demo-pass="cli123"
+                    class="rounded-xl border border-bella-400/50 bg-pastel-rosa px-2 py-1.5 text-xs font-bold text-pastel-tinta shadow-sm transition hover:bg-bella-200">
+              Clienta
+            </button>
+            <button type="button" data-demo-rol="admin" data-demo-user="admin" data-demo-pass="admin123"
+                    class="rounded-xl border border-bella-400/50 bg-pastel-menta px-2 py-1.5 text-xs font-bold text-pastel-tinta shadow-sm transition hover:bg-bella-200">
+              Admin
+            </button>
+            <button type="button" data-demo-rol="estilista" data-demo-user="diana" data-demo-pass="diana123"
+                    class="rounded-xl border border-bella-400/50 bg-pastel-lavanda px-2 py-1.5 text-xs font-bold text-pastel-tinta shadow-sm transition hover:bg-bella-200">
+              Diana (Est.)
+            </button>
+            <button type="button" data-demo-rol="estilista" data-demo-user="estilista" data-demo-pass="est123"
+                    class="rounded-xl border border-bella-400/50 bg-pastel-durazno px-2 py-1.5 text-xs font-bold text-pastel-tinta shadow-sm transition hover:bg-bella-200">
+              Laura (Est.)
+            </button>
+            <button type="button" data-demo-rol="estilista" data-demo-user="paula" data-demo-pass="paula123"
+                    class="rounded-xl border border-bella-400/50 bg-pastel-lavanda px-2 py-1.5 text-xs font-bold text-pastel-tinta shadow-sm transition hover:bg-bella-200">
+              Paula (Est.)
+            </button>
+            <button type="button" data-demo-rol="estilista" data-demo-user="camila" data-demo-pass="est123"
+                    class="rounded-xl border border-bella-400/50 bg-pastel-durazno px-2 py-1.5 text-xs font-bold text-pastel-tinta shadow-sm transition hover:bg-bella-200">
+              Camila (Est.)
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-4 space-y-2 border-t border-bella-300/50 pt-3.5 text-center text-xs font-semibold">
+          <a href="recuperar.html" class="block text-bella-800 underline-offset-4 hover:text-bella-900 hover:underline">¿Olvidaste tu contraseña?</a>
+          <a id="enlaceRegistro" href="register.html?rol=cliente" class="block text-bella-800 underline-offset-4 hover:text-bella-900 hover:underline">¿No tienes cuenta? Regístrate aquí</a>
+          <a href="welcome.html" class="block text-pastel-subtinta hover:text-pastel-tinta">Conoce más de BellaStyle &rarr;</a>
         </div>
       </section>
 
-      <!-- Precios (se cargan desde la base de datos) -->
-      <section class="tarjeta animate-aparecer p-6 text-center [animation-delay:.1s]">
-        <h2 class="font-sans text-xl font-bold text-white">Precios claros,<br>sin sorpresas</h2>
-        <p class="mt-2 text-sm text-white/50">El precio queda guardado en tu cita el día que la agendas.</p>
-        <div id="listaPrecios" class="mt-5 grid grid-cols-2 gap-3"></div>
-        <ul class="mt-5 space-y-1.5 text-sm text-white/60">
-          <li><span class="text-emerald-300">&#10003;</span> Lunes a sábado, de 8:00 a. m. a 7:00 p. m.</li>
-          <li><span class="text-emerald-300">&#10003;</span> Reprograma o cancela desde tu panel</li>
-          <li><span class="text-emerald-300">&#10003;</span> Contraseña cifrada y cuenta personal</li>
+      <!-- Precios (se cargan desde la base de datos y al presionar abren sus variedades) -->
+      <section class="tarjeta animate-aparecer border-bella-300/20 p-5 text-center [animation-delay:.1s] sm:p-6">
+        <h2 class="font-sans text-xl font-bold text-bella-50">Precios claros,<br>sin sorpresas</h2>
+        <p class="mt-1.5 text-xs text-bella-100/75 sm:text-sm">Presiona cualquier servicio para ver qué tipos incluye.</p>
+        <div id="listaPrecios" class="mt-4 grid grid-cols-2 gap-2.5"></div>
+        <ul class="mt-5 space-y-1.5 text-left text-xs text-bella-100/85 sm:text-sm">
+          <li><span class="font-bold text-emerald-300">&#10003;</span> Lunes a sábado, de 8:00 a. m. a 7:00 p. m.</li>
+          <li><span class="font-bold text-emerald-300">&#10003;</span> Reprograma o cancela desde tu panel</li>
+          <li><span class="font-bold text-emerald-300">&#10003;</span> Contraseña cifrada y cuenta personal</li>
         </ul>
       </section>
     </aside>
   </main>
 
-  <footer class="border-t border-white/5 py-8 text-center text-sm text-white/40">
-    <p class="font-titulo text-lg font-bold text-white/80">Bella<span class="text-bella-400">Style</span></p>
+  <footer class="border-t border-white/10 py-8 text-center text-sm text-bella-100/60">
+    <p class="font-titulo text-lg font-bold text-bella-50">Bella<span class="text-bella-400">Style</span></p>
     <p class="mt-2 space-x-4">
       <a href="welcome.html" class="hover:text-white">Inicio</a>
       <a href="welcome.html#servicios" class="hover:text-white">Servicios</a>
@@ -149,6 +215,7 @@
   </footer>
 
   <script src="js/api.js"></script>
+  <script src="js/catalogo-modal.js"></script>
   <script src="js/login.js"></script>
   <script src="js/chat.js"></script>
 </body>

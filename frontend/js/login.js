@@ -9,7 +9,7 @@ if (ROLES[rolEnUrl]) rolActual = rolEnUrl;
 // Si ya hay sesión abierta, se va directo al panel
 if (obtenerSesion()) window.location.href = 'panel.html';
 
-// Dibuja el selector de rol: un botón por cada rol
+// Dibuja el selector de rol: un botón por cada rol con contraste pastel + letra oscura
 function dibujarRoles() {
     const lista = document.getElementById('listaRoles');
     lista.innerHTML = '';
@@ -18,14 +18,16 @@ function dibujarRoles() {
         const boton = document.createElement('button');
         boton.type = 'button';
         boton.textContent = ROLES[clave].titulo;
-        boton.className = 'rounded-lg px-1 py-2 text-xs font-semibold transition '
-            + (clave === rolActual ? 'bg-bella-500 text-white shadow' : 'text-white/60 hover:bg-white/10 hover:text-white');
+        boton.className = 'rounded-lg px-2 py-2 text-xs font-bold transition '
+            + (clave === rolActual
+                ? 'bg-bella-600 text-white shadow-sm'
+                : 'text-pastel-tinta/75 hover:bg-bella-200/70 hover:text-pastel-tinta');
         boton.addEventListener('click', () => seleccionarRol(clave));
         lista.appendChild(boton);
     }
 }
 
-function seleccionarRol(clave) {
+function seleccionarRol(clave, enfocar = true) {
     rolActual = clave;
     document.getElementById('tituloRol').textContent = ROLES[clave].titulo;
     document.getElementById('descripcionRol').textContent = ROLES[clave].descripcion;
@@ -33,7 +35,7 @@ function seleccionarRol(clave) {
     document.getElementById('enlaceRegistro').href = 'register.html?rol=' + clave;
     ocultarAlerta(document.getElementById('alerta'));
     dibujarRoles();
-    document.getElementById('usuario').focus();
+    if (enfocar) document.getElementById('usuario').focus();
 }
 
 // Botón "Mostrar / Ocultar" contraseña
@@ -66,25 +68,70 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
     } else {
         mostrarAlerta(alerta, respuesta.message);
         boton.disabled = false;
-        boton.textContent = 'Iniciar sesión';
+        boton.textContent = 'Entrar';
     }
 });
 
-// Tarjeta de precios: muestra cuatro servicios con su precio real
+// Botones de acceso rápido de prueba (1 clic)
+document.querySelectorAll('button[data-demo-rol]').forEach((boton) => {
+    boton.addEventListener('click', () => {
+        seleccionarRol(boton.dataset.demoRol, false);
+        document.getElementById('usuario').value = boton.dataset.demoUser;
+        document.getElementById('password').value = boton.dataset.demoPass;
+        document.getElementById('formLogin').requestSubmit();
+    });
+});
+
+// Activa los botones de la galería de servicios para abrir la ventana emergente con sus tipos
+document.querySelectorAll('[data-abrir-servicio]').forEach((boton) => {
+    boton.addEventListener('click', () => {
+        abrirModalServicio(boton.dataset.abrirServicio);
+    });
+});
+
+const btnExplorar = document.getElementById('btnExplorarCatalogo');
+if (btnExplorar) {
+    btnExplorar.addEventListener('click', () => abrirModalServicio('Corte de Cabello'));
+}
+
+// Tarjeta de precios: muestra todos los servicios con su precio real y al hacer clic abre los tipos que ofrece
 async function cargarPrecios() {
     const respuesta = await pedir('/servicios');
     const lista = document.getElementById('listaPrecios');
     if (!respuesta.success) {
-        lista.innerHTML = '<p class="col-span-2 text-sm text-white/40">Enciende el servidor para ver los precios.</p>';
+        lista.innerHTML = '<p class="col-span-2 text-sm text-bella-200/70">Enciende el servidor para ver los precios.</p>';
         return;
     }
-    lista.innerHTML = respuesta.data.slice(0, 4).map((s) => `
-        <div class="rounded-xl border border-white/10 bg-white/5 p-3">
-            <p class="text-sm font-semibold text-white">${escapar(s.nombre)}</p>
-            <p class="text-[11px] text-white/40">${s.duracion_min} minutos</p>
+    lista.innerHTML = respuesta.data.map((s) => `
+        <button type="button"
+                data-servicio-nombre="${escapar(s.nombre)}"
+                data-servicio-precio="${s.precio}"
+                data-servicio-duracion="${s.duracion_min}"
+                class="group rounded-xl border border-bella-300/20 bg-noche-800/80 p-3 text-left transition hover:-translate-y-0.5 hover:border-bella-300/60 hover:bg-noche-800">
+            <p class="text-sm font-semibold text-bella-50 group-hover:text-bella-200">${escapar(s.nombre)}</p>
+            <p class="text-[11px] text-bella-200/70">${s.duracion_min} min · Ver tipos &rarr;</p>
             <p class="mt-1 font-bold text-oro">${pesos(s.precio)}</p>
-        </div>`).join('');
+        </button>`).join('');
+
+    lista.querySelectorAll('button[data-servicio-nombre]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            abrirModalServicio(btn.dataset.servicioNombre, {
+                precio: Number(btn.dataset.servicioPrecio),
+                duracion: Number(btn.dataset.servicioDuracion)
+            });
+        });
+    });
 }
 
-seleccionarRol(rolActual);
+seleccionarRol(rolActual, false);
 cargarPrecios();
+
+// Si el cliente seleccionó una especialidad en la Landing Page ("Quiero este"), se la mostramos en el login
+const prefGuardada = sessionStorage.getItem('bellaVariedadPreferida');
+if (prefGuardada) {
+    try {
+        const pref = JSON.parse(prefGuardada);
+        const alerta = document.getElementById('alerta');
+        mostrarAlerta(alerta, `✓ Elegiste: ${pref.variedad} (${pref.servicio}). Inicia sesión o regístrate para agendar tu cita.`, 'ok');
+    } catch (_) {}
+}
