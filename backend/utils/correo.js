@@ -1,6 +1,9 @@
 // Servicio de notificaciones por correo electrónico de BellaStyle Manager
-// Envía el correo de confirmación cuando se agenda una cita (por SMTP si está configurado
-// en variables de entorno, y guarda una copia íntegra consultable desde el sistema).
+// Envía el correo de confirmación real por SMTP (Gmail u otro servidor configurado)
+// cuando se agenda una cita, y guarda también una copia íntegra consultable desde el sistema.
+
+const fs = require('fs');
+const path = require('path');
 
 const DESCRIPCIONES_SERVICIOS = {
     corte: 'Diagnóstico visagista según la forma de tu rostro, lavado relajante, corte de precisión, estilizado y sellado de puntas.',
@@ -11,6 +14,32 @@ const DESCRIPCIONES_SERVICIOS = {
     pedicure: 'Baño relajante con sales minerales, limpieza profunda, exfoliación podal renovadora, embellecimiento de uñas, esmaltado y masaje hidratante.',
     tratamiento: 'Lavado detox de apertura cuticular, aplicación profunda de activos reconstructores (queratina, bótox o argán), termoterapia y sellado antifrizz.'
 };
+
+function obtenerConfigSmtp() {
+    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+        return {
+            host: process.env.SMTP_HOST || 'smtp.gmail.com',
+            port: Number(process.env.SMTP_PORT) || 465,
+            user: process.env.SMTP_USER.trim(),
+            pass: process.env.SMTP_PASS.replace(/\s+/g, '')
+        };
+    }
+    try {
+        const rutaLocal = path.join(__dirname, '../config/smtp.local.json');
+        if (fs.existsSync(rutaLocal)) {
+            const cfg = JSON.parse(fs.readFileSync(rutaLocal, 'utf8'));
+            if (cfg.user && cfg.pass) {
+                return {
+                    host: cfg.host || 'smtp.gmail.com',
+                    port: Number(cfg.port) || 465,
+                    user: String(cfg.user).trim(),
+                    pass: String(cfg.pass).replace(/\s+/g, '')
+                };
+            }
+        }
+    } catch (_) {}
+    return null;
+}
 
 function obtenerDescripcionProcedimiento(nombreServicio = '', observaciones = '') {
     const limpio = String(nombreServicio).toLowerCase();
@@ -51,9 +80,10 @@ async function enviarCorreoConfirmacionCita(datosCita) {
         observaciones
     } = datosCita;
 
+    const smtpCfg = obtenerConfigSmtp();
     const destinatario = clienteEmail && clienteEmail.includes('@')
-        ? clienteEmail
-        : 'clienta@bellastyle.com';
+        ? clienteEmail.trim()
+        : (smtpCfg ? smtpCfg.user : 'clienta@bellastyle.com');
 
     const descripcionDetallada = obtenerDescripcionProcedimiento(servicioNombre, observaciones);
     const asunto = `Tu cita BS-${idCita} ha sido agendada para el ${fecha} a las ${hora} · BellaStyle`;
@@ -145,29 +175,30 @@ async function enviarCorreoConfirmacionCita(datosCita) {
         enviadoSmtp: false
     };
 
-    // Si hay credenciales SMTP configuradas en el entorno, intenta enviarlo por red con nodemailer
-    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    if (smtpCfg) {
         try {
             const nodemailer = require('nodemailer');
             const transporter = nodemailer.createTransport({
-                host: process.env.SMTP_HOST,
-                port: Number(process.env.SMTP_PORT) || 587,
-                secure: Number(process.env.SMTP_PORT) === 465,
+                host: smtpCfg.host,
+                port: smtpCfg.port,
+                secure: smtpCfg.port === 465,
                 auth: {
-                    user: process.env.SMTP_USER,
-                    pass: process.env.SMTP_PASS
+                    user: smtpCfg.user,
+                    pass: smtpCfg.pass
                 }
             });
             await transporter.sendMail({
-                from: `"BellaStyle Salón de Belleza" <${process.env.SMTP_USER}>`,
+                from: `"BellaStyle Salón de Belleza" <${smtpCfg.user}>`,
                 to: destinatario,
                 subject: asunto,
                 text: textoPlano,
                 html
             });
             registro.enviadoSmtp = true;
+            console.log(`Correo enviado exitosamente por SMTP a ${destinatario}`);
         } catch (err) {
             console.warn('Aviso SMTP (se guardó copia digital del correo):', err.message);
+            registro.errorSmtp = err.message;
         }
     }
 
@@ -182,5 +213,6 @@ function obtenerCorreoDeCita(idCita) {
 module.exports = {
     enviarCorreoConfirmacionCita,
     obtenerCorreoDeCita,
-    obtenerDescripcionProcedimiento
+    obtenerDescripcionProcedimiento,
+    obtenerConfigSmtp
 };
