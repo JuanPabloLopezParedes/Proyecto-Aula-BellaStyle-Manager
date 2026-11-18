@@ -1,0 +1,62 @@
+@startuml Diagrama_Despliegue_Nube
+title Diagrama de Despliegue (UML 2.5) — BellaStyle Manager en la nube
+skinparam defaultFontName DejaVu Sans
+skinparam shadowing false
+skinparam ArrowColor #333333
+skinparam node {
+  BackgroundColor #F9F9F9
+  BorderColor #555555
+}
+skinparam artifact {
+  BackgroundColor #FCF1F6
+  BorderColor #B03A78
+}
+skinparam database {
+  BackgroundColor #EAF6EC
+  BorderColor #2E8B57
+}
+
+node "PC / celular del usuario" <<device>> as U {
+  node "Navegador web\n(Chrome, Safari, Edge)" <<executionEnvironment>> as NAV {
+    artifact "Páginas HTML + estilos.css + js/*.js\n(copia descargada del servidor)" as FRONTCOPY
+  }
+}
+
+node "Servidor Render (nube)" <<device>> as RENDER {
+  node "Contenedor Docker\nimagen node:20-alpine" <<executionEnvironment>> as DOCKER {
+    node "Node.js 20" <<executionEnvironment>> as NODE {
+      node "Express 4" <<executionEnvironment>> as EXP {
+        artifact "backend/\napp.js · routes · controllers\nmodels · config · utils" as BACK
+        artifact "frontend/\nHTML · css · js · fonts · img" as FRONT
+      }
+    }
+  }
+}
+
+node "Servidor Aiven (nube)" <<device>> as AIVEN {
+  node "MySQL Server 8" <<executionEnvironment>> as MYSQL {
+    database "bellastylemanager" <<schema>> as BD
+  }
+}
+
+node "GitHub" <<device>> as GH {
+  artifact "Repositorio\nCódigo + Dockerfile" as REPO
+}
+
+node "PC del desarrollador\n(Windows)" <<device>> as DEV {
+  artifact "presentacion_proaula/\nproaula_bella/" as LOCAL
+}
+
+U "0..*" -- "1" RENDER : "«HTTPS»\npuerto 443\nJSON"
+EXP ..> FRONT : "sirve con\nexpress.static"
+FRONT ..> FRONTCOPY : "se descarga\nal navegador"
+RENDER -- AIVEN : "«TCP + SSL»\nprotocolo MySQL"
+DEV -- GH : "«HTTPS»\ngit push"
+GH -- RENDER : "«HTTPS»\nconstruye la imagen\ncon el Dockerfile"
+
+note bottom of RENDER
+  Las claves de la base de datos no están en el código:
+  Render las entrega como variables de entorno
+  (DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, DB_SSL).
+end note
+@enduml
