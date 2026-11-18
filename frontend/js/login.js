@@ -112,13 +112,13 @@ async function cargarPrecios() {
                 data-servicio-nombre="${escapar(s.nombre)}"
                 data-servicio-precio="${s.precio}"
                 data-servicio-duracion="${s.duracion_min}"
-                class="group flex items-center gap-3 rounded-xl border border-bella-300/20 bg-noche-800/80 p-2.5 text-left transition hover:-translate-y-0.5 hover:border-bella-300/60 hover:bg-noche-800">
+                class="group flex items-center gap-2.5 rounded-xl border border-bella-300/80 bg-pastel-perla/90 p-2 text-left transition hover:-translate-y-0.5 hover:border-bella-500 hover:bg-pastel-rosa">
             <img src="${escapar(imgSrv)}" alt="${escapar(s.nombre)}" loading="lazy"
-                 class="h-12 w-12 shrink-0 rounded-lg object-cover ring-1 ring-bella-300/40">
+                 class="h-11 w-11 shrink-0 rounded-lg object-cover ring-1 ring-bella-300/70">
             <div class="min-w-0 flex-1">
-                <p class="truncate text-sm font-semibold text-bella-50 group-hover:text-bella-200">${escapar(s.nombre)}</p>
-                <p class="text-[11px] text-bella-200/70">${s.duracion_min} min · Ver fotos y tipos &rarr;</p>
-                <p class="mt-0.5 font-bold text-oro">${pesos(s.precio)}</p>
+                <p class="truncate text-xs font-bold text-pastel-tinta">${escapar(s.nombre)}</p>
+                <p class="text-[10px] font-semibold text-pastel-subtinta">${s.duracion_min} min · Ver ejemplos &rarr;</p>
+                <p class="mt-0.5 text-xs font-extrabold text-bella-800">${pesos(s.precio)}</p>
             </div>
         </button>`;
     }).join('');

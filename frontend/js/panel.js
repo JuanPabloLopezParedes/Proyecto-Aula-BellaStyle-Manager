@@ -639,15 +639,20 @@ function actualizarResumenTotalCita() {
     const descuento = aplicaDescuento ? Math.round(subtotal * 0.15) : 0;
     const total = Math.max(0, subtotal - descuento);
 
+    const infoProd = prod && typeof obtenerFichaProducto === 'function' ? obtenerFichaProducto(prod.nombre) : null;
+
     cajaResumen.innerHTML = `
         <div class="flex flex-wrap items-center justify-between gap-2">
-            <div>
-                <p class="text-[11px] font-bold uppercase tracking-wider text-bella-900">Resumen estimado de tu cita</p>
-                <p class="text-xs font-semibold text-pastel-subtinta">
-                    Servicio (${duracionBase} min): <strong>${pesos(precioBase)}</strong>
-                    ${prod ? ` + ${escapar(prod.nombre)} (<strong>${pesos(precioProd)}</strong>)` : ''}
-                </p>
-                ${descuento > 0 ? `<p class="mt-0.5 text-xs font-bold text-emerald-900">💎 Beneficio BellaClub / Cupón 15% OFF aplicado: -${pesos(descuento)}</p>` : ''}
+            <div class="flex items-center gap-3">
+                ${infoProd ? `<img src="${escapar(infoProd.imagen)}" alt="${escapar(prod.nombre)}" class="h-11 w-11 rounded-xl object-cover ring-1 ring-bella-400/70 shadow-sm">` : ''}
+                <div>
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-bella-900">Resumen estimado de tu cita</p>
+                    <p class="text-xs font-semibold text-pastel-subtinta">
+                        Servicio (${duracionBase} min): <strong>${pesos(precioBase)}</strong>
+                        ${prod ? ` + ${escapar(prod.nombre)} (<strong>${pesos(precioProd)}</strong>)` : ''}
+                    </p>
+                    ${descuento > 0 ? `<p class="mt-0.5 text-xs font-bold text-emerald-900">💎 Beneficio BellaClub / Cupón 15% OFF aplicado: -${pesos(descuento)}</p>` : ''}
+                </div>
             </div>
             <p class="font-titulo text-2xl font-bold text-bella-800">${pesos(total)}</p>
         </div>`;
@@ -666,6 +671,19 @@ window.aplicarEspecialidadEnFormulario = function ({ variedad, categoria, precio
         etiquetaVar.textContent = `✓ Especialidad: ${variedad} (${categoria}) · ${pesos(precioEspecialidadSeleccionada || 0)} · ${duracionEspecialidadSeleccionada || 60} min`;
         etiquetaVar.classList.remove('hidden');
     }
+    // Recuperar producto preferido si hizo clic en "Incluir en mi cita" desde la Tienda
+    const prodPrefTexto = sessionStorage.getItem('bellaProductoPreferida') || sessionStorage.getItem('bellaProductoPreferido');
+    if (prodPrefTexto) {
+        try {
+            const prodPref = JSON.parse(prodPrefTexto);
+            sessionStorage.removeItem('bellaProductoPreferido');
+            const selectProd = document.getElementById('productoAdicional');
+            if (selectProd && prodPref.id_producto) {
+                selectProd.value = String(prodPref.id_producto);
+            }
+        } catch (_) {}
+    }
+
     actualizarResumenTotalCita();
     actualizarDisponibilidadHoras();
 };
@@ -791,7 +809,20 @@ async function iniciarClienta() {
         precioEspecialidadSeleccionada = null;
         duracionEspecialidadSeleccionada = null;
         filtrarEstilistas();
-        actualizarResumenTotalCita();
+        // Recuperar producto preferido si hizo clic en "Incluir en mi cita" desde la Tienda
+    const prodPrefTexto = sessionStorage.getItem('bellaProductoPreferida') || sessionStorage.getItem('bellaProductoPreferido');
+    if (prodPrefTexto) {
+        try {
+            const prodPref = JSON.parse(prodPrefTexto);
+            sessionStorage.removeItem('bellaProductoPreferido');
+            const selectProd = document.getElementById('productoAdicional');
+            if (selectProd && prodPref.id_producto) {
+                selectProd.value = String(prodPref.id_producto);
+            }
+        } catch (_) {}
+    }
+
+    actualizarResumenTotalCita();
         actualizarDisponibilidadHoras();
         const etiquetaVar = document.getElementById('variedadSeleccionada');
         if (etiquetaVar) etiquetaVar.classList.add('hidden');
@@ -880,6 +911,19 @@ async function iniciarClienta() {
         } catch (_) {}
     }
 
+    // Recuperar producto preferido si hizo clic en "Incluir en mi cita" desde la Tienda
+    const prodPrefTexto = sessionStorage.getItem('bellaProductoPreferida') || sessionStorage.getItem('bellaProductoPreferido');
+    if (prodPrefTexto) {
+        try {
+            const prodPref = JSON.parse(prodPrefTexto);
+            sessionStorage.removeItem('bellaProductoPreferido');
+            const selectProd = document.getElementById('productoAdicional');
+            if (selectProd && prodPref.id_producto) {
+                selectProd.value = String(prodPref.id_producto);
+            }
+        } catch (_) {}
+    }
+
     actualizarResumenTotalCita();
     await actualizarDisponibilidadHoras();
 
@@ -951,7 +995,20 @@ async function agendarCita(e) {
 
         productosDisponibles = (await pedir('/productos')).data || [];
         poblarSelectProductosClienta();
-        actualizarResumenTotalCita();
+        // Recuperar producto preferido si hizo clic en "Incluir en mi cita" desde la Tienda
+    const prodPrefTexto = sessionStorage.getItem('bellaProductoPreferida') || sessionStorage.getItem('bellaProductoPreferido');
+    if (prodPrefTexto) {
+        try {
+            const prodPref = JSON.parse(prodPrefTexto);
+            sessionStorage.removeItem('bellaProductoPreferido');
+            const selectProd = document.getElementById('productoAdicional');
+            if (selectProd && prodPref.id_producto) {
+                selectProd.value = String(prodPref.id_producto);
+            }
+        } catch (_) {}
+    }
+
+    actualizarResumenTotalCita();
         await cargarCitasClienta();
         await actualizarDisponibilidadHoras();
     } else {
@@ -1056,11 +1113,37 @@ async function cargarCitasClienta() {
             const inputCupon = document.getElementById('codigoPromocional');
             if (inputCupon) {
                 inputCupon.value = 'BELLA15';
-                actualizarResumenTotalCita();
+                // Recuperar producto preferido si hizo clic en "Incluir en mi cita" desde la Tienda
+    const prodPrefTexto = sessionStorage.getItem('bellaProductoPreferida') || sessionStorage.getItem('bellaProductoPreferido');
+    if (prodPrefTexto) {
+        try {
+            const prodPref = JSON.parse(prodPrefTexto);
+            sessionStorage.removeItem('bellaProductoPreferido');
+            const selectProd = document.getElementById('productoAdicional');
+            if (selectProd && prodPref.id_producto) {
+                selectProd.value = String(prodPref.id_producto);
+            }
+        } catch (_) {}
+    }
+
+    actualizarResumenTotalCita();
                 avisar('¡Cupón BELLA15 (15% de descuento) aplicado en tu formulario!');
             }
         });
     }
+    // Recuperar producto preferido si hizo clic en "Incluir en mi cita" desde la Tienda
+    const prodPrefTexto = sessionStorage.getItem('bellaProductoPreferida') || sessionStorage.getItem('bellaProductoPreferido');
+    if (prodPrefTexto) {
+        try {
+            const prodPref = JSON.parse(prodPrefTexto);
+            sessionStorage.removeItem('bellaProductoPreferido');
+            const selectProd = document.getElementById('productoAdicional');
+            if (selectProd && prodPref.id_producto) {
+                selectProd.value = String(prodPref.id_producto);
+            }
+        } catch (_) {}
+    }
+
     actualizarResumenTotalCita();
 
     tabla.innerHTML = citasClienta.length === 0 ? filaVacia(5, 'Todavía no tienes citas agendadas') : citasClienta.map((c) => {
@@ -1916,9 +1999,18 @@ async function cargarProductosAdmin() {
         const cambio = p.estado === 'Activo'
             ? botonAccion('Desactivar', 'rojo', `/productos/${p.id_producto}/estado`, { estado: 'Inactivo' })
             : botonAccion('Activar', 'verde', `/productos/${p.id_producto}/estado`, { estado: 'Activo' });
+        const infoProd = typeof obtenerFichaProducto === 'function' ? obtenerFichaProducto(p.nombre) : { imagen: 'img/productos/shampoo-argan.jpg', categoria: '' };
         return `
             <tr>
-                <td class="font-medium text-white">${escapar(p.nombre)}</td>
+                <td>
+                    <div class="flex items-center gap-3">
+                        <img src="${escapar(infoProd.imagen)}" alt="${escapar(p.nombre)}" class="h-11 w-11 shrink-0 rounded-xl object-cover ring-1 ring-bella-300/60 shadow-sm">
+                        <div>
+                            <span class="block font-medium text-white">${escapar(p.nombre)}</span>
+                            <span class="block text-[11px] text-bella-200/80">${escapar(infoProd.categoria || 'Producto de salón')}</span>
+                        </div>
+                    </div>
+                </td>
                 <td>${pesos(p.precio)}</td>
                 <td>
                     <div class="inline-flex items-center gap-1.5">

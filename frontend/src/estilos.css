@@ -135,10 +135,17 @@
 
 /* =====================================================================
    MODO CLARO PASTEL PROFESIONAL (html.tema-claro)
+   Garantiza contraste perfecto: letras oscuras (#1a0d14) y tarjetas
+   pasteles nítidas sobre el video de fondo claro.
    ===================================================================== */
+html.tema-claro {
+  background-color: #fdf6f9 !important;
+  color: #1a0d14 !important;
+}
+
 html.tema-claro body {
-  background-color: #f8eef3 !important;
-  color: #1e1017 !important;
+  background-color: transparent !important;
+  color: #1a0d14 !important;
 }
 
 html.tema-claro input[type='date'],
@@ -148,7 +155,7 @@ html.tema-claro input[type='time'] {
 
 html.tema-claro select option {
   background-color: #fdf6f9;
-  color: #1e1017;
+  color: #1a0d17;
 }
 
 /* Fondo decorativo en modo claro */
@@ -160,56 +167,72 @@ html.tema-claro .to-noche-950 {
   --tw-gradient-to: #f9eef4 !important;
 }
 
-html.tema-claro header {
-  background-color: rgba(253, 246, 249, 0.92) !important;
-  border-color: rgba(219, 39, 119, 0.2) !important;
-}
-
+html.tema-claro header,
 html.tema-claro footer {
-  border-color: rgba(219, 39, 119, 0.2) !important;
-  color: #47303c !important;
+  background-color: rgba(253, 246, 249, 0.94) !important;
+  border-color: rgba(190, 24, 93, 0.22) !important;
+  color: #1a0d14 !important;
 }
 
-/* Tarjetas, navegación de pestañas y bloques en modo claro */
+/* Todos los contenedores oscuros pasan a pastel crema translúcido con letra oscura en modo claro */
 html.tema-claro .tarjeta,
 html.tema-claro .galeria,
 html.tema-claro #pestanas,
+html.tema-claro .bloque-hero-legible,
+html.tema-claro .bloque-seccion-cabecera,
+html.tema-claro .bloque-asesoria-cristal,
+html.tema-claro .chat-ventana-adaptable,
+html.tema-claro .bg-noche-950\/90,
+html.tema-claro .bg-noche-950\/85,
+html.tema-claro .bg-noche-900\/90,
 html.tema-claro .bg-noche-900\/85,
 html.tema-claro .bg-noche-900\/80,
 html.tema-claro .bg-noche-900\/75,
-html.tema-claro .bg-noche-900\/90 {
-  background-color: rgba(255, 251, 253, 0.94) !important;
-  border-color: rgba(219, 39, 119, 0.25) !important;
-  color: #1e1017 !important;
-  box-shadow: 0 10px 28px -8px rgba(90, 28, 59, 0.12) !important;
+html.tema-claro .bg-noche-900\/70,
+html.tema-claro .bg-noche-900\/65,
+html.tema-claro .bg-noche-900\/60,
+html.tema-claro .bg-noche-900\/50,
+html.tema-claro .bg-noche-900\/40,
+html.tema-claro .bg-noche-800,
+html.tema-claro .bg-noche-800\/80 {
+  background-color: rgba(255, 250, 252, 0.93) !important;
+  border-color: rgba(190, 24, 93, 0.28) !important;
+  color: #1a0d14 !important;
+  box-shadow: 0 12px 30px -8px rgba(90, 28, 59, 0.14) !important;
+}
+
+html.tema-claro .chat-ventana-adaptable #chatSugerencias,
+html.tema-claro .chat-ventana-adaptable #chatFormMensaje {
+  background-color: rgba(248, 229, 238, 0.9) !important;
+  border-color: rgba(190, 24, 93, 0.22) !important;
 }
 
 html.tema-claro .tarjeta-pastel {
   box-shadow: 0 12px 32px -8px rgba(90, 28, 59, 0.16) !important;
 }
 
-/* Tipografía en modo claro para máximo contraste y lectura cómoda */
+/* Tipografía en modo claro: todas las letras blancas o claras pasan a tinta oscura intensa */
+html.tema-claro h1,
+html.tema-claro h2,
+html.tema-claro h3,
+html.tema-claro h4,
 html.tema-claro .text-bella-50,
 html.tema-claro .text-white,
-html.tema-claro .text-white\/90 {
-  color: #1e1017 !important;
-}
-
-/* Mantiene texto blanco dentro de botones primarios o insignias de acento oscuro */
-html.tema-claro .btn-primario,
-html.tema-claro .btn-primario *,
-html.tema-claro .bg-bella-500,
-html.tema-claro .bg-bella-600 {
-  color: #ffffff !important;
+html.tema-claro .text-white\/90,
+html.tema-claro .text-white\/85,
+html.tema-claro .etiqueta {
+  color: #1a0d14 !important;
 }
 
 html.tema-claro .text-bella-100,
+html.tema-claro .text-bella-100\/90,
 html.tema-claro .text-bella-100\/85,
 html.tema-claro .text-bella-100\/80,
 html.tema-claro .text-bella-100\/75,
 html.tema-claro .text-bella-100\/70,
 html.tema-claro .text-bella-100\/60,
 html.tema-claro .text-bella-200,
+html.tema-claro .text-bella-200\/85,
 html.tema-claro .text-bella-200\/80,
 html.tema-claro .text-bella-200\/75,
 html.tema-claro .text-bella-200\/70,
@@ -218,18 +241,56 @@ html.tema-claro .text-white\/80,
 html.tema-claro .text-white\/75,
 html.tema-claro .text-white\/70,
 html.tema-claro .text-white\/60,
+html.tema-claro .text-white\/55,
 html.tema-claro .text-white\/50,
-html.tema-claro .text-white\/40 {
-  color: #47303c !important;
+html.tema-claro .text-white\/40,
+html.tema-claro .text-white\/30 {
+  color: #3b202e !important;
 }
 
 html.tema-claro .text-bella-300,
 html.tema-claro .text-bella-400 {
-  color: #be185d !important;
+  color: #9d174d !important;
 }
 
 html.tema-claro .text-oro {
-  color: #9a5b13 !important;
+  color: #92400e !important;
+}
+
+html.tema-claro .text-emerald-300 {
+  color: #065f46 !important;
+}
+
+html.tema-claro .text-amber-300 {
+  color: #92400e !important;
+}
+
+html.tema-claro .text-sky-300 {
+  color: #075985 !important;
+}
+
+html.tema-claro .text-red-300 {
+  color: #991b1b !important;
+}
+
+/* Mantiene texto blanco únicamente dentro de botones o insignias de fondo oscuro/acento */
+html.tema-claro .btn-primario,
+html.tema-claro .btn-primario *,
+html.tema-claro .bg-bella-500,
+html.tema-claro .bg-bella-500 *,
+html.tema-claro .bg-bella-600,
+html.tema-claro .bg-bella-600 *,
+html.tema-claro .bg-bella-700,
+html.tema-claro .bg-bella-700 *,
+html.tema-claro .bg-bella-700\/95,
+html.tema-claro .bg-emerald-700,
+html.tema-claro .bg-black\/70,
+html.tema-claro .bg-black\/75,
+html.tema-claro #chatBurbuja,
+html.tema-claro #chatBurbuja *,
+html.tema-claro .from-bella-700,
+html.tema-claro .from-bella-700 * {
+  color: #ffffff !important;
 }
 
 /* Campos y botones secundarios en modo claro */
@@ -375,7 +436,7 @@ html.tema-claro body {
 .velo-video-fondo {
   position: absolute;
   inset: 0;
-  background: rgba(12, 6, 10, 0.46);
+  background: rgba(12, 6, 10, 0.35);
   transition: background 0.55s ease-in-out;
 }
 
@@ -388,5 +449,5 @@ html.tema-claro .video-fondo-claro {
 }
 
 html.tema-claro .velo-video-fondo {
-  background: rgba(253, 246, 249, 0.34);
+  background: rgba(252, 240, 246, 0.72);
 }
