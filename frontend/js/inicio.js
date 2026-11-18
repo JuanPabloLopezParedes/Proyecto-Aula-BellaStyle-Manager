@@ -98,17 +98,23 @@ async function cargarDatos() {
             ? buscarDetalleServicio(s.nombre, s.precio, s.duracion_min)
             : null;
 
-        // Armamos el listado visual de las opciones que ofrece este servicio
+        // Armamos el listado visual de las opciones que ofrece este servicio (con miniatura de ejemplo de cada estilo)
         const bloquesOpciones = ficha
             ? ficha.grupos.map((g) => `
                 <div class="mt-3">
                   <p class="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-bella-800">
                     <span>${g.icono}</span> ${escapar(g.categoria)}
                   </p>
-                  <ul class="mt-1.5 space-y-1">
+                  <ul class="mt-1.5 space-y-1.5">
                     ${g.opciones.map((op) => `
-                      <li class="flex items-center justify-between gap-2 rounded-lg bg-pastel-perla/75 px-2.5 py-1 text-xs font-medium text-pastel-tinta">
-                        <span class="truncate">· ${escapar(op.nombre)}</span>
+                      <li class="flex items-center justify-between gap-2 rounded-xl bg-pastel-perla/85 p-1.5 pr-2.5 text-xs font-medium text-pastel-tinta shadow-sm">
+                        <div class="flex min-w-0 items-center gap-2">
+                          <img src="${escapar(op.imagen || ficha.imagen || 'img/servicios/cat-corte.jpg')}"
+                               alt="${escapar(op.nombre)}"
+                               loading="lazy"
+                               class="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-bella-300/80">
+                          <span class="truncate font-semibold">${escapar(op.nombre)}</span>
+                        </div>
                         <span class="shrink-0 font-bold text-bella-800">${pesos(op.precio)}</span>
                       </li>
                     `).join('')}
@@ -121,21 +127,27 @@ async function cargarDatos() {
             ? ficha.grupos.reduce((acc, g) => acc + g.opciones.length, 0)
             : 2;
 
+        const imgCategoria = (ficha && ficha.imagen) ? ficha.imagen : 'img/servicios/cat-corte.jpg';
+
         return `
             <article data-servicio-nombre="${escapar(s.nombre)}"
                      data-servicio-precio="${s.precio}"
                      data-servicio-duracion="${s.duracion_min}"
                      role="button"
                      tabindex="0"
-                     class="revelar tarjeta-pastel group flex cursor-pointer flex-col justify-between p-6 transition duration-300 hover:-translate-y-1.5 hover:border-bella-500"
+                     class="revelar tarjeta-pastel group flex cursor-pointer flex-col justify-between p-5 sm:p-6 transition duration-300 hover:-translate-y-1.5 hover:border-bella-500"
                      style="transition-delay:${i * 60}ms">
                 <div>
+                    <div class="relative mb-3.5 h-36 w-full overflow-hidden rounded-2xl border border-bella-300/70 shadow-sm">
+                        <img src="${escapar(imgCategoria)}" alt="${escapar(s.nombre)}" loading="lazy"
+                             class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
+                        <span class="absolute left-3 top-3 rounded-full ${ficha ? ficha.colorPastel : 'bg-pastel-rosa'} px-3 py-0.5 text-[11px] font-bold text-bella-900 shadow-md">
+                            ${totalVariedades} opciones con foto
+                        </span>
+                    </div>
                     <div class="flex items-start justify-between gap-2">
                         <div>
-                            <span class="inline-block rounded-full ${ficha ? ficha.colorPastel : 'bg-pastel-rosa'} px-2.5 py-0.5 text-[11px] font-bold text-bella-900 shadow-sm">
-                                ${totalVariedades} opciones disponibles
-                            </span>
-                            <h3 class="mt-2 text-2xl font-bold text-pastel-tinta group-hover:text-bella-800">${escapar(s.nombre)}</h3>
+                            <h3 class="text-2xl font-bold text-pastel-tinta group-hover:text-bella-800">${escapar(s.nombre)}</h3>
                         </div>
                         <div class="text-right">
                             <p class="text-[10px] font-bold uppercase tracking-wider text-pastel-subtinta">Desde</p>

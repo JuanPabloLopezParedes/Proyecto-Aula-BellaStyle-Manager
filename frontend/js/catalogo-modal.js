@@ -1,4 +1,4 @@
-// Catálogo detallado de sub-servicios y especialidades + ventana emergente interactiva con pestañas rápidas.
+// Catálogo detallado de sub-servicios y especialidades con imágenes de ejemplo + ventana emergente interactiva.
 // Funciona en:
 //  - index.html (galería de servicios e ítems de precios)
 //  - welcome.html (tarjetas de la sección "Nuestros servicios")
@@ -11,25 +11,26 @@ const CATALOGO_DETALLES = [
         titulo: 'Corte de Cabello',
         subtitulo: 'Cortes personalizados para dama y caballero según tu tipo de rostro',
         colorPastel: 'bg-pastel-rosa',
+        imagen: 'img/servicios/cat-corte.jpg',
         grupos: [
             {
                 categoria: 'Corte para Mujer',
                 icono: '♀',
                 opciones: [
-                    { nombre: 'Corte Bob / Long Bob (Lob)', detalle: 'Líneas elegantes a la altura del mentón o clavícula, ideal para dar movimiento.', precio: 40000, duracion: 50 },
-                    { nombre: 'Corte en Capas Largas o Mariposa', detalle: 'Aporta volumen, ligereza y caída natural sin perder el largo.', precio: 38000, duracion: 45 },
-                    { nombre: 'Corte Recto / Despuntado Saludable', detalle: 'Sanea puntas abiertas manteniendo una línea simétrica y pulida.', precio: 35000, duracion: 40 },
-                    { nombre: 'Corte Pixie / Flequillo Curtain Bangs', detalle: 'Diseño moderno con estilizado de contorno facial.', precio: 42000, duracion: 50 }
+                    { nombre: 'Corte Bob / Long Bob (Lob)', detalle: 'Líneas elegantes a la altura del mentón o clavícula, ideal para dar movimiento.', precio: 40000, duracion: 50, imagen: 'img/servicios/corte-bob-long-bob.jpg' },
+                    { nombre: 'Corte en Capas Largas o Mariposa', detalle: 'Aporta volumen, ligereza y caída natural sin perder el largo.', precio: 38000, duracion: 45, imagen: 'img/servicios/corte-capas-mariposa.jpg' },
+                    { nombre: 'Corte Recto / Despuntado Saludable', detalle: 'Sanea puntas abiertas manteniendo una línea simétrica y pulida.', precio: 35000, duracion: 40, imagen: 'img/servicios/corte-recto-despuntado.jpg' },
+                    { nombre: 'Corte Pixie / Flequillo Curtain Bangs', detalle: 'Diseño moderno con estilizado de contorno facial.', precio: 42000, duracion: 50, imagen: 'img/servicios/corte-pixie-curtain-bangs.jpg' }
                 ]
             },
             {
                 categoria: 'Corte para Hombre',
                 icono: '♂',
                 opciones: [
-                    { nombre: 'Corte Clásico Ejecutivo (Tijera y Máquina)', detalle: 'Acabado limpio, formal y perfilado de contornos.', precio: 28000, duracion: 35 },
-                    { nombre: 'Degradado / Fade (Low, Mid o High Fade)', detalle: 'Desvanecido milimétrico con transición suave y diseño superior.', precio: 32000, duracion: 45 },
-                    { nombre: 'Corte Texturizado / Crop o Mullet Moderno', detalle: 'Trabajo de tijera en la zona superior para dar textura natural.', precio: 35000, duracion: 45 },
-                    { nombre: 'Corte + Perfilado y Arreglo de Barba', detalle: 'Servicio completo con toalla tibia y definición de barba.', precio: 42000, duracion: 55 }
+                    { nombre: 'Corte Clásico Ejecutivo (Tijera y Máquina)', detalle: 'Acabado limpio, formal y perfilado de contornos.', precio: 28000, duracion: 35, imagen: 'img/servicios/corte-clasico-ejecutivo.jpg' },
+                    { nombre: 'Degradado / Fade (Low, Mid o High Fade)', detalle: 'Desvanecido milimétrico con transición suave y diseño superior.', precio: 32000, duracion: 45, imagen: 'img/servicios/corte-degradado-fade.jpg' },
+                    { nombre: 'Corte Texturizado / Crop o Mullet Moderno', detalle: 'Trabajo de tijera en la zona superior para dar textura natural.', precio: 35000, duracion: 45, imagen: 'img/servicios/corte-texturizado-crop.jpg' },
+                    { nombre: 'Corte + Perfilado y Arreglo de Barba', detalle: 'Servicio completo con toalla tibia y definición de barba.', precio: 42000, duracion: 55, imagen: 'img/servicios/corte-barba-toalla.jpg' }
                 ]
             }
         ]
@@ -40,17 +41,18 @@ const CATALOGO_DETALLES = [
         titulo: 'Manicure y Diseño de Uñas',
         subtitulo: 'Cuidado integral de manos y sistemas profesionales de uñas',
         colorPastel: 'bg-pastel-menta',
+        imagen: 'img/servicios/cat-manicure.jpg',
         grupos: [
             {
                 categoria: 'Tipos de Uñas y Sistemas',
                 icono: '✦',
                 opciones: [
-                    { nombre: 'Uñas Acrílicas Esculpidas', detalle: 'Extensión resistente con molde o tip, largo a elección y esmaltado en gel.', precio: 85000, duracion: 120 },
-                    { nombre: 'Uñas en Polygel / TechGel', detalle: 'Sistema ligero, flexible y de aspecto ultra natural con alta durabilidad.', precio: 90000, duracion: 120 },
-                    { nombre: 'Uñas Press-On / Soft Gel', detalle: 'Extensión rápida de cobertura completa sin maltratar la uña natural.', precio: 70000, duracion: 90 },
-                    { nombre: 'Esmaltado Semipermanente', detalle: 'Brillo intacto hasta por 21 días sobre uña natural con limpieza rusa.', precio: 45000, duracion: 60 },
-                    { nombre: 'Forrado en Base Rubber / Nivelación', detalle: 'Refuerzo ideal para uñas frágiles o quebradizas con acabado liso.', precio: 55000, duracion: 75 },
-                    { nombre: 'Manicure Tradicional + Nail Art', detalle: 'Limpieza profunda, hidratación, esmaltado clásico o francés.', precio: 25000, duracion: 45 }
+                    { nombre: 'Uñas Acrílicas Esculpidas', detalle: 'Extensión resistente con molde o tip, largo a elección y esmaltado en gel.', precio: 85000, duracion: 120, imagen: 'img/servicios/unas-acrilicas.jpg' },
+                    { nombre: 'Uñas en Polygel / TechGel', detalle: 'Sistema ligero, flexible y de aspecto ultra natural con alta durabilidad.', precio: 90000, duracion: 120, imagen: 'img/servicios/unas-polygel.jpg' },
+                    { nombre: 'Uñas Press-On / Soft Gel', detalle: 'Extensión rápida de cobertura completa sin maltratar la uña natural.', precio: 70000, duracion: 90, imagen: 'img/servicios/unas-soft-gel.jpg' },
+                    { nombre: 'Esmaltado Semipermanente', detalle: 'Brillo intacto hasta por 21 días sobre uña natural con limpieza rusa.', precio: 45000, duracion: 60, imagen: 'img/servicios/unas-semipermanente.jpg' },
+                    { nombre: 'Forrado en Base Rubber / Nivelación', detalle: 'Refuerzo ideal para uñas frágiles o quebradizas con acabado liso.', precio: 55000, duracion: 75, imagen: 'img/servicios/unas-base-rubber.jpg' },
+                    { nombre: 'Manicure Tradicional + Nail Art', detalle: 'Limpieza profunda, hidratación, esmaltado clásico o francés.', precio: 25000, duracion: 45, imagen: 'img/servicios/unas-tradicional-nailart.jpg' }
                 ]
             }
         ]
@@ -61,15 +63,16 @@ const CATALOGO_DETALLES = [
         titulo: 'Pedicure y Spa de Pies',
         subtitulo: 'Descanso, suavidad y estética impecable para tus pies',
         colorPastel: 'bg-pastel-menta',
+        imagen: 'img/servicios/cat-pedicure.jpg',
         grupos: [
             {
                 categoria: 'Tipos de Pedicure',
                 icono: '❀',
                 opciones: [
-                    { nombre: 'Pedicure Tradicional Completo', detalle: 'Limpieza de cutícula, limado anatómico, exfoliación suave y esmaltado.', precio: 30000, duracion: 60 },
-                    { nombre: 'Pedicure Semipermanente', detalle: 'Esmaltado en gel de larga duración con secado inmediato en lámpara LED.', precio: 48000, duracion: 70 },
-                    { nombre: 'PediSpa Detox & Hidratación Profunda', detalle: 'Sales relajantes, remoción de callosidades, mascarilla térmica y masaje.', precio: 60000, duracion: 80 },
-                    { nombre: 'Reconstrucción Estética en Acrílico / Gel', detalle: 'Corrección visual y embellecimiento de uñas en pies.', precio: 65000, duracion: 75 }
+                    { nombre: 'Pedicure Tradicional Completo', detalle: 'Limpieza de cutícula, limado anatómico, exfoliación suave y esmaltado.', precio: 30000, duracion: 60, imagen: 'img/servicios/pedicure-tradicional.jpg' },
+                    { nombre: 'Pedicure Semipermanente', detalle: 'Esmaltado en gel de larga duración con secado inmediato en lámpara LED.', precio: 48000, duracion: 70, imagen: 'img/servicios/pedicure-semipermanente.jpg' },
+                    { nombre: 'PediSpa Detox & Hidratación Profunda', detalle: 'Sales relajantes, remoción de callosidades, mascarilla térmica y masaje.', precio: 60000, duracion: 80, imagen: 'img/servicios/pedispa-detox.jpg' },
+                    { nombre: 'Reconstrucción Estética en Acrílico / Gel', detalle: 'Corrección visual y embellecimiento de uñas en pies.', precio: 65000, duracion: 75, imagen: 'img/servicios/pedicure-reconstruccion.jpg' }
                 ]
             }
         ]
@@ -80,15 +83,16 @@ const CATALOGO_DETALLES = [
         titulo: 'Tinte y Coloración Profesional',
         subtitulo: 'Fórmulas de cuidado capilar con pigmentos vibrantes y duraderos',
         colorPastel: 'bg-pastel-lavanda',
+        imagen: 'img/servicios/cat-tinte.jpg',
         grupos: [
             {
                 categoria: 'Opciones de Coloración',
                 icono: '◈',
                 opciones: [
-                    { nombre: 'Tinte Global (Tono Entero)', detalle: 'Aplicación uniforme de raíz a puntas con brillo espejo y sellado de color.', precio: 120000, duracion: 120 },
-                    { nombre: 'Retoque de Raíz y Cubrimiento de Canas', detalle: 'Cobertura total del crecimiento (hasta 2 cm) e igualación de tono.', precio: 85000, duracion: 90 },
-                    { nombre: 'Baño de Color / Gloss Sin Amoniaco', detalle: 'Reaviva el tono, matiza reflejos no deseados y aporta máxima suavidad.', precio: 95000, duracion: 75 },
-                    { nombre: 'Coloración Fantasía o Tonos Cobrizos', detalle: 'Diseño de tonos intensos con protección de la fibra capilar.', precio: 150000, duracion: 140 }
+                    { nombre: 'Tinte Global (Tono Entero)', detalle: 'Aplicación uniforme de raíz a puntas con brillo espejo y sellado de color.', precio: 120000, duracion: 120, imagen: 'img/servicios/tinte-global.jpg' },
+                    { nombre: 'Retoque de Raíz y Cubrimiento de Canas', detalle: 'Cobertura total del crecimiento (hasta 2 cm) e igualación de tono.', precio: 85000, duracion: 90, imagen: 'img/servicios/tinte-retoque-raiz.jpg' },
+                    { nombre: 'Baño de Color / Gloss Sin Amoniaco', detalle: 'Reaviva el tono, matiza reflejos no deseados y aporta máxima suavidad.', precio: 95000, duracion: 75, imagen: 'img/servicios/tinte-bano-color-gloss.jpg' },
+                    { nombre: 'Coloración Fantasía o Tonos Cobrizos', detalle: 'Diseño de tonos intensos con protección de la fibra capilar.', precio: 150000, duracion: 140, imagen: 'img/servicios/tinte-fantasia-cobrizo.jpg' }
                 ]
             }
         ]
@@ -99,15 +103,16 @@ const CATALOGO_DETALLES = [
         titulo: 'Mechas, Balayage e Iluminación',
         subtitulo: 'Técnicas avanzadas de aclaración con efecto degradado natural',
         colorPastel: 'bg-pastel-lavanda',
+        imagen: 'img/servicios/cat-mechas.jpg',
         grupos: [
             {
                 categoria: 'Técnicas de Diseño de Color',
                 icono: '✨',
                 opciones: [
-                    { nombre: 'Balayage Hand-Painted', detalle: 'Degradado luminoso de medios a puntas con transición suave sin marcas.', precio: 180000, duracion: 150 },
-                    { nombre: 'Babylights / Micro-Mechas', detalle: 'Hilos finos de luz desde la raíz para un rubio delicado y multidimensional.', precio: 195000, duracion: 165 },
-                    { nombre: 'Contorno / Money Piece + Iluminaciones', detalle: 'Enmarca e ilumina el rostro con mechones frontales estratégicos.', precio: 145000, duracion: 120 },
-                    { nombre: 'Morena Iluminada (Caramelo / Avellana)', detalle: 'Reflejos cálidos sin decoloración agresiva, ideal para bases oscuras.', precio: 165000, duracion: 135 }
+                    { nombre: 'Balayage Hand-Painted', detalle: 'Degradado luminoso de medios a puntas con transición suave sin marcas.', precio: 180000, duracion: 150, imagen: 'img/servicios/mechas-balayage.jpg' },
+                    { nombre: 'Babylights / Micro-Mechas', detalle: 'Hilos finos de luz desde la raíz para un rubio delicado y multidimensional.', precio: 195000, duracion: 165, imagen: 'img/servicios/mechas-babylights.jpg' },
+                    { nombre: 'Contorno / Money Piece + Iluminaciones', detalle: 'Enmarca e ilumina el rostro con mechones frontales estratégicos.', precio: 145000, duracion: 120, imagen: 'img/servicios/mechas-contorno-money.jpg' },
+                    { nombre: 'Morena Iluminada (Caramelo / Avellana)', detalle: 'Reflejos cálidos sin decoloración agresiva, ideal para bases oscuras.', precio: 165000, duracion: 135, imagen: 'img/servicios/mechas-morena-iluminada.jpg' }
                 ]
             }
         ]
@@ -118,15 +123,16 @@ const CATALOGO_DETALLES = [
         titulo: 'Peinados y Estilizado para Eventos',
         subtitulo: 'Looks duraderos para grados, bodas, quinceañeras y ocasiones especiales',
         colorPastel: 'bg-pastel-durazno',
+        imagen: 'img/servicios/cat-peinado.jpg',
         grupos: [
             {
                 categoria: 'Estilos de Peinado',
                 icono: '♛',
                 opciones: [
-                    { nombre: 'Ondas Glamour / Ondas al Agua o Sirena', detalle: 'Ondas definidas de alta fijación con preparación térmica protectora.', precio: 60000, duracion: 60 },
-                    { nombre: 'Recogido Elegante (Novias, Grados y Gala)', detalle: 'Moño alto, bajo o trenzado estructurado con fijación de larga duración.', precio: 85000, duracion: 75 },
-                    { nombre: 'Semirecogido Romántico con Trenzas', detalle: 'Combinación de ondas sueltas y detalles trenzados artesanales.', precio: 65000, duracion: 60 },
-                    { nombre: 'Cepillado Profesional + Planchado Seda', detalle: 'Blower con volumen o liso extremo y sellado antifrizz de puntas.', precio: 40000, duracion: 45 }
+                    { nombre: 'Ondas Glamour / Ondas al Agua o Sirena', detalle: 'Ondas definidas de alta fijación con preparación térmica protectora.', precio: 60000, duracion: 60, imagen: 'img/servicios/peinado-ondas-glamour.jpg' },
+                    { nombre: 'Recogido Elegante (Novias, Grados y Gala)', detalle: 'Moño alto, bajo o trenzado estructurado con fijación de larga duración.', precio: 85000, duracion: 75, imagen: 'img/servicios/peinado-recogido-gala.jpg' },
+                    { nombre: 'Semirecogido Romántico con Trenzas', detalle: 'Combinación de ondas sueltas y detalles trenzados artesanales.', precio: 65000, duracion: 60, imagen: 'img/servicios/peinado-semirecogido-trenzas.jpg' },
+                    { nombre: 'Cepillado Profesional + Planchado Seda', detalle: 'Blower con volumen o liso extremo y sellado antifrizz de puntas.', precio: 40000, duracion: 45, imagen: 'img/servicios/peinado-cepillado-planchado.jpg' }
                 ]
             }
         ]
@@ -137,16 +143,17 @@ const CATALOGO_DETALLES = [
         titulo: 'Tratamientos y Recuperación Capilar',
         subtitulo: 'Nutrición profunda, control de frizz y reconstrucción de la hebra',
         colorPastel: 'bg-pastel-rosa',
+        imagen: 'img/servicios/cat-tratamiento.jpg',
         grupos: [
             {
                 categoria: 'Terapias Capilares',
                 icono: '❖',
                 opciones: [
-                    { nombre: 'Hidratación Profunda & Bomba Nutritiva', detalle: 'Mascarilla intensiva con óleos naturales y vaporización para cabello seco.', precio: 55000, duracion: 60 },
-                    { nombre: 'Cauterización / Reconstrucción con Queratina', detalle: 'Repone proteínas perdidas por tintes o decoloraciones y sella la cutícula.', precio: 95000, duracion: 90 },
-                    { nombre: 'Bótox Capilar Antifrizz', detalle: 'Rejuvenecimiento capilar que reduce el encrespamiento y devuelve el brillo.', precio: 120000, duracion: 105 },
-                    { nombre: 'Alisado Orgánico / Aminoácidos', detalle: 'Reducción de volumen y ondas sin formol, dejando el cabello sedoso.', precio: 180000, duracion: 150 },
-                    { nombre: 'Detox de Cuero Cabelludo', detalle: 'Exfoliación suave, oxigenación folicular y masaje estimulante.', precio: 65000, duracion: 60 }
+                    { nombre: 'Hidratación Profunda & Bomba Nutritiva', detalle: 'Mascarilla intensiva con óleos naturales y vaporización para cabello seco.', precio: 55000, duracion: 60, imagen: 'img/servicios/tratamiento-hidratacion.jpg' },
+                    { nombre: 'Cauterización / Reconstrucción con Queratina', detalle: 'Repone proteínas perdidas por tintes o decoloraciones y sella la cutícula.', precio: 95000, duracion: 90, imagen: 'img/servicios/tratamiento-queratina.jpg' },
+                    { nombre: 'Bótox Capilar Antifrizz', detalle: 'Rejuvenecimiento capilar que reduce el encrespamiento y devuelve el brillo.', precio: 120000, duracion: 105, imagen: 'img/servicios/tratamiento-botox-capilar.jpg' },
+                    { nombre: 'Alisado Orgánico / Aminoácidos', detalle: 'Reducción de volumen y ondas sin formol, dejando el cabello sedoso.', precio: 180000, duracion: 150, imagen: 'img/servicios/tratamiento-alisado-organico.jpg' },
+                    { nombre: 'Detox de Cuero Cabelludo', detalle: 'Exfoliación suave, oxigenación folicular y masaje estimulante.', precio: 65000, duracion: 60, imagen: 'img/servicios/tratamiento-detox-cuero.jpg' }
                 ]
             }
         ]
@@ -174,6 +181,7 @@ function buscarDetalleServicio(nombreServicio, precioBase = null, duracionBase =
         titulo: nombreServicio || 'Servicio BellaStyle',
         subtitulo: 'Atención personalizada con productos profesionales de salón',
         colorPastel: 'bg-pastel-rosa',
+        imagen: 'img/servicios/cat-corte.jpg',
         grupos: [
             {
                 categoria: 'Opciones incluidas en este servicio',
@@ -183,13 +191,15 @@ function buscarDetalleServicio(nombreServicio, precioBase = null, duracionBase =
                         nombre: `${nombreServicio} — Sesión Estándar`,
                         detalle: 'Incluye diagnóstico previo con la estilista, aplicación con productos profesionales y acabado final.',
                         precio: precioBase || 45000,
-                        duracion: duracionBase || 60
+                        duracion: duracionBase || 60,
+                        imagen: 'img/servicios/cat-corte.jpg'
                     },
                     {
                         nombre: `${nombreServicio} — Sesión Premium + Hidratación`,
                         detalle: 'Servicio completo acompañado de sellado protector de brillo y asesoría de cuidado en casa.',
                         precio: precioBase ? Number(precioBase) + 20000 : 65000,
-                        duracion: duracionBase ? Number(duracionBase) + 20 : 80
+                        duracion: duracionBase ? Number(duracionBase) + 20 : 80,
+                        imagen: 'img/servicios/cat-tratamiento.jpg'
                     }
                 ]
             }
@@ -202,35 +212,41 @@ function asegurarModalCatalogo() {
     if (document.getElementById('modalCatalogoServicio')) return;
 
     document.body.insertAdjacentHTML('beforeend', `
-      <dialog id="modalCatalogoServicio" class="w-[calc(100%-1rem)] max-w-3xl rounded-3xl border border-bella-300/70 bg-pastel-crema p-0 text-pastel-tinta shadow-2xl backdrop:bg-black/75 backdrop:backdrop-blur-sm sm:w-[calc(100%-2rem)]">
+      <dialog id="modalCatalogoServicio" class="w-[calc(100%-1rem)] max-w-4xl rounded-3xl border border-bella-300/70 bg-pastel-crema p-0 text-pastel-tinta shadow-2xl backdrop:bg-black/75 backdrop:backdrop-blur-sm sm:w-[calc(100%-2rem)]">
         <div class="flex max-h-[88vh] flex-col overflow-hidden">
           <!-- Cabecera en tono pastel + barra rápida para cambiar de categoría sin cerrar -->
           <div class="border-b border-bella-300/60 bg-pastel-perla/90 px-4 py-4 sm:px-6 sm:py-5">
             <div class="flex items-start justify-between gap-3">
-              <div>
-                <span class="inline-flex items-center gap-1.5 rounded-full bg-bella-600/15 px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-bella-800">
-                  &#10022; Catálogo interactivo de especialidades
-                </span>
-                <h2 id="modalCatTitulo" class="mt-1 font-titulo text-2xl font-bold text-pastel-tinta sm:text-4xl"></h2>
-                <p id="modalCatSubtitulo" class="mt-0.5 text-xs font-medium text-pastel-subtinta sm:text-sm"></p>
+              <div class="flex items-center gap-3.5">
+                <img id="modalCatImagenCabecera" src="img/servicios/cat-corte.jpg" alt="" class="h-14 w-14 shrink-0 rounded-2xl object-cover shadow-md ring-2 ring-bella-400/60 sm:h-16 sm:w-16">
+                <div>
+                  <span class="inline-flex items-center gap-1.5 rounded-full bg-bella-600/15 px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-bella-800">
+                    &#10022; Catálogo visual con ejemplos reales
+                  </span>
+                  <h2 id="modalCatTitulo" class="mt-0.5 font-titulo text-2xl font-bold text-pastel-tinta sm:text-4xl"></h2>
+                  <p id="modalCatSubtitulo" class="mt-0.5 text-xs font-medium text-pastel-subtinta sm:text-sm"></p>
+                </div>
               </div>
               <button type="button" id="modalCatCerrar" class="rounded-xl border border-bella-300/80 bg-pastel-crema px-3 py-1.5 text-xl font-bold leading-none text-pastel-tinta transition hover:bg-bella-200" aria-label="Cerrar ventana">&times;</button>
             </div>
             <!-- Pestañas rápidas para explorar otros servicios ahí mismo + buscador rápido -->
             <div id="modalCatNav" class="mt-3.5 flex gap-1.5 overflow-x-auto pb-1"></div>
             <div class="mt-2.5">
-              <input id="buscadorEspecialidadModal" type="search" placeholder="🔎 Filtrar especialidad por nombre o acabado (ej. Balayage, Fade, Acrílicas, Bob...)"
+              <input id="buscadorEspecialidadModal" type="search" placeholder="🔎 Filtrar especialidad por nombre o acabado (ej. Bob, Fade, Acrílicas, Balayage...)"
                      class="campo-pastel py-1.5 text-xs">
             </div>
           </div>
 
-          <!-- Cuerpo con las tarjetas de cada variedad -->
+          <!-- Vista ampliada opcional cuando el cliente toca una miniatura -->
+          <div id="modalCatVistaPrevia" class="hidden border-b border-bella-300/60 bg-pastel-rosa/50 px-4 py-3 sm:px-6"></div>
+
+          <!-- Cuerpo con las tarjetas de cada variedad y su imagen de ejemplo -->
           <div id="modalCatCuerpo" class="flex-1 space-y-5 overflow-y-auto p-4 sm:p-6"></div>
 
           <!-- Pie del modal -->
           <div class="flex flex-wrap items-center justify-between gap-3 border-t border-bella-300/60 bg-pastel-perla/90 px-4 py-3.5 sm:px-6 sm:py-4">
             <p id="modalCatPieTexto" class="text-xs font-semibold text-pastel-subtinta">
-              Presiona el botón de la especialidad que prefieras para elegirla al instante.
+              Haz clic en la foto de cualquier estilo para verla más grande o presiona "Quiero este" para agendar.
             </p>
             <div class="flex items-center gap-2">
               <button type="button" id="modalCatBtnCerrar2" class="rounded-xl border border-bella-400/60 bg-pastel-crema px-4 py-2 text-xs font-bold text-pastel-tinta transition hover:bg-bella-200/70">Cerrar</button>
@@ -249,7 +265,7 @@ function asegurarModalCatalogo() {
     });
 }
 
-// Abre la pantalla emergente mostrando todos los tipos/variedades del servicio seleccionado.
+// Abre la pantalla emergente mostrando todos los tipos/variedades del servicio seleccionado con su foto de ejemplo.
 function abrirModalServicio(nombreServicio, opciones = {}) {
     asegurarModalCatalogo();
 
@@ -257,6 +273,18 @@ function abrirModalServicio(nombreServicio, opciones = {}) {
     const dialog = document.getElementById('modalCatalogoServicio');
     document.getElementById('modalCatTitulo').textContent = detalle.titulo;
     document.getElementById('modalCatSubtitulo').textContent = detalle.subtitulo;
+
+    const imgCab = document.getElementById('modalCatImagenCabecera');
+    if (imgCab) {
+        imgCab.src = detalle.imagen || 'img/servicios/cat-corte.jpg';
+        imgCab.alt = detalle.titulo;
+    }
+
+    const vistaPrevia = document.getElementById('modalCatVistaPrevia');
+    if (vistaPrevia) {
+        vistaPrevia.classList.add('hidden');
+        vistaPrevia.innerHTML = '';
+    }
 
     // Dibuja la barra superior de pestañas para saltar entre Corte, Uñas, Color, Peinados, etc. sin cerrar el modal
     const nav = document.getElementById('modalCatNav');
@@ -297,23 +325,38 @@ function abrirModalServicio(nombreServicio, opciones = {}) {
           <span class="flex h-7 w-7 items-center justify-center rounded-lg ${detalle.colorPastel} text-sm font-bold text-bella-900 shadow-sm">${grupo.icono}</span>
           <h3 class="font-sans text-sm font-bold uppercase tracking-wider text-pastel-tinta">${escapar(grupo.categoria)}</h3>
         </div>
-        <div class="grid gap-3 sm:grid-cols-2">
+        <div class="grid gap-3.5 sm:grid-cols-2">
           ${grupo.opciones.map((op, idx) => {
             const insignia = idx === 0
                 ? '<span class="inline-block rounded-full bg-amber-400/25 px-2 py-0.5 text-[10px] font-extrabold text-amber-950">🔥 Más pedido</span>'
                 : (idx === 1 ? '<span class="inline-block rounded-full bg-bella-500/15 px-2 py-0.5 text-[10px] font-extrabold text-bella-900">✨ Tendencia</span>' : '');
+            const imgOp = op.imagen || detalle.imagen || 'img/servicios/cat-corte.jpg';
             return `
             <div data-tarjeta-especialidad="${escapar((op.nombre + ' ' + op.detalle).toLowerCase())}"
-                 class="flex flex-col justify-between rounded-2xl border border-bella-300/80 bg-pastel-perla/75 p-4 transition hover:border-bella-500 hover:bg-bella-50 shadow-sm">
-              <div>
-                <div class="flex items-start justify-between gap-2">
-                  <div>
-                    ${insignia}
-                    <h4 class="mt-0.5 font-sans text-sm font-bold text-pastel-tinta sm:text-base">${escapar(op.nombre)}</h4>
+                 class="flex flex-col justify-between rounded-2xl border border-bella-300/80 bg-pastel-perla/80 p-3.5 transition hover:border-bella-500 hover:bg-bella-50 shadow-sm">
+              <div class="flex gap-3.5">
+                <!-- Pequeña imagen de ejemplo del corte/servicio -->
+                <button type="button"
+                        data-ampliar-img="${escapar(imgOp)}"
+                        data-ampliar-nombre="${escapar(op.nombre)}"
+                        data-ampliar-detalle="${escapar(op.detalle)}"
+                        data-ampliar-precio="${op.precio}"
+                        title="Haz clic para ampliar ejemplo de ${escapar(op.nombre)}"
+                        class="group/img relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-bella-300/80 bg-white shadow-sm sm:h-24 sm:w-24">
+                  <img src="${escapar(imgOp)}" alt="${escapar(op.nombre)}" loading="lazy"
+                       class="h-full w-full object-cover transition duration-300 group-hover/img:scale-110">
+                  <span class="absolute inset-x-0 bottom-0 bg-black/60 py-0.5 text-center text-[9px] font-bold text-white">🔍 Ejemplo</span>
+                </button>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-start justify-between gap-1.5">
+                    <div>
+                      ${insignia}
+                      <h4 class="mt-0.5 font-sans text-sm font-bold leading-snug text-pastel-tinta sm:text-base">${escapar(op.nombre)}</h4>
+                    </div>
+                    <span class="shrink-0 rounded-lg bg-bella-600/15 px-2 py-0.5 text-xs font-extrabold text-bella-900">${pesos(op.precio)}</span>
                   </div>
-                  <span class="shrink-0 rounded-lg bg-bella-600/15 px-2.5 py-0.5 text-xs font-extrabold text-bella-900">${pesos(op.precio)}</span>
+                  <p class="mt-1 text-xs leading-relaxed text-pastel-subtinta">${escapar(op.detalle)}</p>
                 </div>
-                <p class="mt-1.5 text-xs leading-relaxed text-pastel-subtinta">${escapar(op.detalle)}</p>
               </div>
               <div class="mt-3 flex items-center justify-between border-t border-bella-300/50 pt-2.5">
                 <span class="text-[11px] font-semibold text-pastel-subtinta">&#9719; Duración aprox: ${op.duracion} min</span>
@@ -333,6 +376,28 @@ function abrirModalServicio(nombreServicio, opciones = {}) {
         </div>
       </div>
     `).join('');
+
+    // Ampliar foto de ejemplo dentro del modal al hacer clic sobre la miniatura
+    cuerpo.querySelectorAll('button[data-ampliar-img]').forEach((btnImg) => {
+        btnImg.addEventListener('click', () => {
+            if (!vistaPrevia) return;
+            vistaPrevia.innerHTML = `
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <img src="${escapar(btnImg.dataset.ampliarImg)}" alt="${escapar(btnImg.dataset.ampliarNombre)}"
+                             class="h-28 w-28 rounded-2xl object-cover shadow-lg ring-2 ring-bella-500 sm:h-36 sm:w-36">
+                        <div>
+                            <span class="rounded-full bg-bella-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">Ejemplo de referencia</span>
+                            <h4 class="mt-1 text-lg font-bold text-pastel-tinta">${escapar(btnImg.dataset.ampliarNombre)} · ${pesos(btnImg.dataset.ampliarPrecio)}</h4>
+                            <p class="mt-0.5 max-w-md text-xs text-pastel-subtinta">${escapar(btnImg.dataset.ampliarDetalle)}</p>
+                        </div>
+                    </div>
+                    <button type="button" id="btnCerrarVistaPrevia" class="rounded-xl border border-bella-400/60 bg-white px-3 py-1.5 text-xs font-bold text-pastel-tinta hover:bg-pastel-rosa">Ocultar ejemplo</button>
+                </div>`;
+            vistaPrevia.classList.remove('hidden');
+            document.getElementById('btnCerrarVistaPrevia')?.addEventListener('click', () => vistaPrevia.classList.add('hidden'));
+        });
+    });
 
     cuerpo.querySelectorAll('button[data-elegir-variedad]').forEach((boton) => {
         boton.addEventListener('click', () => {

@@ -657,6 +657,10 @@ function actualizarResumenTotalCita() {
 window.aplicarEspecialidadEnFormulario = function ({ variedad, categoria, precio, duracion }) {
     precioEspecialidadSeleccionada = precio ? Number(precio) : null;
     duracionEspecialidadSeleccionada = duracion ? Number(duracion) : null;
+    const obs = document.getElementById('observaciones');
+    if (obs) {
+        obs.value = `Especialidad elegida: ${variedad} (${categoria})`;
+    }
     const etiquetaVar = document.getElementById('variedadSeleccionada');
     if (etiquetaVar) {
         etiquetaVar.textContent = `✓ Especialidad: ${variedad} (${categoria}) · ${pesos(precioEspecialidadSeleccionada || 0)} · ${duracionEspecialidadSeleccionada || 60} min`;
@@ -825,15 +829,20 @@ async function iniciarClienta() {
         });
     }
 
-    // Píldoras rápidas con todos los servicios disponibles
+    // Píldoras rápidas con todos los servicios disponibles y su foto de ejemplo
     const contenedorBotones = document.getElementById('botonesCatalogoClienta');
     if (contenedorBotones) {
-        contenedorBotones.innerHTML = conEstilista.map((s) => `
+        contenedorBotones.innerHTML = conEstilista.map((s) => {
+            const ficha = typeof buscarDetalleServicio === 'function' ? buscarDetalleServicio(s.nombre) : null;
+            const imgSrv = (ficha && ficha.imagen) ? ficha.imagen : 'img/servicios/cat-corte.jpg';
+            return `
             <button type="button"
                     data-explorar-id="${s.id_servicio}"
-                    class="rounded-xl border border-bella-400/50 bg-pastel-crema px-2.5 py-1 text-xs font-bold text-pastel-tinta shadow-sm transition hover:border-bella-600 hover:bg-pastel-rosa">
-                ${escapar(s.nombre)}
-            </button>`).join('');
+                    class="inline-flex items-center gap-1.5 rounded-xl border border-bella-400/50 bg-pastel-crema px-2.5 py-1 text-xs font-bold text-pastel-tinta shadow-sm transition hover:border-bella-600 hover:bg-pastel-rosa">
+                <img src="${escapar(imgSrv)}" alt="" class="h-5 w-5 rounded-md object-cover">
+                <span>${escapar(s.nombre)}</span>
+            </button>`;
+        }).join('');
         contenedorBotones.querySelectorAll('button[data-explorar-id]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const srv = conEstilista.find((s) => String(s.id_servicio) === String(btn.dataset.explorarId));

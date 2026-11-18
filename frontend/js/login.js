@@ -104,16 +104,24 @@ async function cargarPrecios() {
         lista.innerHTML = '<p class="col-span-2 text-sm text-bella-200/70">Enciende el servidor para ver los precios.</p>';
         return;
     }
-    lista.innerHTML = respuesta.data.map((s) => `
+    lista.innerHTML = respuesta.data.map((s) => {
+        const ficha = typeof buscarDetalleServicio === 'function' ? buscarDetalleServicio(s.nombre) : null;
+        const imgSrv = (ficha && ficha.imagen) ? ficha.imagen : 'img/servicios/cat-corte.jpg';
+        return `
         <button type="button"
                 data-servicio-nombre="${escapar(s.nombre)}"
                 data-servicio-precio="${s.precio}"
                 data-servicio-duracion="${s.duracion_min}"
-                class="group rounded-xl border border-bella-300/20 bg-noche-800/80 p-3 text-left transition hover:-translate-y-0.5 hover:border-bella-300/60 hover:bg-noche-800">
-            <p class="text-sm font-semibold text-bella-50 group-hover:text-bella-200">${escapar(s.nombre)}</p>
-            <p class="text-[11px] text-bella-200/70">${s.duracion_min} min · Ver tipos &rarr;</p>
-            <p class="mt-1 font-bold text-oro">${pesos(s.precio)}</p>
-        </button>`).join('');
+                class="group flex items-center gap-3 rounded-xl border border-bella-300/20 bg-noche-800/80 p-2.5 text-left transition hover:-translate-y-0.5 hover:border-bella-300/60 hover:bg-noche-800">
+            <img src="${escapar(imgSrv)}" alt="${escapar(s.nombre)}" loading="lazy"
+                 class="h-12 w-12 shrink-0 rounded-lg object-cover ring-1 ring-bella-300/40">
+            <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-semibold text-bella-50 group-hover:text-bella-200">${escapar(s.nombre)}</p>
+                <p class="text-[11px] text-bella-200/70">${s.duracion_min} min · Ver fotos y tipos &rarr;</p>
+                <p class="mt-0.5 font-bold text-oro">${pesos(s.precio)}</p>
+            </div>
+        </button>`;
+    }).join('');
 
     lista.querySelectorAll('button[data-servicio-nombre]').forEach((btn) => {
         btn.addEventListener('click', () => {
