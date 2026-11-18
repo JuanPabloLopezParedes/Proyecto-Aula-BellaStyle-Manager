@@ -5,7 +5,7 @@ const clienteModel = require('../models/clienteModel');
 const servicioModel = require('../models/servicioModel');
 const productoModel = require('../models/productoModel');
 const estilistaModel = require('../models/estilistaModel');
-const { enviarCorreoConfirmacionCita, obtenerCorreoDeCita } = require('../utils/correo');
+const { enviarCorreoConfirmacionCita, enviarCorreoActualizacionCita, obtenerCorreoDeCita } = require('../utils/correo');
 
 const APERTURA = 8 * 60;  // 8:00 a.m. en minutos
 const CIERRE = 19 * 60;   // 7:00 p.m. en minutos
@@ -224,6 +224,8 @@ async function crear(req, res) {
         idProducto,
         precioEspecialidad,
         duracionEspecialidad,
+        codigoPromo,
+        aplicarVip,
         observaciones
     } = req.body;
 
@@ -311,7 +313,27 @@ async function crear(req, res) {
             }
         }
 
-        const precioTotal = precioBaseServicio + precioProducto;
+        const subtotal = precioBaseServicio + precioProducto;
+
+        // Evaluar descuento BellaClub VIP (cada 3 citas finalizadas) o cupón BELLA15 (15% OFF)
+        const todasCitas = await citaModel.listarTodas();
+        const finalizadasClienta = todasCitas.filter(
+            (c) => Number(c.id_cliente) === Number(clienta.id_clienta) && c.estado === 'Finalizada'
+        ).length;
+        const cuponLimpio = String(codigoPromo || '').trim().toUpperCase();
+        const tieneBeneficioVip = Boolean(aplicarVip) && finalizadasClienta >= 3;
+        const tieneCuponValido = cuponLimpio === 'BELLA15' || cuponLimpio === 'VIP15';
+
+        let descuentoAplicado = 0;
+        let motivoDescuento = '';
+        if (tieneBeneficioVip || tieneCuponValido) {
+            descuentoAplicado = Math.round(subtotal * 0.15);
+            motivoDescuento = tieneBeneficioVip ? 'BellaClub VIP 15% OFF' : `Cupón ${cuponLimpio} (15% OFF)`;
+        }
+        const precioTotal = Math.max(0, subtotal - descuentoAplicado);
+        const obsFinal = descuentoAplicado > 0
+            ? `${observaciones ? observaciones + ' · ' : ''}[Beneficio aplicado: ${motivoDescuento} (-$${descuentoAplicado.toLocaleString('es-CO')})]`
+            : observaciones;
 
         const idCita = await citaModel.crear({
             idClienta: clienta.id_clienta,
@@ -323,7 +345,7 @@ async function crear(req, res) {
             precio: precioTotal,
             productoAdicional: productoNombre,
             precioProducto,
-            observaciones
+            observaciones: obsFinal
         });
 
         // Si eligió un producto adicional, descontamos 1 unidad del inventario
@@ -345,8 +367,10 @@ async function crear(req, res) {
             precioServicio: precioBaseServicio,
             productoNombre,
             precioProducto,
+            descuentoAplicado,
+            motivoDescuento,
             precioTotal,
-            observaciones
+            observaciones: obsFinal
         });
 
         const mensaje = `Cita BS-${idCita} agendada para el ${fecha} a las ${hora} con ${elegida.nombre || 'tu estilista'}. Se envió confirmación al correo ${correo.para}.`;
@@ -410,7 +434,25 @@ async function cambiarEstado(req, res) {
         if (!actualizada) {
             return res.status(404).json({ success: false, message: 'La cita no existe.' });
         }
-        res.json({ success: true, message: `La cita quedó ${estado.toLowerCase()}.` });
+        // Enviar correo de notificación automática al confirmar, finalizar o cancelar
+        const todas = await citaModel.listarTodas();
+        const c = todas.find((x) => Number(x.id) === Number(req.params.id));
+        if (c && ['Confirmada', 'Cancelada', 'Finalizada'].includes(estado)) {
+            await enviarCorreoActualizacionCita({
+                idCita: c.id,
+                tipoEvento: estado,
+                clienteNombre: c.cliente,
+                clienteEmail: c.cliente_email,
+                estilistaNombre: c.estilista,
+                servicioNombre: c.servicio,
+                fecha: c.fecha,
+                hora: c.hora,
+                duracionMin: c.duracion_min,
+                precioTotal: c.precio,
+                observaciones: c.observaciones
+            });
+        }
+        res.json({ success: true, message: `La cita quedó ${estado.toLowerCase()} y se notificó por correo a la clienta.` });
     } catch (err) {
         console.error('Error al cambiar estado:', err.message);
         res.status(500).json({ success: false, message: 'No se pudo actualizar la cita.' });
@@ -478,11 +520,81 @@ async function reprogramar(req, res) {
         }
 
         await citaModel.reprogramar(cita.id_cita, fecha, hora + ':00');
-        res.json({ success: true, message: 'Cita reprogramada. Queda pendiente de confirmación.' });
+        const todas = await citaModel.listarTodas();
+        const c = todas.find((x) => Number(x.id) === Number(cita.id_cita));
+        if (c) {
+            await enviarCorreoActualizacionCita({
+                idCita: c.id,
+                tipoEvento: 'Reprogramada',
+                clienteNombre: c.cliente,
+                clienteEmail: c.cliente_email,
+                estilistaNombre: c.estilista,
+                servicioNombre: c.servicio,
+                fecha,
+                hora,
+                duracionMin: c.duracion_min,
+                precioTotal: c.precio,
+                observaciones: c.observaciones
+            });
+        }
+        res.json({ success: true, message: 'Cita reprogramada y notificada por correo. Queda pendiente de confirmación.' });
     } catch (err) {
         console.error('Error al reprogramar:', err.message);
         res.status(500).json({ success: false, message: 'No se pudo reprogramar la cita.' });
     }
 }
 
-module.exports = { listar, disponibilidad, crear, verCorreoCita, reprogramar, cambiarEstado, calificar };
+// GET /api/resenas  (Reseñas verificadas para mostrar en la Landing Page)
+async function resenasPublicas(_req, res) {
+    try {
+        const todas = await citaModel.listarTodas();
+        const resenas = todas
+            .filter((c) => Number(c.calificacion) >= 4)
+            .slice(0, 6)
+            .map((c) => ({
+                id: c.id,
+                cliente: c.cliente,
+                estilista: c.estilista,
+                servicio: c.servicio,
+                fecha: c.fecha,
+                calificacion: Number(c.calificacion),
+                comentario: c.comentario_calificacion || 'Excelente atención y resultados profesionales.',
+                especialidad: c.observaciones || ''
+            }));
+        res.json({ success: true, data: resenas });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Error al cargar reseñas.' });
+    }
+}
+
+// GET /api/citas/:id/mensajes  (Chat directo dentro de una cita)
+async function mensajesDeCita(req, res) {
+    try {
+        const msgs = await citaModel.listarMensajesCita(req.params.id);
+        res.json({ success: true, data: msgs });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'No se pudieron cargar los mensajes de la cita.' });
+    }
+}
+
+// POST /api/citas/:id/mensajes  Recibe: { autor, rolAutor, texto }
+async function enviarMensajeCita(req, res) {
+    const texto = typeof req.body.texto === 'string' ? req.body.texto.trim().slice(0, 400) : '';
+    const autor = typeof req.body.autor === 'string' && req.body.autor.trim() ? req.body.autor.trim() : 'Usuario';
+    const rolAutor = typeof req.body.rolAutor === 'string' && req.body.rolAutor.trim() ? req.body.rolAutor.trim() : 'Clienta';
+    if (!texto) {
+        return res.status(400).json({ success: false, message: 'Escribe un mensaje antes de enviar.' });
+    }
+    try {
+        await citaModel.agregarMensajeCita(req.params.id, autor, rolAutor, texto);
+        const msgs = await citaModel.listarMensajesCita(req.params.id);
+        res.status(201).json({ success: true, message: 'Mensaje enviado.', data: msgs });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'No se pudo enviar el mensaje.' });
+    }
+}
+
+module.exports = {
+    listar, disponibilidad, crear, verCorreoCita, reprogramar, cambiarEstado, calificar,
+    resenasPublicas, mensajesDeCita, enviarMensajeCita
+};

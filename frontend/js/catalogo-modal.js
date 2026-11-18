@@ -216,8 +216,12 @@ function asegurarModalCatalogo() {
               </div>
               <button type="button" id="modalCatCerrar" class="rounded-xl border border-bella-300/80 bg-pastel-crema px-3 py-1.5 text-xl font-bold leading-none text-pastel-tinta transition hover:bg-bella-200" aria-label="Cerrar ventana">&times;</button>
             </div>
-            <!-- Pestañas rápidas para explorar otros servicios ahí mismo -->
+            <!-- Pestañas rápidas para explorar otros servicios ahí mismo + buscador rápido -->
             <div id="modalCatNav" class="mt-3.5 flex gap-1.5 overflow-x-auto pb-1"></div>
+            <div class="mt-2.5">
+              <input id="buscadorEspecialidadModal" type="search" placeholder="🔎 Filtrar especialidad por nombre o acabado (ej. Balayage, Fade, Acrílicas, Bob...)"
+                     class="campo-pastel py-1.5 text-xs">
+            </div>
           </div>
 
           <!-- Cuerpo con las tarjetas de cada variedad -->
@@ -294,11 +298,19 @@ function abrirModalServicio(nombreServicio, opciones = {}) {
           <h3 class="font-sans text-sm font-bold uppercase tracking-wider text-pastel-tinta">${escapar(grupo.categoria)}</h3>
         </div>
         <div class="grid gap-3 sm:grid-cols-2">
-          ${grupo.opciones.map((op) => `
-            <div class="flex flex-col justify-between rounded-2xl border border-bella-300/80 bg-pastel-perla/75 p-4 transition hover:border-bella-500 hover:bg-bella-50 shadow-sm">
+          ${grupo.opciones.map((op, idx) => {
+            const insignia = idx === 0
+                ? '<span class="inline-block rounded-full bg-amber-400/25 px-2 py-0.5 text-[10px] font-extrabold text-amber-950">🔥 Más pedido</span>'
+                : (idx === 1 ? '<span class="inline-block rounded-full bg-bella-500/15 px-2 py-0.5 text-[10px] font-extrabold text-bella-900">✨ Tendencia</span>' : '');
+            return `
+            <div data-tarjeta-especialidad="${escapar((op.nombre + ' ' + op.detalle).toLowerCase())}"
+                 class="flex flex-col justify-between rounded-2xl border border-bella-300/80 bg-pastel-perla/75 p-4 transition hover:border-bella-500 hover:bg-bella-50 shadow-sm">
               <div>
                 <div class="flex items-start justify-between gap-2">
-                  <h4 class="font-sans text-sm font-bold text-pastel-tinta sm:text-base">${escapar(op.nombre)}</h4>
+                  <div>
+                    ${insignia}
+                    <h4 class="mt-0.5 font-sans text-sm font-bold text-pastel-tinta sm:text-base">${escapar(op.nombre)}</h4>
+                  </div>
                   <span class="shrink-0 rounded-lg bg-bella-600/15 px-2.5 py-0.5 text-xs font-extrabold text-bella-900">${pesos(op.precio)}</span>
                 </div>
                 <p class="mt-1.5 text-xs leading-relaxed text-pastel-subtinta">${escapar(op.detalle)}</p>
@@ -316,7 +328,8 @@ function abrirModalServicio(nombreServicio, opciones = {}) {
                 </button>
               </div>
             </div>
-          `).join('')}
+          `;
+          }).join('')}
         </div>
       </div>
     `).join('');
@@ -381,6 +394,18 @@ function abrirModalServicio(nombreServicio, opciones = {}) {
             }
         });
     });
+
+    const buscadorModal = document.getElementById('buscadorEspecialidadModal');
+    if (buscadorModal) {
+        buscadorModal.value = '';
+        buscadorModal.oninput = () => {
+            const q = buscadorModal.value.trim().toLowerCase();
+            cuerpo.querySelectorAll('[data-tarjeta-especialidad]').forEach((card) => {
+                const coincide = !q || card.dataset.tarjetaEspecialidad.includes(q);
+                card.classList.toggle('hidden', !coincide);
+            });
+        };
+    }
 
     if (!dialog.open) dialog.showModal();
 }

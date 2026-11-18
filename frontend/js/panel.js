@@ -474,6 +474,114 @@ function verFichaClientaDesdeCita(idCita) {
         });
 }
 
+// Chat directo dentro de una cita específica (Clienta <-> Estilista / Administradora)
+async function abrirChatCita(idCita) {
+    const c = buscarCitaEnMemoria(idCita);
+    if (!c) return;
+
+    const respuesta = await pedir(`/citas/${c.id}/mensajes`);
+    const mensajes = respuesta.data || [];
+
+    const renderizarMensajesCita = (lista) => {
+        if (!lista || lista.length === 0) {
+            return `<p class="py-6 text-center text-xs text-pastel-subtinta">Aún no hay mensajes en esta cita. Escribe aquí cualquier indicación o aviso (ej. "Voy en camino").</p>`;
+        }
+        return lista.map((m) => {
+            const esMio = m.rol_autor === usuario.rol;
+            const bg = m.rol_autor === 'Clienta'
+                ? 'bg-pastel-rosa border-bella-300/80'
+                : 'bg-pastel-menta border-emerald-400/60';
+            return `
+                <div class="flex flex-col ${esMio ? 'items-end' : 'items-start'}">
+                    <span class="text-[10px] font-bold text-pastel-subtinta">${escapar(m.autor)} (${escapar(m.rol_autor)}) · ${escapar(m.hora)}</span>
+                    <div class="mt-0.5 max-w-[85%] rounded-2xl border ${bg} px-3.5 py-2 text-xs font-medium text-pastel-tinta shadow-sm">
+                        ${escapar(m.texto)}
+                    </div>
+                </div>`;
+        }).join('');
+    };
+
+    const htmlChat = `
+        <div class="rounded-xl border border-bella-300/70 bg-pastel-lavanda/75 p-3 text-xs text-pastel-tinta">
+            <p><strong>Cita #BS-${c.id}:</strong> ${escapar(c.servicio)} · ${escapar(c.fecha)} a las ${escapar(c.hora)}</p>
+            <p class="mt-0.5"><strong>Clienta:</strong> ${escapar(c.cliente)} · <strong>Estilista:</strong> ${escapar(c.estilista)}</p>
+        </div>
+        <div id="cajaMensajesCitaModal" class="max-h-60 space-y-2.5 overflow-y-auto rounded-2xl border border-bella-300/70 bg-white p-3 shadow-inner">
+            ${renderizarMensajesCita(mensajes)}
+        </div>
+        <div>
+            <label for="vTextoMensajeCita" class="etiqueta-oscura">Nuevo mensaje para esta cita</label>
+            <input id="vTextoMensajeCita" type="text" class="campo-pastel" placeholder="Escribe un mensaje para la ${usuario.rol === 'Clienta' ? 'estilista' : 'clienta'}..." required>
+        </div>`;
+
+    abrirVentana(`💬 Chat directo de la cita BS-${c.id}`, htmlChat, async () => {
+        const texto = valor('vTextoMensajeCita');
+        const res = await pedir(`/citas/${c.id}/mensajes`, 'POST', {
+            autor: usuario.nombre,
+            rolAutor: usuario.rol,
+            texto
+        });
+        return res;
+    }, 'Enviar mensaje');
+}
+
+// Dibuja la línea de tiempo visual por horas (08:00 a 19:00) para una fecha determinada
+function dibujarTimelineDia(fecha, listaCitas, idContenedor) {
+    const cont = document.getElementById(idContenedor);
+    if (!cont) return;
+
+    const delDia = (listaCitas || []).filter((c) => c.fecha === fecha && c.estado !== 'Cancelada');
+    const horas = [];
+    for (let h = 8; h <= 18; h++) {
+        horas.push(`${String(h).padStart(2, '0')}:00`);
+        horas.push(`${String(h).padStart(2, '0')}:30`);
+    }
+
+    if (delDia.length === 0) {
+        cont.innerHTML = `<p class="rounded-xl border border-bella-300/60 bg-pastel-perla p-3 text-xs font-semibold text-pastel-subtinta">No hay citas programadas para el <strong>${escapar(fecha)}</strong>. Todos los bloques de 08:00 a 19:00 están despejados.</p>`;
+        return;
+    }
+
+    const colores = ['bg-pastel-rosa border-bella-400', 'bg-pastel-lavanda border-purple-400', 'bg-pastel-menta border-emerald-400', 'bg-pastel-durazno border-amber-400'];
+
+    cont.innerHTML = `
+        <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            ${horas.map((horaSlot) => {
+                const [sh, sm] = horaSlot.split(':').map(Number);
+                const minSlot = sh * 60 + sm;
+                const enEsteBloque = delDia.filter((c) => {
+                    const [ch, cm] = String(c.hora).split(':').map(Number);
+                    const ini = ch * 60 + cm;
+                    const fin = ini + Number(c.duracion_min || 60);
+                    return minSlot >= ini && minSlot < fin;
+                });
+
+                if (enEsteBloque.length === 0) {
+                    return `
+                        <div class="flex items-center justify-between rounded-xl border border-bella-200/70 bg-white/70 px-3 py-2 text-xs">
+                            <span class="font-mono font-bold text-pastel-subtinta">${horaSlot}</span>
+                            <span class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-900">Libre</span>
+                        </div>`;
+                }
+
+                return `
+                    <div class="rounded-xl border-2 ${colores[sh % colores.length]} p-2.5 text-xs shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono font-extrabold text-bella-900">${horaSlot}</span>
+                            <span class="rounded-full bg-bella-700 px-2 py-0.5 text-[10px] font-bold text-white">${enEsteBloque.length} en atención</span>
+                        </div>
+                        <div class="mt-1.5 space-y-1">
+                            ${enEsteBloque.map((c) => `
+                                <div class="rounded-lg bg-white/85 px-2 py-1 text-[11px] text-pastel-tinta">
+                                    <p class="font-bold">${escapar(c.servicio)} <span class="text-bella-800">(#BS-${c.id})</span></p>
+                                    <p class="text-pastel-subtinta">👤 ${escapar(c.cliente)} · ✂ ${escapar(c.estilista)} (${c.duracion_min || 60} min)</p>
+                                </div>`).join('')}
+                        </div>
+                    </div>`;
+            }).join('')}
+        </div>`;
+}
+
 // ---------------------------------------------------------------
 // Encabezado
 // ---------------------------------------------------------------
@@ -509,6 +617,7 @@ let citasClienta = [];
 function actualizarResumenTotalCita() {
     const selectSrv = document.getElementById('servicio');
     const selectProd = document.getElementById('productoAdicional');
+    const inputCupon = document.getElementById('codigoPromocional');
     const cajaResumen = document.getElementById('resumenTotalCita');
     if (!selectSrv || !cajaResumen) return;
 
@@ -522,7 +631,13 @@ function actualizarResumenTotalCita() {
         ? productosDisponibles.find((p) => String(p.id_producto) === String(selectProd.value))
         : null;
     const precioProd = prod ? Number(prod.precio) : 0;
-    const total = precioBase + precioProd;
+    const subtotal = precioBase + precioProd;
+
+    const cupon = (inputCupon?.value || '').trim().toUpperCase();
+    const finalizadasCount = citasClienta.filter((c) => c.estado === 'Finalizada').length;
+    const aplicaDescuento = cupon === 'BELLA15' || cupon === 'VIP15' || finalizadasCount >= 3;
+    const descuento = aplicaDescuento ? Math.round(subtotal * 0.15) : 0;
+    const total = Math.max(0, subtotal - descuento);
 
     cajaResumen.innerHTML = `
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -532,6 +647,7 @@ function actualizarResumenTotalCita() {
                     Servicio (${duracionBase} min): <strong>${pesos(precioBase)}</strong>
                     ${prod ? ` + ${escapar(prod.nombre)} (<strong>${pesos(precioProd)}</strong>)` : ''}
                 </p>
+                ${descuento > 0 ? `<p class="mt-0.5 text-xs font-bold text-emerald-900">💎 Beneficio BellaClub / Cupón 15% OFF aplicado: -${pesos(descuento)}</p>` : ''}
             </div>
             <p class="font-titulo text-2xl font-bold text-bella-800">${pesos(total)}</p>
         </div>`;
@@ -688,6 +804,7 @@ async function iniciarClienta() {
     });
 
     document.getElementById('productoAdicional')?.addEventListener('change', actualizarResumenTotalCita);
+    document.getElementById('codigoPromocional')?.addEventListener('input', actualizarResumenTotalCita);
     document.getElementById('estilista').addEventListener('change', actualizarDisponibilidadHoras);
     inputFecha.addEventListener('change', actualizarDisponibilidadHoras);
 
@@ -777,6 +894,8 @@ async function agendarCita(e) {
     }
 
     const idProducto = document.getElementById('productoAdicional')?.value || null;
+    const codigoPromo = document.getElementById('codigoPromocional')?.value.trim() || '';
+    const finalizadasCount = citasClienta.filter((c) => c.estado === 'Finalizada').length;
 
     const respuesta = await pedir('/citas', 'POST', {
         idUsuario: usuario.id,
@@ -787,7 +906,9 @@ async function agendarCita(e) {
         observaciones: document.getElementById('observaciones').value.trim(),
         idProducto,
         precioEspecialidad: precioEspecialidadSeleccionada,
-        duracionEspecialidad: duracionEspecialidadSeleccionada
+        duracionEspecialidad: duracionEspecialidadSeleccionada,
+        codigoPromo,
+        aplicarVip: finalizadasCount >= 3
     });
 
     if (respuesta.success) {
@@ -890,9 +1011,53 @@ async function cargarCitasClienta() {
             tarjetaMetrica('Total historial', citasClienta.length, 'bg-pastel-menta');
     }
 
+    // Tarjeta de Fidelización VIP BellaClub
+    const contClub = document.getElementById('tarjetaBellaClub');
+    if (contClub) {
+        const sellos = Math.min(3, finalizadas.length);
+        const esVip = finalizadas.length >= 3;
+        contClub.innerHTML = `
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <span class="inline-flex items-center gap-1 rounded-full bg-bella-600/15 px-3 py-0.5 text-[11px] font-extrabold uppercase tracking-wider text-bella-900">
+                        💎 Programa de Fidelización BellaClub
+                    </span>
+                    <h3 class="mt-1 text-lg font-bold text-pastel-tinta">
+                        ${esVip ? '¡Felicidades! Eres Clienta VIP con 15% de descuento activo' : `Llevas ${sellos} de 3 visitas completadas para tu 15% OFF VIP`}
+                    </h3>
+                    <p class="text-xs font-medium text-pastel-subtinta">
+                        También puedes usar el cupón promocional <strong>BELLA15</strong> en tu próxima reserva para obtener <strong>15% de descuento inmediato</strong>.
+                    </p>
+                </div>
+                <div class="flex items-center gap-2">
+                    ${[1, 2, 3].map((n) => `
+                        <div class="flex h-11 w-11 items-center justify-center rounded-2xl border-2 text-sm font-extrabold shadow-sm ${
+                            n <= sellos
+                                ? 'border-bella-600 bg-bella-600 text-white'
+                                : 'border-bella-300 bg-pastel-perla text-pastel-subtinta'
+                        }">
+                            ${n <= sellos ? '★' : n}
+                        </div>`).join('')}
+                    <button type="button" id="btnActivarCuponBella" class="ml-2 rounded-xl bg-bella-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700">
+                        Aplicar 15% OFF
+                    </button>
+                </div>
+            </div>`;
+        document.getElementById('btnActivarCuponBella')?.addEventListener('click', () => {
+            const inputCupon = document.getElementById('codigoPromocional');
+            if (inputCupon) {
+                inputCupon.value = 'BELLA15';
+                actualizarResumenTotalCita();
+                avisar('¡Cupón BELLA15 (15% de descuento) aplicado en tu formulario!');
+            }
+        });
+    }
+    actualizarResumenTotalCita();
+
     tabla.innerHTML = citasClienta.length === 0 ? filaVacia(5, 'Todavía no tienes citas agendadas') : citasClienta.map((c) => {
         const activa = c.estado === 'Pendiente' || c.estado === 'Confirmada';
         let acciones =
+            botonEditar('💬 Chat', 'abrirChatCita', c.id) + ' ' +
             botonEditar('🧾 Comprobante', 'verComprobanteCita', c.id) + ' ' +
             botonEditar('✉️ Correo', 'verCorreoCita', c.id) + ' ';
         if (activa) {
@@ -935,6 +1100,25 @@ async function iniciarEstilista() {
     document.getElementById('btnEditarMisServicios').addEventListener('click', () => editarServiciosEstilista(miPerfilEstilista.id_estilista));
     const buscador = document.getElementById('buscarCitaEstilista');
     if (buscador) buscador.addEventListener('input', dibujarCitasEstilista);
+
+    const btnTl = document.getElementById('btnToggleTimelineEstilista');
+    const bloqueTl = document.getElementById('bloqueTimelineEstilista');
+    const inputFechaTl = document.getElementById('fechaTimelineEstilista');
+    if (inputFechaTl) {
+        inputFechaTl.value = fechaDeHoy();
+        inputFechaTl.addEventListener('change', () => {
+            dibujarTimelineDia(inputFechaTl.value, citasEstilistaLista, 'contenedorTimelineEstilista');
+        });
+    }
+    if (btnTl && bloqueTl) {
+        btnTl.addEventListener('click', () => {
+            bloqueTl.classList.toggle('hidden');
+            if (!bloqueTl.classList.contains('hidden')) {
+                dibujarTimelineDia(inputFechaTl?.value || fechaDeHoy(), citasEstilistaLista, 'contenedorTimelineEstilista');
+            }
+        });
+    }
+
     cargarMiPerfilEstilista();
     cargarCitasEstilista();
 }
@@ -1024,6 +1208,7 @@ function dibujarCitasEstilista() {
     const tabla = document.getElementById('tablaCitasEstilista');
     tabla.innerHTML = citas.length === 0 ? filaVacia(6, 'No hay citas que coincidan') : citas.map((c) => {
         let acciones =
+            botonEditar('💬 Chat', 'abrirChatCita', c.id) + ' ' +
             botonEditar('📋 Ficha clienta', 'verFichaClientaDesdeCita', c.id) + ' ' +
             botonEditar('🧾 Comprobante', 'verComprobanteCita', c.id) + ' ';
         if (c.estado === 'Pendiente') {
@@ -1113,7 +1298,112 @@ async function cargarCitasAdmin() {
         tarjetaMetrica('Finalizadas', finalizadas.length, 'bg-pastel-lavanda') +
         tarjetaMetrica('Ingresos', pesos(ingresos), 'bg-pastel-menta');
 
+    dibujarGraficasAdmin();
+    const fechaTl = document.getElementById('fechaTimelineAdmin')?.value || fechaDeHoy();
+    dibujarTimelineDia(fechaTl, citasAdmin, 'contenedorTimelineAdmin');
     dibujarCitasAdmin();
+}
+
+function dibujarGraficasAdmin() {
+    const cont = document.getElementById('graficasAdmin');
+    if (!cont) return;
+
+    const noCanceladas = citasAdmin.filter((c) => c.estado !== 'Cancelada');
+    // 1. Ingresos por servicio
+    const mapaServicios = {};
+    noCanceladas.forEach((c) => {
+        if (!mapaServicios[c.servicio]) mapaServicios[c.servicio] = { total: 0, cantidad: 0 };
+        mapaServicios[c.servicio].total += Number(c.precio || 0);
+        mapaServicios[c.servicio].cantidad += 1;
+    });
+    const rankingSrv = Object.entries(mapaServicios)
+        .map(([nombre, v]) => ({ nombre, ...v }))
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 5);
+    const maxSrv = Math.max(1, ...rankingSrv.map((s) => s.total));
+
+    // 2. Desempeño por estilista
+    const mapaEstilistas = {};
+    noCanceladas.forEach((c) => {
+        if (!mapaEstilistas[c.estilista]) mapaEstilistas[c.estilista] = { total: 0, citas: 0 };
+        mapaEstilistas[c.estilista].total += Number(c.precio || 0);
+        mapaEstilistas[c.estilista].citas += 1;
+    });
+    const rankingEst = Object.entries(mapaEstilistas)
+        .map(([nombre, v]) => ({ nombre, ...v }))
+        .sort((a, b) => b.citas - a.citas)
+        .slice(0, 5);
+    const maxEst = Math.max(1, ...rankingEst.map((e) => e.citas));
+
+    // 3. Distribución por estados
+    const total = Math.max(1, citasAdmin.length);
+    const conteoEstados = [
+        { label: 'Finalizadas', cant: citasAdmin.filter((c) => c.estado === 'Finalizada').length, barra: 'bg-emerald-600' },
+        { label: 'Confirmadas', cant: citasAdmin.filter((c) => c.estado === 'Confirmada').length, barra: 'bg-sky-600' },
+        { label: 'Pendientes',  cant: citasAdmin.filter((c) => c.estado === 'Pendiente').length,  barra: 'bg-amber-500' },
+        { label: 'Canceladas',  cant: citasAdmin.filter((c) => c.estado === 'Cancelada').length,  barra: 'bg-rose-600' }
+    ];
+
+    cont.innerHTML = `
+        <div class="tarjeta-pastel p-4 sm:p-5">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-bella-800">📊 Analítica comercial</span>
+            <h3 class="mt-0.5 text-lg font-bold text-pastel-tinta">Ingresos por servicio</h3>
+            <div class="mt-3 space-y-2.5">
+                ${rankingSrv.map((s) => {
+                    const pct = Math.max(8, Math.round((s.total / maxSrv) * 100));
+                    return `
+                        <div>
+                            <div class="flex justify-between text-xs font-bold text-pastel-tinta">
+                                <span>${escapar(s.nombre)} <span class="text-[11px] font-medium text-pastel-subtinta">(${s.cantidad} citas)</span></span>
+                                <span class="text-bella-800">${pesos(s.total)}</span>
+                            </div>
+                            <div class="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-pastel-perla">
+                                <div class="h-full rounded-full bg-bella-600" style="width:${pct}%"></div>
+                            </div>
+                        </div>`;
+                }).join('')}
+            </div>
+        </div>
+
+        <div class="tarjeta-pastel p-4 sm:p-5">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-bella-800">👑 Productividad del equipo</span>
+            <h3 class="mt-0.5 text-lg font-bold text-pastel-tinta">Citas y facturación por estilista</h3>
+            <div class="mt-3 space-y-2.5">
+                ${rankingEst.map((e) => {
+                    const pct = Math.max(10, Math.round((e.citas / maxEst) * 100));
+                    return `
+                        <div>
+                            <div class="flex justify-between text-xs font-bold text-pastel-tinta">
+                                <span>${escapar(e.nombre)}</span>
+                                <span class="text-emerald-950">${e.citas} citas · ${pesos(e.total)}</span>
+                            </div>
+                            <div class="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-pastel-perla">
+                                <div class="h-full rounded-full bg-emerald-600" style="width:${pct}%"></div>
+                            </div>
+                        </div>`;
+                }).join('')}
+            </div>
+        </div>
+
+        <div class="tarjeta-pastel p-4 sm:p-5">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-bella-800">📈 Estado operativo</span>
+            <h3 class="mt-0.5 text-lg font-bold text-pastel-tinta">Distribución de estados (${citasAdmin.length} citas)</h3>
+            <div class="mt-3 space-y-2.5">
+                ${conteoEstados.map((st) => {
+                    const pct = Math.round((st.cant / total) * 100);
+                    return `
+                        <div>
+                            <div class="flex justify-between text-xs font-bold text-pastel-tinta">
+                                <span>${st.label}</span>
+                                <span>${st.cant} (${pct}%)</span>
+                            </div>
+                            <div class="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-pastel-perla">
+                                <div class="h-full rounded-full ${st.barra}" style="width:${Math.max(4, pct)}%"></div>
+                            </div>
+                        </div>`;
+                }).join('')}
+            </div>
+        </div>`;
 }
 
 function obtenerCitasFiltradasAdmin() {
@@ -1132,6 +1422,7 @@ function dibujarCitasAdmin() {
 
     tabla.innerHTML = citas.length === 0 ? filaVacia(7, 'No se encontraron citas con ese filtro') : citas.map((c) => {
         let acciones =
+            botonEditar('💬 Chat', 'abrirChatCita', c.id) + ' ' +
             botonEditar('🧾 Comprobante', 'verComprobanteCita', c.id) + ' ' +
             botonEditar('✉️ Correo', 'verCorreoCita', c.id) + ' ';
         if (c.estado === 'Pendiente') {
@@ -1832,6 +2123,24 @@ function iniciarAdmin() {
     document.getElementById('btnNuevoServicio').addEventListener('click', () => editarServicio(''));
     document.getElementById('btnNuevoProducto').addEventListener('click', () => editarProducto(''));
 
+    const btnTlAdmin = document.getElementById('btnToggleTimelineAdmin');
+    const bloqueTlAdmin = document.getElementById('bloqueTimelineAdmin');
+    const inputFechaTlAdmin = document.getElementById('fechaTimelineAdmin');
+    if (inputFechaTlAdmin) {
+        inputFechaTlAdmin.value = fechaDeHoy();
+        inputFechaTlAdmin.addEventListener('change', () => {
+            dibujarTimelineDia(inputFechaTlAdmin.value, citasAdmin, 'contenedorTimelineAdmin');
+        });
+    }
+    if (btnTlAdmin && bloqueTlAdmin) {
+        btnTlAdmin.addEventListener('click', () => {
+            bloqueTlAdmin.classList.toggle('hidden');
+            if (!bloqueTlAdmin.classList.contains('hidden')) {
+                dibujarTimelineDia(inputFechaTlAdmin?.value || fechaDeHoy(), citasAdmin, 'contenedorTimelineAdmin');
+            }
+        });
+    }
+
     const inputCal = document.getElementById('fechaCalendarioAdmin');
     if (inputCal) {
         inputCal.value = fechaDeHoy();
@@ -1855,6 +2164,7 @@ const EDITORES = {
     editarClienta,
     editarFichaTecnica,
     verFichaClientaDesdeCita,
+    abrirChatCita,
     verComprobanteCita,
     verCorreoCita,
     calificarCita,

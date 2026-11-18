@@ -122,7 +122,25 @@ async function reprogramar(idCita, fecha, hora) {
     await db.query("UPDATE citas SET fecha = ?, hora = ?, estado = 'Pendiente' WHERE id_cita = ?", [fecha, hora, idCita]);
 }
 
+// Mensajes directos dentro de una cita específica (Clienta <-> Estilista / Salón)
+async function listarMensajesCita(idCita) {
+    const [filas] = await db.query(
+        'SELECT id_mensaje_cita AS id, id_cita, autor, rol_autor, texto, hora FROM mensajes_cita WHERE id_cita = ? ORDER BY id_mensaje_cita ASC',
+        [idCita]
+    );
+    return filas;
+}
+
+async function agregarMensajeCita(idCita, autor, rolAutor, texto) {
+    const [res] = await db.query(
+        'INSERT INTO mensajes_cita (id_cita, autor, rol_autor, texto) VALUES (?, ?, ?, ?)',
+        [idCita, autor, rolAutor, texto]
+    );
+    return res.insertId;
+}
+
 module.exports = {
     listarTodas, listarPorEstilista, listarPorClienta, buscarPorId,
-    ocupadasDelDia, ocupadasClientaDelDia, crear, cambiarEstado, calificar, reprogramar
+    ocupadasDelDia, ocupadasClientaDelDia, crear, cambiarEstado, calificar, reprogramar,
+    listarMensajesCita, agregarMensajeCita
 };

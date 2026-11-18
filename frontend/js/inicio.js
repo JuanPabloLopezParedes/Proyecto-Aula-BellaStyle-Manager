@@ -40,7 +40,34 @@ function animarNumero(elemento, final) {
 
 // 4. Carga servicios y estilistas desde la base de datos y dibuja cada servicio con sus opciones detalladas
 async function cargarDatos() {
-    const [servicios, estilistas] = await Promise.all([pedir('/servicios'), pedir('/estilistas')]);
+    const [servicios, estilistas, resenas] = await Promise.all([
+        pedir('/servicios'),
+        pedir('/estilistas'),
+        pedir('/resenas')
+    ]);
+
+    const contResenas = document.getElementById('listaResenasLanding');
+    if (contResenas && resenas && resenas.success && Array.isArray(resenas.data)) {
+        const colores = ['bg-pastel-rosa', 'bg-pastel-lavanda', 'bg-pastel-menta', 'bg-pastel-durazno'];
+        contResenas.innerHTML = resenas.data.map((r, idx) => {
+            const estrellas = '★'.repeat(Number(r.calificacion) || 5);
+            const bg = colores[idx % colores.length];
+            return `
+                <article class="tarjeta-pastel flex flex-col justify-between p-5">
+                    <div>
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="rounded-full ${bg} px-3 py-0.5 text-xs font-extrabold text-bella-900 shadow-sm">${estrellas} (${r.calificacion}.0)</span>
+                            <span class="text-[11px] font-semibold text-pastel-subtinta">${escapar(r.fecha)}</span>
+                        </div>
+                        <p class="mt-3 text-sm font-medium italic leading-relaxed text-pastel-tinta">"${escapar(r.comentario)}"</p>
+                    </div>
+                    <div class="mt-4 border-t border-bella-300/60 pt-3 text-xs">
+                        <p class="font-bold text-pastel-tinta">${escapar(r.cliente)}</p>
+                        <p class="font-semibold text-bella-800">${escapar(r.servicio)} · Atendió: ${escapar(r.estilista)}</p>
+                    </div>
+                </article>`;
+        }).join('');
+    }
 
     const totales = {
         servicios: servicios.success ? servicios.data.length : 7,

@@ -285,3 +285,47 @@ html.tema-claro .bg-red-500\/15     { background-color: #fee2e2 !important; colo
 html.tema-claro .bg-white\/10       { background-color: #f3dce7 !important; color: #1e1017 !important; }
 html.tema-claro .bg-white\/5        { background-color: #f9ebf2 !important; color: #1e1017 !important; }
 html.tema-claro .texto-brillo       { background-image: linear-gradient(90deg, #9d174d, #b45309, #9d174d) !important; }
+
+/* =====================================================================
+   VISTA DE TARJETAS INTELIGENTES EN CELULAR (100% MOBILE-FIRST)
+   En pantallas pequeñas (< 640px) las tablas se apilan como tarjetas
+   para evitar desplazamientos horizontales incómodos.
+   ===================================================================== */
+@media (max-width: 640px) {
+  .tabla thead {
+    display: none;
+  }
+  .tabla,
+  .tabla tbody,
+  .tabla tr,
+  .tabla td {
+    display: block;
+    width: 100%;
+  }
+  .tabla tbody tr {
+    margin: 0.65rem 0.75rem;
+    width: calc(100% - 1.5rem);
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background-color: rgba(255, 255, 255, 0.04);
+    padding: 0.75rem 0.85rem;
+  }
+  html.tema-claro .tabla tbody tr {
+    border-color: rgba(219, 39, 119, 0.25) !important;
+    background-color: rgba(253, 246, 249, 0.92) !important;
+  }
+  .tabla td {
+    border: 0 !important;
+    padding: 0.3rem 0 !important;
+    text-align: left !important;
+    white-space: normal !important;
+  }
+  .tabla td:last-child {
+    margin-top: 0.45rem;
+    padding-top: 0.55rem !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+}

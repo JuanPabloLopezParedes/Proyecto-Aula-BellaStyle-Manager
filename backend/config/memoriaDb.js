@@ -1,6 +1,10 @@
 // Motor de base de datos en memoria (con los mismos datos de init_db.sql)
 // Se activa automáticamente si MySQL no está conectado o tiene otra clave en el equipo,
-// para que el servidor y todas las funciones del proyecto funcionen de inmediato sin bloqueos.
+// y persiste todos los cambios en disco (estado_memoria.local.json) para no perder pruebas.
+
+const fs = require('fs');
+const path = require('path');
+const RUTA_PERSISTENCIA = path.join(__dirname, 'estado_memoria.local.json');
 
 const datos = {
     usuarios: [
@@ -152,8 +156,38 @@ const datos = {
         { id_mensaje: 6, id_conversacion: 3, autor: 'Asistente', texto: '¡Hola, Lucía! Soy el asistente de BellaStyle.', leido: true, hora: '16:00' },
         { id_mensaje: 7, id_conversacion: 3, autor: 'Visitante', texto: 'Hola, quería confirmar si tienen parqueadero cerca del salón.', leido: true, hora: '16:02' },
         { id_mensaje: 8, id_conversacion: 3, autor: 'Salon',     texto: '¡Hola Lucía! Sí, contamos con bahía de parqueo gratuita justo frente al salón para nuestras clientas.', leido: true, hora: '16:05' }
+    ],
+    mensajes_cita: [
+        { id_mensaje_cita: 1, id_cita: 8, autor: 'César Pestana', rol_autor: 'Clienta', texto: 'Hola Diana, llegaré 5 minutos antes. Quiero mantener el largo superior.', hora: '09:30' },
+        { id_mensaje_cita: 2, id_cita: 8, autor: 'Diana Martínez', rol_autor: 'Estilista', texto: '¡Claro que sí César! Ya tengo todo listo en la estación para tu turno.', hora: '09:35' },
+        { id_mensaje_cita: 3, id_cita: 9, autor: 'Mariana López', rol_autor: 'Clienta', texto: 'Hola Valentina, llevaré el tocado de perlas para probarlo en el recogido.', hora: '11:15' }
     ]
 };
+
+function cargarEstadoDisco() {
+    try {
+        if (fs.existsSync(RUTA_PERSISTENCIA)) {
+            const guardado = JSON.parse(fs.readFileSync(RUTA_PERSISTENCIA, 'utf8'));
+            for (const clave of Object.keys(datos)) {
+                if (Array.isArray(guardado[clave]) && guardado[clave].length > 0) {
+                    datos[clave] = guardado[clave];
+                }
+            }
+        }
+    } catch (err) {
+        console.warn('No se pudo leer estado persistido:', err.message);
+    }
+}
+
+function guardarEstadoDisco() {
+    try {
+        fs.writeFileSync(RUTA_PERSISTENCIA, JSON.stringify(datos, null, 2), 'utf8');
+    } catch (err) {
+        console.warn('No se pudo guardar estado en disco:', err.message);
+    }
+}
+
+cargarEstadoDisco();
 
 function horaActual() {
     const d = new Date();
@@ -215,7 +249,7 @@ function armarCitas(filtroFn = () => true) {
         .sort((a, b) => (b.fecha + b.hora).localeCompare(a.fecha + a.hora));
 }
 
-async function query(sql, params = []) {
+async function ejecutarConsulta(sql, params = []) {
     const s = sql.replace(/\s+/g, ' ').trim();
 
     // Comprobaciones iniciales de app.js
@@ -560,7 +594,45 @@ async function query(sql, params = []) {
         return [msgs.length > 0 ? [{ texto: msgs[msgs.length - 1].texto }] : []];
     }
 
+    // CHAT DIRECTO DENTRO DE CADA CITA (mensajes_cita)
+    if (s.includes('FROM mensajes_cita WHERE id_cita = ?')) {
+        const msgs = (datos.mensajes_cita || [])
+            .filter((m) => String(m.id_cita) === String(params[0]))
+            .map((m) => ({
+                id: m.id_mensaje_cita,
+                id_cita: m.id_cita,
+                autor: m.autor,
+                rol_autor: m.rol_autor,
+                texto: m.texto,
+                hora: m.hora
+            }));
+        return [msgs];
+    }
+    if (s.startsWith('INSERT INTO mensajes_cita')) {
+        if (!Array.isArray(datos.mensajes_cita)) datos.mensajes_cita = [];
+        const id_mensaje_cita = datos.mensajes_cita.length + 1;
+        const [id_cita, autor, rol_autor, texto] = params;
+        datos.mensajes_cita.push({
+            id_mensaje_cita,
+            id_cita: Number(id_cita),
+            autor,
+            rol_autor: rol_autor || 'Clienta',
+            texto,
+            hora: horaActual()
+        });
+        return [{ insertId: id_mensaje_cita, affectedRows: 1 }];
+    }
+
     return [[]];
+}
+
+async function query(sql, params = []) {
+    const resultado = await ejecutarConsulta(sql, params);
+    const s = String(sql || '').trim().toUpperCase();
+    if (s.startsWith('INSERT ') || s.startsWith('UPDATE ') || s.startsWith('DELETE ')) {
+        guardarEstadoDisco();
+    }
+    return resultado;
 }
 
 async function getConnection() {

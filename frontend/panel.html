@@ -44,6 +44,9 @@
       <!-- Métricas rápidas de la clienta -->
       <div id="metricasClienta" class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:col-span-12"></div>
 
+      <!-- Tarjeta de Fidelización VIP BellaClub -->
+      <div id="tarjetaBellaClub" class="tarjeta-pastel p-4 sm:p-5 lg:col-span-12"></div>
+
       <!-- Formulario de agendar en tarjeta pastel suave con letra oscura para máxima claridad -->
       <div class="tarjeta-pastel p-5 sm:p-6 lg:col-span-5">
         <div class="flex items-center justify-between gap-2">
@@ -108,6 +111,11 @@
             <textarea id="observaciones" rows="2" class="campo-pastel" placeholder="Ej: Corte Bob o uñas acrílicas almendradas"></textarea>
           </div>
 
+          <div>
+            <label for="codigoPromocional" class="etiqueta-oscura">7. Cupón promocional o beneficio BellaClub (opcional)</label>
+            <input id="codigoPromocional" type="text" class="campo-pastel uppercase" placeholder="Ej: BELLA15 (15% de descuento)">
+          </div>
+
           <div id="resumenTotalCita" class="rounded-2xl border border-bella-400/60 bg-pastel-rosa/80 px-4 py-3 text-xs text-pastel-tinta"></div>
 
           <button type="submit" class="btn-primario w-full py-3 text-base shadow-md">Confirmar y Agendar Cita</button>
@@ -166,8 +174,29 @@
       <div class="tarjeta mt-6 overflow-hidden">
         <div class="flex flex-wrap items-center justify-between gap-3 p-5 pb-3 sm:p-6 sm:pb-3">
           <h2 class="text-2xl font-bold text-bella-50">Citas asignadas</h2>
-          <input id="buscarCitaEstilista" type="search" class="campo w-full sm:w-64 py-2 text-xs" placeholder="Buscar por clienta o servicio...">
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" id="btnToggleTimelineEstilista" class="rounded-xl border border-bella-300/60 bg-pastel-rosa px-3 py-2 text-xs font-bold text-bella-900 shadow-sm transition hover:bg-bella-200">
+              📅 Ver Agenda Visual por Horas
+            </button>
+            <input id="buscarCitaEstilista" type="search" class="campo w-full sm:w-64 py-2 text-xs" placeholder="Buscar por clienta o servicio...">
+          </div>
         </div>
+
+        <!-- Agenda visual por horas (08:00 a 19:00) para la estilista -->
+        <div id="bloqueTimelineEstilista" class="mx-5 mb-5 hidden rounded-2xl border border-bella-300/70 bg-pastel-crema p-4 text-pastel-tinta shadow-md sm:mx-6">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-bella-800">📅 Línea de tiempo diaria (08:00 – 19:00)</span>
+              <h3 class="text-lg font-bold text-pastel-tinta">Mis bloques horarios ocupados y libres del día</h3>
+            </div>
+            <div class="flex items-center gap-2">
+              <label for="fechaTimelineEstilista" class="text-xs font-bold text-pastel-tinta">Fecha:</label>
+              <input id="fechaTimelineEstilista" type="date" class="campo-pastel w-auto py-1.5 text-xs [color-scheme:light]">
+            </div>
+          </div>
+          <div id="contenedorTimelineEstilista" class="mt-3"></div>
+        </div>
+
         <div class="overflow-x-auto">
           <table class="tabla">
             <thead><tr><th>Código</th><th>Clienta</th><th>Servicio y detalle</th><th>Fecha y hora</th><th>Estado</th><th>Acciones</th></tr></thead>
@@ -180,6 +209,9 @@
     <!-- ===================== ADMINISTRADORA ===================== -->
     <section data-rol="Administradora" class="mt-6 hidden">
       <div id="metricasAdmin" class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"></div>
+
+      <!-- Panel gráfico de analítica en tonos pastel -->
+      <div id="graficasAdmin" class="mt-5 grid gap-4 lg:grid-cols-3"></div>
 
       <nav id="pestanas" class="mt-6 flex gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-noche-900/90 p-1.5">
         <button class="pestana pestana-activa" data-pestana="citas">Citas</button>
@@ -208,6 +240,9 @@
                 <option>Finalizada</option>
                 <option>Cancelada</option>
               </select>
+              <button type="button" id="btnToggleTimelineAdmin" class="rounded-xl border border-bella-300/60 bg-pastel-lavanda px-3 py-2 text-xs font-bold text-bella-900 shadow-sm transition hover:bg-bella-200">
+                📅 Agenda Visual del Día
+              </button>
               <button type="button" id="btnNuevaCitaAdmin" class="btn-primario px-3.5 py-2 text-xs">
                 + Agendar cita a clienta
               </button>
@@ -216,6 +251,22 @@
               </button>
             </div>
           </div>
+
+          <!-- Agenda visual por horas (08:00 a 19:00) para la administradora -->
+          <div id="bloqueTimelineAdmin" class="mx-5 mb-5 hidden rounded-2xl border border-bella-300/70 bg-pastel-crema p-4 text-pastel-tinta shadow-md sm:mx-6">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-bella-800">📅 Línea de tiempo del salón (08:00 – 19:00)</span>
+                <h3 class="text-lg font-bold text-pastel-tinta">Ocupación por hora y estilista</h3>
+              </div>
+              <div class="flex items-center gap-2">
+                <label for="fechaTimelineAdmin" class="text-xs font-bold text-pastel-tinta">Fecha:</label>
+                <input id="fechaTimelineAdmin" type="date" class="campo-pastel w-auto py-1.5 text-xs [color-scheme:light]">
+              </div>
+            </div>
+            <div id="contenedorTimelineAdmin" class="mt-3"></div>
+          </div>
+
           <div class="overflow-x-auto">
             <table class="tabla">
               <thead><tr><th>Código</th><th>Clienta</th><th>Servicio y detalle</th><th>Estilista</th><th>Fecha y hora</th><th>Estado</th><th>Acciones</th></tr></thead>

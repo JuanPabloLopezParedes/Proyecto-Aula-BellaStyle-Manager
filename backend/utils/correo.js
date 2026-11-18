@@ -1,6 +1,6 @@
 // Servicio de notificaciones por correo electrónico de BellaStyle Manager
-// Envía el correo de confirmación real por SMTP (Gmail u otro servidor configurado)
-// cuando se agenda una cita, y guarda también una copia íntegra consultable desde el sistema.
+// Envía correos reales por SMTP (Gmail u otro servidor configurado) al agendar,
+// confirmar, reprogramar, finalizar o cancelar una cita, y guarda copia íntegra en el sistema.
 
 const fs = require('fs');
 const path = require('path');
@@ -63,6 +63,34 @@ function formatearPesos(valor) {
 // Registro en memoria de los correos enviados para consulta inmediata desde el panel
 const historialCorreos = new Map();
 
+async function despacharPorSmtp(smtpCfg, destinatario, asunto, textoPlano, html, registro) {
+    if (!smtpCfg) return;
+    try {
+        const nodemailer = require('nodemailer');
+        const transporter = nodemailer.createTransport({
+            host: smtpCfg.host,
+            port: smtpCfg.port,
+            secure: smtpCfg.port === 465,
+            auth: {
+                user: smtpCfg.user,
+                pass: smtpCfg.pass
+            }
+        });
+        await transporter.sendMail({
+            from: `"BellaStyle Salón de Belleza" <${smtpCfg.user}>`,
+            to: destinatario,
+            subject: asunto,
+            text: textoPlano,
+            html
+        });
+        registro.enviadoSmtp = true;
+        console.log(`Correo enviado exitosamente por SMTP a ${destinatario}`);
+    } catch (err) {
+        console.warn('Aviso SMTP (se guardó copia digital del correo):', err.message);
+        registro.errorSmtp = err.message;
+    }
+}
+
 async function enviarCorreoConfirmacionCita(datosCita) {
     const {
         idCita,
@@ -76,6 +104,8 @@ async function enviarCorreoConfirmacionCita(datosCita) {
         precioServicio,
         productoNombre,
         precioProducto,
+        descuentoAplicado = 0,
+        motivoDescuento = '',
         precioTotal,
         observaciones
     } = datosCita;
@@ -99,6 +129,7 @@ async function enviarCorreoConfirmacionCita(datosCita) {
         `- Estilista asignada: ${estilistaNombre}`,
         `- Fecha y hora: ${fecha} a las ${hora} (Duración estimada: ${duracionMin || 60} min)`,
         productoNombre ? `- Producto adicional incluido: ${productoNombre} (${formatearPesos(precioProducto)})` : null,
+        descuentoAplicado > 0 ? `- Beneficio BellaClub / Cupón (${motivoDescuento || '15% OFF'}): -${formatearPesos(descuentoAplicado)}` : null,
         `- Valor total: ${formatearPesos(precioTotal || precioServicio)}`,
         `- Lugar: BellaStyle Salón de Belleza · Bocagrande, Cra. 3 #8-45, Cartagena`,
         ``,
@@ -149,6 +180,11 @@ async function enviarCorreoConfirmacionCita(datosCita) {
               <td style="padding:10px 14px;font-weight:700;color:#523444;">Producto adicional</td>
               <td style="padding:10px 14px;text-align:right;color:#1e1017;">${productoNombre} (${formatearPesos(precioProducto)})</td>
             </tr>` : ''}
+            ${descuentoAplicado > 0 ? `
+            <tr style="border-bottom:1px solid #f2e2ea;background:#ecfdf5;">
+              <td style="padding:10px 14px;font-weight:700;color:#065f46;">💎 Descuento BellaClub (${motivoDescuento || '15% OFF'})</td>
+              <td style="padding:10px 14px;text-align:right;font-weight:700;color:#065f46;">-${formatearPesos(descuentoAplicado)}</td>
+            </tr>` : ''}
             <tr style="background:#f9e4ee;">
               <td style="padding:12px 14px;font-weight:800;color:#4a1532;">Total estimado</td>
               <td style="padding:12px 14px;text-align:right;font-size:16px;font-weight:800;color:#9d174d;">${formatearPesos(precioTotal || precioServicio)}</td>
@@ -175,33 +211,100 @@ async function enviarCorreoConfirmacionCita(datosCita) {
         enviadoSmtp: false
     };
 
-    if (smtpCfg) {
-        try {
-            const nodemailer = require('nodemailer');
-            const transporter = nodemailer.createTransport({
-                host: smtpCfg.host,
-                port: smtpCfg.port,
-                secure: smtpCfg.port === 465,
-                auth: {
-                    user: smtpCfg.user,
-                    pass: smtpCfg.pass
-                }
-            });
-            await transporter.sendMail({
-                from: `"BellaStyle Salón de Belleza" <${smtpCfg.user}>`,
-                to: destinatario,
-                subject: asunto,
-                text: textoPlano,
-                html
-            });
-            registro.enviadoSmtp = true;
-            console.log(`Correo enviado exitosamente por SMTP a ${destinatario}`);
-        } catch (err) {
-            console.warn('Aviso SMTP (se guardó copia digital del correo):', err.message);
-            registro.errorSmtp = err.message;
-        }
-    }
+    await despacharPorSmtp(smtpCfg, destinatario, asunto, textoPlano, html, registro);
+    historialCorreos.set(Number(idCita), registro);
+    return registro;
+}
 
+// Envía notificación automática cuando la cita es Confirmada, Reprogramada, Finalizada o Cancelada
+async function enviarCorreoActualizacionCita(datosCita) {
+    const {
+        idCita,
+        tipoEvento, // 'Confirmada' | 'Reprogramada' | 'Cancelada' | 'Finalizada'
+        clienteNombre,
+        clienteEmail,
+        estilistaNombre,
+        servicioNombre,
+        fecha,
+        hora,
+        duracionMin,
+        precioTotal,
+        observaciones
+    } = datosCita;
+
+    const smtpCfg = obtenerConfigSmtp();
+    const destinatario = clienteEmail && clienteEmail.includes('@')
+        ? clienteEmail.trim()
+        : (smtpCfg ? smtpCfg.user : 'clienta@bellastyle.com');
+
+    const descripcionDetallada = obtenerDescripcionProcedimiento(servicioNombre, observaciones);
+
+    const titulos = {
+        Confirmada: `Tu cita BS-${idCita} para el ${fecha} a las ${hora} ha sido CONFIRMADA · BellaStyle`,
+        Reprogramada: `Tu cita BS-${idCita} fue REPROGRAMADA para el ${fecha} a las ${hora} · BellaStyle`,
+        Cancelada: `Tu cita BS-${idCita} del ${fecha} ha sido CANCELADA · BellaStyle`,
+        Finalizada: `¡Gracias por tu visita en la cita BS-${idCita}! Califica tu experiencia · BellaStyle`
+    };
+    const mensajesPrincipales = {
+        Confirmada: `Tu cita con <strong>${estilistaNombre}</strong> ha sido <strong>confirmada oficialmente</strong> para el <strong>${fecha}</strong> a las <strong>${hora}</strong>.`,
+        Reprogramada: `Tu cita ha sido <strong>reprogramada exitosamente</strong> para la nueva fecha <strong>${fecha}</strong> a las <strong>${hora}</strong> con <strong>${estilistaNombre}</strong>.`,
+        Cancelada: `Te informamos que tu cita <strong>BS-${idCita}</strong> programada para el <strong>${fecha}</strong> a las <strong>${hora}</strong> ha sido <strong>cancelada</strong>. Puedes agendar un nuevo turno cuando gustes desde tu panel.`,
+        Finalizada: `¡Fue un placer atenderte hoy en <strong>${servicioNombre}</strong> con <strong>${estilistaNombre}</strong>! Ya puedes ingresar a tu panel para calificar con estrellas tu experiencia y sumar puntos en tu tarjeta VIP <strong>BellaClub</strong>.`
+    };
+
+    const asunto = titulos[tipoEvento] || `Actualización de tu cita BS-${idCita} · BellaStyle`;
+    const bannerMsg = mensajesPrincipales[tipoEvento] || `Estado actualizado a ${tipoEvento}.`;
+
+    const textoPlano = [
+        `¡Hola, ${clienteNombre}!`,
+        ``,
+        bannerMsg.replace(/<[^>]+>/g, ''),
+        ``,
+        `DETALLE DE LA CITA BS-${idCita}:`,
+        `- Estado actual: ${tipoEvento}`,
+        `- Servicio: ${servicioNombre}`,
+        `- Procedimiento: ${descripcionDetallada}`,
+        `- Estilista: ${estilistaNombre}`,
+        `- Fecha y hora: ${fecha} a las ${hora} (${duracionMin || 60} min)`,
+        `- Total: ${formatearPesos(precioTotal)}`,
+        ``,
+        `Equipo BellaStyle Salón de Belleza · Cartagena`
+    ].join('\n');
+
+    const html = `
+      <div style="font-family:'Plus Jakarta Sans',Arial,sans-serif;max-width:600px;margin:0 auto;background:#fdf6f9;border:1px solid #e6b8cd;border-radius:20px;overflow:hidden;color:#1e1017;">
+        <div style="background:linear-gradient(135deg,#2b1321,#591c3b);padding:24px 28px;color:#fff8fb;">
+          <p style="margin:0;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#f3d0e0;">Actualización de estado (${tipoEvento}) · Código BS-${idCita}</p>
+          <h1 style="margin:6px 0 0;font-size:24px;font-weight:700;">Bella<span style="color:#ec4899;">Style</span> Salón de Belleza</h1>
+        </div>
+        <div style="padding:24px 28px;">
+          <p style="margin:0 0 10px;font-size:16px;font-weight:700;color:#1e1017;">¡Hola, ${clienteNombre}!</p>
+          <div style="background:#f9e4ee;border-left:4px solid #db2777;padding:14px 16px;border-radius:12px;margin-bottom:18px;">
+            <p style="margin:0;font-size:14px;line-height:1.5;color:#4a1532;">${bannerMsg}</p>
+          </div>
+          <p style="margin:0 0 14px;font-size:13px;line-height:1.55;color:#1e1017;background:#ffffff;border:1px solid #ead1dc;padding:12px;border-radius:12px;">
+            <strong>${servicioNombre}:</strong> ${descripcionDetallada}
+          </p>
+          <p style="margin:0;font-size:12px;color:#523444;">
+            📅 <strong>Fecha:</strong> ${fecha} · <strong>Hora:</strong> ${hora} · <strong>Estilista:</strong> ${estilistaNombre} · <strong>Total:</strong> ${formatearPesos(precioTotal)}
+          </p>
+        </div>
+      </div>
+    `;
+
+    const registro = {
+        idCita: Number(idCita),
+        para: destinatario,
+        asunto,
+        fechaEnvio: new Date().toISOString(),
+        resumen: bannerMsg.replace(/<[^>]+>/g, ''),
+        descripcion: descripcionDetallada,
+        textoPlano,
+        html,
+        enviadoSmtp: false
+    };
+
+    await despacharPorSmtp(smtpCfg, destinatario, asunto, textoPlano, html, registro);
     historialCorreos.set(Number(idCita), registro);
     return registro;
 }
@@ -212,6 +315,7 @@ function obtenerCorreoDeCita(idCita) {
 
 module.exports = {
     enviarCorreoConfirmacionCita,
+    enviarCorreoActualizacionCita,
     obtenerCorreoDeCita,
     obtenerDescripcionProcedimiento,
     obtenerConfigSmtp

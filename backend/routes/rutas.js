@@ -15,10 +15,13 @@ router.post('/login', auth.login);
 router.post('/register', auth.registrar);
 router.post('/recuperar-password', auth.recuperarPassword);
 
-// Citas, disponibilidad en tiempo real, correo de confirmación y calificación
+// Citas, disponibilidad en tiempo real, correo de confirmación, chat de cita y calificación
+router.get('/resenas', citas.resenasPublicas);
 router.get('/citas', protegerRuta(), citas.listar);
 router.get('/citas/disponibilidad', citas.disponibilidad);
 router.get('/citas/:id/correo', protegerRuta(), citas.verCorreoCita);
+router.get('/citas/:id/mensajes', protegerRuta(), citas.mensajesDeCita);
+router.post('/citas/:id/mensajes', protegerRuta(), citas.enviarMensajeCita);
 router.post('/citas', protegerRuta(), citas.crear);
 router.put('/citas/:id/estado', protegerRuta(), citas.cambiarEstado);
 router.put('/citas/:id/reprogramar', protegerRuta(), citas.reprogramar);
