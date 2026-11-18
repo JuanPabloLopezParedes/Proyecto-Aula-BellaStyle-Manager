@@ -177,6 +177,12 @@ function cargarEstadoDisco() {
     } catch (err) {
         console.warn('No se pudo leer estado persistido:', err.message);
     }
+    // Migración: la administradora principal (admin) es la cuenta superior con permiso total
+    datos.usuarios.forEach((u) => {
+        if (u.rol === 'Administradora' && typeof u.puede_crear_admins !== 'boolean') {
+            u.puede_crear_admins = u.username === 'admin';
+        }
+    });
 }
 
 function guardarEstadoDisco() {
@@ -262,10 +268,13 @@ async function ejecutarConsulta(sql, params = []) {
     if (s.startsWith('SELECT * FROM usuarios WHERE username = ?')) {
         return [datos.usuarios.filter((u) => u.username === params[0])];
     }
+    if (s.startsWith('SELECT * FROM usuarios WHERE id_usuario = ?')) {
+        return [datos.usuarios.filter((u) => String(u.id_usuario) === String(params[0]))];
+    }
     if (s.startsWith('INSERT INTO usuarios')) {
         const id_usuario = datos.usuarios.length + 1;
-        const [nombre, username, password, rol, foto] = params;
-        datos.usuarios.push({ id_usuario, nombre, username, password, rol, foto });
+        const [nombre, username, password, rol, foto, puede_crear_admins] = params;
+        datos.usuarios.push({ id_usuario, nombre, username, password, rol, foto, puede_crear_admins: Boolean(Number(puede_crear_admins)) });
         return [{ insertId: id_usuario, affectedRows: 1 }];
     }
     if (s.startsWith('UPDATE usuarios SET password = ? WHERE username = ?')) {

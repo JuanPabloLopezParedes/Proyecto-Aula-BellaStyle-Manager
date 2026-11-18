@@ -35,6 +35,7 @@ CREATE TABLE usuarios (
     password    VARCHAR(255) NOT NULL,
     rol         ENUM('Administradora','Estilista','Clienta') NOT NULL DEFAULT 'Clienta',
     foto        VARCHAR(255),
+    puede_crear_admins BOOLEAN NOT NULL DEFAULT FALSE,
     creado_en   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -164,6 +165,9 @@ INSERT INTO usuarios (id_usuario, nombre, username, password, rol, foto) VALUES
 (10, 'Natalia Vega',      'natalia',   '$2a$10$wPH.tKFjr54oM.IzJVbSHOUYpEJjgJ43.CAekjbRWF3IpVt3P6csa', 'Clienta',        'img/login_cliente.webp'),
 (11, 'Gabriela Castillo', 'gabriela',  '$2a$10$wPH.tKFjr54oM.IzJVbSHOUYpEJjgJ43.CAekjbRWF3IpVt3P6csa', 'Clienta',        'img/login_cliente.webp'),
 (12, 'Sebastián Rojas',   'sebastian', '$2a$10$wPH.tKFjr54oM.IzJVbSHOUYpEJjgJ43.CAekjbRWF3IpVt3P6csa', 'Clienta',        'img/login_cliente.webp');
+
+-- La administradora principal (superior) puede crear otras administradoras
+UPDATE usuarios SET puede_crear_admins = TRUE WHERE username = 'admin';
 
 INSERT INTO clientas (id_clienta, id_usuario, nombres, apellidos, telefono, email, ficha_tecnica) VALUES
 (1, 5,    'César',     'Pestana',   '3001112233', 'cesar@correo.com',     'Cuero cabelludo normal. Prefiere degradado medio con tijera en la parte superior y loción refrescante sin alcohol.'),

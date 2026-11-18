@@ -22,6 +22,13 @@ app.use('/api', rutas);
 // Revisa que la base de datos sea la versión actual (contraseñas cifradas).
 // Si es la versión vieja, el login no funcionaría.
 async function revisarBaseDeDatos() {
+    // Migración automática: permiso para crear otras administradoras
+    const [colPermiso] = await db.query("SHOW COLUMNS FROM usuarios LIKE 'puede_crear_admins'");
+    if (colPermiso.length === 0) {
+        await db.query('ALTER TABLE usuarios ADD COLUMN puede_crear_admins BOOLEAN NOT NULL DEFAULT FALSE');
+        await db.query("UPDATE usuarios SET puede_crear_admins = TRUE WHERE username = 'admin'");
+    }
+
     const [columnas] = await db.query("SHOW COLUMNS FROM citas LIKE 'precio'");
     const [chat] = await db.query("SHOW TABLES LIKE 'mensajes'");
     const [usuarios] = await db.query('SELECT password FROM usuarios LIMIT 1');

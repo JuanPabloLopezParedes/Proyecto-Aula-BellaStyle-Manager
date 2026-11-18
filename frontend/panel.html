@@ -388,7 +388,8 @@
 
         <!-- Registrar usuario -->
         <div data-panel="nuevo" class="hidden p-5 sm:p-6">
-          <h2 class="text-2xl font-bold text-bella-50">Registrar estilista o clienta</h2>
+          <h2 class="text-2xl font-bold text-bella-50">Registrar estilista, clienta o administradora</h2>
+          <p id="notaPermisosAdmin" class="mt-1 text-xs text-bella-200/70"></p>
           <div id="alertaNuevo" class="alerta mt-4"></div>
           <form id="formNuevo" class="mt-5 grid max-w-2xl gap-4 sm:grid-cols-2">
             <div>
@@ -396,6 +397,13 @@
               <select id="nuevoRol" class="campo">
                 <option value="estilista">Estilista</option>
                 <option value="cliente">Clienta</option>
+              </select>
+            </div>
+            <div id="bloquePermisoAdmin" class="hidden">
+              <label for="nuevoPermisoAdmin" class="etiqueta">Permisos de la nueva administradora</label>
+              <select id="nuevoPermisoAdmin" class="campo">
+                <option value="limitado">Limitado: solo crear clientas y estilistas</option>
+                <option value="total">Total: también puede crear otras administradoras</option>
               </select>
             </div>
             <div>

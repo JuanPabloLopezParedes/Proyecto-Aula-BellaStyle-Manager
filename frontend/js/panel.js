@@ -1976,9 +1976,23 @@ function dibujarCasillasNuevo() {
 
 function prepararFormNuevo() {
     const selectRol = document.getElementById('nuevoRol');
-    selectRol.addEventListener('change', () => {
+    const bloquePermiso = document.getElementById('bloquePermisoAdmin');
+    const nota = document.getElementById('notaPermisosAdmin');
+
+    // Solo una administradora con permiso total puede crear otras administradoras
+    if (usuario.puedeCrearAdmins) {
+        selectRol.insertAdjacentHTML('beforeend', '<option value="admin">Administradora</option>');
+        if (nota) nota.textContent = 'Tu cuenta tiene permiso total: puedes crear clientas, estilistas y otras administradoras (con permiso total o limitado).';
+    } else if (nota) {
+        nota.textContent = 'Tu cuenta tiene permiso limitado: puedes crear clientas y estilistas, pero no otras administradoras.';
+    }
+
+    const actualizarBloques = () => {
         document.getElementById('bloqueServicios').classList.toggle('hidden', selectRol.value !== 'estilista');
-    });
+        bloquePermiso.classList.toggle('hidden', selectRol.value !== 'admin');
+    };
+    selectRol.addEventListener('change', actualizarBloques);
+    actualizarBloques();
 
     document.getElementById('formNuevo').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1992,11 +2006,15 @@ function prepararFormNuevo() {
         if (datos.rol === 'estilista') {
             datos.servicios = [...document.querySelectorAll('input[name="nuevoServicio"]:checked')].map((c) => Number(c.value));
         }
+        if (datos.rol === 'admin') {
+            datos.permisoAdmin = document.getElementById('nuevoPermisoAdmin').value;
+        }
 
         const respuesta = await pedir('/register', 'POST', datos);
         if (respuesta.success) {
-            mostrarAlerta(alerta, `Cuenta creada. Usuario: ${datos.username} · Contraseña: ${datos.password}`, 'ok');
+            mostrarAlerta(alerta, `${respuesta.message} Usuario: ${datos.username} · Contraseña: ${datos.password}`, 'ok');
             e.target.reset();
+            actualizarBloques();
             cargarEstilistasAdmin();
             cargarClientasAdmin();
         } else {

@@ -1,54 +1,5 @@
-// Página de registro (register.html). Sirve para los tres roles.
-
-let rolActual = new URLSearchParams(window.location.search).get('rol');
-if (!ROLES[rolActual]) rolActual = 'cliente';
-
-// Botones para cambiar de rol con contraste pastel y letras oscuras
-function dibujarSelector() {
-    const selector = document.getElementById('selectorRol');
-    selector.innerHTML = '';
-    for (const clave in ROLES) {
-        const boton = document.createElement('button');
-        boton.type = 'button';
-        boton.textContent = ROLES[clave].titulo;
-        boton.className = 'rounded-lg px-2 py-2 text-xs font-bold transition '
-            + (clave === rolActual
-                ? 'bg-bella-600 text-white shadow-sm'
-                : 'text-pastel-tinta/75 hover:bg-bella-200/70 hover:text-pastel-tinta');
-        boton.addEventListener('click', () => cambiarRol(clave));
-        selector.appendChild(boton);
-    }
-}
-
-function cambiarRol(clave) {
-    rolActual = clave;
-    document.getElementById('tituloRol').textContent = ROLES[clave].titulo;
-    document.getElementById('imagenRol').src = ROLES[clave].imagen;
-
-    // Muestra solo los campos que corresponden al rol
-    document.querySelectorAll('[data-solo]').forEach((bloque) => {
-        bloque.classList.toggle('hidden', bloque.dataset.solo !== clave);
-    });
-
-    ocultarAlerta(document.getElementById('alerta'));
-    dibujarSelector();
-    history.replaceState(null, '', '?rol=' + clave);
-}
-
-// Casillas de servicios (para estilistas) en tonos pasteles con letra oscura
-async function cargarServicios() {
-    const contenedor = document.getElementById('listaServicios');
-    const respuesta = await pedir('/servicios');
-    if (!respuesta.success) {
-        contenedor.innerHTML = '<p class="text-sm font-semibold text-red-900">No se pudieron cargar los servicios.</p>';
-        return;
-    }
-    contenedor.innerHTML = respuesta.data.map((s) => `
-        <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-bella-300/80 bg-pastel-perla/75 px-3 py-2.5 text-sm font-semibold text-pastel-tinta transition hover:border-bella-500 has-[:checked]:border-bella-600 has-[:checked]:bg-pastel-rosa">
-            <input type="checkbox" name="servicio" value="${s.id_servicio}" class="accent-bella-600 h-4 w-4">
-            ${escapar(s.nombre)}
-        </label>`).join('');
-}
+// Página de registro (register.html). Registro público: SOLO cuentas de Clienta.
+// Las cuentas de Estilista y Administradora las crea una administradora desde su panel.
 
 document.getElementById('formRegistro').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -57,34 +8,22 @@ document.getElementById('formRegistro').addEventListener('submit', async (e) => 
     ocultarAlerta(alerta);
 
     const datos = {
-        rol: rolActual,
+        rol: 'cliente',
         nombre: document.getElementById('nombre').value.trim(),
         username: document.getElementById('usuario').value.trim(),
-        password: document.getElementById('password').value
+        password: document.getElementById('password').value,
+        telefono: document.getElementById('telefono').value.trim(),
+        email: document.getElementById('email').value.trim()
     };
-
-    if (rolActual === 'cliente') {
-        datos.telefono = document.getElementById('telefono').value.trim();
-        datos.email = document.getElementById('email').value.trim();
-    }
-    if (rolActual === 'estilista') {
-        datos.servicios = [...document.querySelectorAll('input[name="servicio"]:checked')].map((c) => Number(c.value));
-    }
-    if (rolActual === 'admin') {
-        datos.codigoAdmin = document.getElementById('codigo').value;
-    }
 
     boton.disabled = true;
     const respuesta = await pedir('/register', 'POST', datos);
 
     if (respuesta.success) {
         mostrarAlerta(alerta, respuesta.message + ' Te llevamos al inicio de sesión...', 'ok');
-        setTimeout(() => { window.location.href = 'index.html?rol=' + rolActual; }, 1800);
+        setTimeout(() => { window.location.href = 'index.html?rol=cliente'; }, 1800);
     } else {
         mostrarAlerta(alerta, respuesta.message);
         boton.disabled = false;
     }
 });
-
-cambiarRol(rolActual);
-cargarServicios();

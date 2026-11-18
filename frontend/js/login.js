@@ -32,7 +32,9 @@ function seleccionarRol(clave, enfocar = true) {
     document.getElementById('tituloRol').textContent = ROLES[clave].titulo;
     document.getElementById('descripcionRol').textContent = ROLES[clave].descripcion;
     document.getElementById('imagenRol').src = ROLES[clave].imagen;
-    document.getElementById('enlaceRegistro').href = 'register.html?rol=' + clave;
+    document.getElementById('enlaceRegistro').href = 'register.html?rol=cliente';
+    // Solo las clientas pueden registrarse por su cuenta; estilistas y administradoras las crea una administradora
+    document.getElementById('enlaceRegistro').classList.toggle('hidden', clave !== 'cliente');
     ocultarAlerta(document.getElementById('alerta'));
     dibujarRoles();
     if (enfocar) document.getElementById('usuario').focus();
