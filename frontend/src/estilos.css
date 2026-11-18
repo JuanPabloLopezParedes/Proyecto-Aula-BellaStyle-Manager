@@ -329,3 +329,64 @@ html.tema-claro .texto-brillo       { background-image: linear-gradient(90deg, #
     gap: 0.35rem;
   }
 }
+
+/* =====================================================================
+   VIDEOS DE FONDO DINÁMICOS (MODO OSCURO Y MODO CLARO)
+   ===================================================================== */
+html {
+  background-color: #0b070a;
+}
+
+body,
+body.bg-noche-950,
+html.tema-claro body {
+  background-color: transparent !important;
+}
+
+.from-noche-950.via-noche-900\/95.to-noche-950 {
+  opacity: 0.18 !important;
+}
+
+.fondo-videos-contenedor {
+  position: fixed;
+  inset: 0;
+  z-index: -20;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.video-fondo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.65s ease-in-out;
+}
+
+.video-fondo-oscuro {
+  opacity: 1;
+}
+
+.video-fondo-claro {
+  opacity: 0;
+}
+
+.velo-video-fondo {
+  position: absolute;
+  inset: 0;
+  background: rgba(12, 6, 10, 0.46);
+  transition: background 0.55s ease-in-out;
+}
+
+html.tema-claro .video-fondo-oscuro {
+  opacity: 0;
+}
+
+html.tema-claro .video-fondo-claro {
+  opacity: 1;
+}
+
+html.tema-claro .velo-video-fondo {
+  background: rgba(253, 246, 249, 0.34);
+}

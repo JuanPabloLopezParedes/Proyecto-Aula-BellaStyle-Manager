@@ -26,14 +26,50 @@ function actualizarTextoBotonesTema() {
     });
 }
 
+function actualizarVideosDeFondo() {
+    const claro = esTemaClaro();
+    const vOscuro = document.getElementById('videoFondoOscuro');
+    const vClaro = document.getElementById('videoFondoClaro');
+    if (!vOscuro || !vClaro) return;
+
+    if (claro) {
+        vOscuro.pause();
+        vClaro.play().catch(() => {});
+    } else {
+        vClaro.pause();
+        vOscuro.play().catch(() => {});
+    }
+}
+
+function inicializarVideosDeFondo() {
+    if (document.getElementById('contenedorVideosFondo')) {
+        actualizarVideosDeFondo();
+        return;
+    }
+    document.body.insertAdjacentHTML('afterbegin', `
+        <div id="contenedorVideosFondo" class="fondo-videos-contenedor" aria-hidden="true">
+            <video id="videoFondoOscuro" class="video-fondo video-fondo-oscuro" muted loop playsinline autoplay preload="auto">
+                <source src="img/fondo_oscuro.mp4" type="video/mp4">
+            </video>
+            <video id="videoFondoClaro" class="video-fondo video-fondo-claro" muted loop playsinline autoplay preload="auto">
+                <source src="img/fondo_claro.mp4" type="video/mp4">
+            </video>
+            <div class="velo-video-fondo"></div>
+        </div>
+    `);
+    actualizarVideosDeFondo();
+}
+
 function alternarTemaClaroOscuro() {
     const html = document.documentElement;
     const ahoraClaro = html.classList.toggle('tema-claro');
     localStorage.setItem('bellaTema', ahoraClaro ? 'claro' : 'oscuro');
     actualizarTextoBotonesTema();
+    actualizarVideosDeFondo();
 }
 
 function inicializarBotonTema() {
+    inicializarVideosDeFondo();
     // Si la página ya tiene botones con [data-toggle-tema], los conectamos
     const existentes = document.querySelectorAll('[data-toggle-tema]');
     if (existentes.length > 0) {
