@@ -1,4 +1,4 @@
-// Controlador de gestión: crear y editar servicios, productos, estilistas y clientas
+// Controlador de gestión: crear y editar servicios, productos, estilistas (incluyendo horarios) y clientas
 const db = require('../config/db');
 const servicioModel = require('../models/servicioModel');
 const productoModel = require('../models/productoModel');
@@ -117,7 +117,7 @@ async function estadoProducto(req, res) {
 }
 
 // ---------------------------------------------------------------
-// ESTILISTAS
+// ESTILISTAS Y HORARIOS SEMANALES
 // ---------------------------------------------------------------
 
 // PUT /api/estilistas/:id/estado   Recibe: { estado: 'Activo' | 'Inactivo' }
@@ -134,9 +134,10 @@ async function estadoEstilista(req, res) {
     } catch (err) { errorServidor(res, err); }
 }
 
-// PUT /api/estilistas/:id/servicios   Recibe: { servicios: [1, 4, 7] }
+// PUT /api/estilistas/:id/servicios   Recibe: { servicios: [1, 4, 7], especialidad?: '...' }
 async function serviciosEstilista(req, res) {
     const servicios = Array.isArray(req.body.servicios) ? req.body.servicios.map(Number) : [];
+    const especialidad = typeof req.body.especialidad === 'string' ? req.body.especialidad.trim() : null;
     if (servicios.length === 0) {
         return res.status(400).json({ success: false, message: 'Selecciona al menos un servicio.' });
     }
@@ -146,8 +147,70 @@ async function serviciosEstilista(req, res) {
     try {
         await conexion.beginTransaction();
         await estilistaModel.reemplazarServicios(conexion, req.params.id, servicios);
+        if (especialidad !== null && especialidad.length >= 2) {
+            await estilistaModel.cambiarEspecialidad(req.params.id, especialidad);
+        }
         await conexion.commit();
-        res.json({ success: true, message: 'Servicios actualizados.' });
+        res.json({ success: true, message: 'Especialización y servicios actualizados.' });
+    } catch (err) {
+        await conexion.rollback();
+        errorServidor(res, err);
+    } finally {
+        conexion.release();
+    }
+}
+
+function aMinutosHora(hora) {
+    if (!/^\d{2}:\d{2}$/.test(hora || '')) return -1;
+    const [h, m] = hora.split(':').map(Number);
+    return h * 60 + m;
+}
+
+// PUT /api/estilistas/:id/horario
+// Recibe: { horarios: [{ dia_semana: 1..6, trabaja: true|false, hora_inicio: '08:00', hora_fin: '18:00' }] }
+async function horarioEstilista(req, res) {
+    const lista = Array.isArray(req.body.horarios) ? req.body.horarios : [];
+    if (lista.length !== 6) {
+        return res.status(400).json({ success: false, message: 'Debes enviar la programación de lunes a sábado (6 días).' });
+    }
+
+    const normalizados = [];
+    for (let dia = 1; dia <= 6; dia++) {
+        const item = lista.find((x) => Number(x.dia_semana) === dia);
+        if (!item) {
+            return res.status(400).json({ success: false, message: `Falta configurar el día ${dia}.` });
+        }
+        const trabaja = Boolean(item.trabaja);
+        const inicio = String(item.hora_inicio || '08:00').slice(0, 5);
+        const fin = String(item.hora_fin || '19:00').slice(0, 5);
+        const minInicio = aMinutosHora(inicio);
+        const minFin = aMinutosHora(fin);
+
+        if (minInicio < 8 * 60 || minFin > 19 * 60 || minInicio >= minFin) {
+            return res.status(400).json({
+                success: false,
+                message: 'El horario laboral debe estar entre las 08:00 y las 19:00, y la hora de salida debe ser posterior a la de entrada.'
+            });
+        }
+        normalizados.push({
+            dia_semana: dia,
+            trabaja,
+            hora_inicio: inicio,
+            hora_fin: fin
+        });
+    }
+
+    const diasActivos = normalizados.filter((d) => d.trabaja).length;
+    if (diasActivos === 0) {
+        return res.status(400).json({ success: false, message: 'La estilista debe tener al menos un día laboral en la semana.' });
+    }
+
+    const conexion = await db.getConnection();
+    try {
+        await conexion.beginTransaction();
+        await estilistaModel.reemplazarHorario(conexion, req.params.id, normalizados);
+        await conexion.commit();
+        res.json({ success: true, message: 'Horario semanal y días de descanso actualizados.' });
     } catch (err) {
         await conexion.rollback();
         errorServidor(res, err);
@@ -181,9 +244,19 @@ async function editarClienta(req, res) {
     } catch (err) { errorServidor(res, err); }
 }
 
+// PUT /api/clientas/:id/ficha   Recibe: { ficha_tecnica }
+async function fichaTecnicaClienta(req, res) {
+    const ficha = typeof req.body.ficha_tecnica === 'string' ? req.body.ficha_tecnica.trim().slice(0, 800) : '';
+    try {
+        const ok = await clienteModel.actualizarFichaTecnica(req.params.id, ficha);
+        if (!ok) return res.status(404).json({ success: false, message: 'La clienta no existe.' });
+        res.json({ success: true, message: 'Ficha técnica capilar y de cuidado guardada.' });
+    } catch (err) { errorServidor(res, err); }
+}
+
 module.exports = {
     crearServicio, editarServicio, estadoServicio,
     crearProducto, editarProducto, estadoProducto,
-    estadoEstilista, serviciosEstilista,
-    editarClienta
+    estadoEstilista, serviciosEstilista, horarioEstilista,
+    editarClienta, fichaTecnicaClienta
 };

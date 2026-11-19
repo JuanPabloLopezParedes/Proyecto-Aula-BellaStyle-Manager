@@ -4,85 +4,70 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Crear cuenta | BellaStyle</title>
-  <link rel="icon" type="image/png" href="img/favicon.png">
-  <link rel="apple-touch-icon" href="img/icono-180.png">
-  <meta name="description" content="BellaStyle: agenda tu cita en el salón de belleza en minutos.">
-  <meta name="theme-color" content="#f7d3e2">
-  <link rel="stylesheet" href="css/estilos.css?v=8">
-  <script src="js/tema.js?v=7"></script>
+  <link rel="stylesheet" href="css/estilos.css">
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen bg-noche-950">
 
+  <!-- Fondo ligeramente oscurecido con destellos suaves -->
   <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-    <div class="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-bella-200/50 blur-3xl"></div>
-    <div class="absolute -bottom-40 -left-20 h-[28rem] w-[28rem] rounded-full bg-lavanda-200/50 blur-3xl"></div>
+    <div class="absolute inset-0 bg-gradient-to-b from-noche-950 via-noche-900/95 to-noche-950"></div>
+    <div class="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-bella-700/15 blur-3xl"></div>
+    <div class="absolute -bottom-40 -left-20 h-[28rem] w-[28rem] rounded-full bg-bella-900/25 blur-3xl"></div>
   </div>
 
   <header class="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
-    <a href="welcome.html" class="flex items-center gap-2 font-titulo text-2xl font-bold"><img src="img/logo.webp" alt="" class="h-9 w-9 rounded-full shadow-sm"><span>Bella<span class="text-bella-700">Style</span></span></a>
-    <a href="index.html" class="text-sm text-tinta/80 transition hover:text-tinta">Ya tengo cuenta</a>
+    <a href="welcome.html" class="font-titulo text-2xl font-bold text-bella-50">Bella<span class="text-bella-400">Style</span></a>
+    <div class="flex items-center gap-2.5">
+      <button type="button" data-toggle-tema class="rounded-lg border border-bella-300/35 bg-noche-900/70 px-3 py-1.5 text-xs font-bold text-bella-100 transition hover:border-bella-300/60 hover:text-white"></button>
+      <a href="index.html" class="rounded-lg border border-bella-300/25 bg-noche-900/70 px-3.5 py-1.5 text-sm font-medium text-bella-100 transition hover:border-bella-300/50 hover:text-white">Ya tengo cuenta &rarr;</a>
+    </div>
   </header>
 
   <main class="mx-auto max-w-xl px-5 pb-12 pt-2">
-    <section class="tarjeta animate-aparecer p-6 sm:p-8">
-
-      <!-- Selector de rol -->
-      <div id="selectorRol" class="grid grid-cols-3 gap-1 rounded-xl bg-tinta/5 p-1"></div>
-
-      <div class="mt-6 flex items-center gap-4">
-        <img id="imagenRol" src="img/rol_clienta.svg" alt="" class="h-14 w-14 rounded-2xl object-cover shadow-sm">
+    <section class="tarjeta-pastel animate-aparecer p-6 sm:p-8">
+<div class="mt-6 flex items-center gap-4">
+        <img id="imagenRol" src="img/login_cliente.webp" alt="" class="h-14 w-14 rounded-2xl object-cover ring-2 ring-bella-500/50 shadow-md">
         <div>
-          <p class="text-xs uppercase tracking-wider text-tinta/80">Crear cuenta de</p>
-          <h1 id="tituloRol" class="text-3xl font-bold">Clienta</h1>
+          <p class="text-xs font-bold uppercase tracking-wider text-pastel-subtinta">Registro exclusivo para</p>
+          <h1 id="tituloRol" class="text-3xl font-bold text-pastel-tinta">Clienta</h1>
         </div>
       </div>
 
-      <div id="alerta" class="alerta mt-6"></div>
+      <div id="alerta" data-tema="pastel" class="alerta mt-6"></div>
+
+      <p class="mt-4 rounded-xl border border-bella-300/70 bg-pastel-lavanda/70 px-3 py-2 text-xs font-semibold text-pastel-tinta">Aquí solo se crean cuentas de <strong>Clienta</strong>. Las cuentas de estilista y administradora las crea una administradora del salón.</p>
 
       <form id="formRegistro" class="mt-6 space-y-5">
         <div>
-          <label for="nombre" class="etiqueta">Nombre completo</label>
-          <input id="nombre" class="campo" type="text" placeholder="Ej: Ana María López" required>
+          <label for="nombre" class="etiqueta-oscura">Nombre completo</label>
+          <input id="nombre" class="campo-pastel" type="text" placeholder="Ej: Ana María López" required>
         </div>
 
         <div class="grid gap-5 sm:grid-cols-2">
           <div>
-            <label for="usuario" class="etiqueta">Usuario</label>
-            <input id="usuario" class="campo" type="text" placeholder="Ej: anamaria" required>
+            <label for="usuario" class="etiqueta-oscura">Usuario</label>
+            <input id="usuario" class="campo-pastel" type="text" placeholder="Ej: anamaria" required>
           </div>
           <div>
-            <label for="password" class="etiqueta">Contraseña</label>
-            <input id="password" class="campo" type="password" minlength="6" placeholder="Mínimo 6 caracteres" required>
+            <label for="password" class="etiqueta-oscura">Contraseña</label>
+            <input id="password" class="campo-pastel" type="password" minlength="6" placeholder="Mínimo 6 caracteres" required>
           </div>
         </div>
 
         <!-- Solo para clienta -->
-        <div data-solo="cliente" class="grid gap-5 sm:grid-cols-2">
+        <div class="grid gap-5 sm:grid-cols-2">
           <div>
-            <label for="telefono" class="etiqueta">Teléfono</label>
-            <input id="telefono" class="campo" type="tel" placeholder="300 000 0000">
+            <label for="telefono" class="etiqueta-oscura">Teléfono</label>
+            <input id="telefono" class="campo-pastel" type="tel" placeholder="300 000 0000">
           </div>
           <div>
-            <label for="email" class="etiqueta">Correo</label>
-            <input id="email" class="campo" type="email" placeholder="tu@correo.com">
+            <label for="email" class="etiqueta-oscura">Correo</label>
+            <input id="email" class="campo-pastel" type="email" placeholder="tu@correo.com">
           </div>
         </div>
 
-        <!-- Solo para estilista -->
-        <div data-solo="estilista">
-          <p class="etiqueta">Servicios que sabes realizar</p>
-          <div id="listaServicios" class="grid gap-2 sm:grid-cols-2">
-            <p class="text-sm text-tinta/80">Cargando servicios...</p>
-          </div>
-        </div>
 
-        <!-- Solo para administradora -->
-        <div data-solo="admin">
-          <label for="codigo" class="etiqueta">Código de administradora</label>
-          <input id="codigo" class="campo" type="password" placeholder="Te lo entrega la dueña del salón">
-        </div>
-
-        <button id="btnRegistrar" type="submit" class="btn-primario w-full py-3">Crear cuenta</button>
+        <button id="btnRegistrar" type="submit" class="btn-primario w-full py-3 text-base shadow-md">Crear cuenta</button>
       </form>
     </section>
   </main>

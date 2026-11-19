@@ -1,26 +1,26 @@
 // Modelo de la tabla citas
 const db = require('../config/db');
 
-// Consulta base: une la cita con clienta, estilista y servicio.
-// También trae la calificación (si ya la tiene) y cuántos mensajes del chat
-// de la cita no ha leído cada una: la clienta y la estilista.
+// Consulta base: une la cita con clienta, estilista y servicio (incluye ficha técnica, producto adicional y calificación)
 const SELECT_CITAS = `
     SELECT c.id_cita AS id,
-           c.id_estilista,
-           c.id_servicio,
+           c.id_cliente,
            CONCAT(cl.nombres, ' ', cl.apellidos) AS cliente,
+           cl.email AS cliente_email,
+           cl.telefono AS cliente_telefono,
+           cl.ficha_tecnica,
            CONCAT(e.nombres, ' ', e.apellidos) AS estilista,
            s.nombre AS servicio,
+           COALESCE(c.duracion_min, s.duracion_min) AS duracion_min,
            c.precio,
+           c.producto_adicional,
+           c.precio_producto,
            DATE_FORMAT(c.fecha, '%Y-%m-%d') AS fecha,
            TIME_FORMAT(c.hora, '%H:%i') AS hora,
            c.estado,
            c.observaciones,
-           (SELECT cal.estrellas FROM calificaciones cal WHERE cal.id_cita = c.id_cita) AS calificacion,
-           (SELECT COUNT(*) FROM mensajes_cita m
-             WHERE m.id_cita = c.id_cita AND m.autor = 'Estilista' AND m.leido = FALSE) AS sin_leer_clienta,
-           (SELECT COUNT(*) FROM mensajes_cita m
-             WHERE m.id_cita = c.id_cita AND m.autor = 'Clienta' AND m.leido = FALSE) AS sin_leer_estilista
+           c.calificacion,
+           c.comentario_calificacion
     FROM citas c
     JOIN clientas cl ON cl.id_clienta = c.id_cliente
     JOIN estilistas e ON e.id_estilista = c.id_estilista
@@ -45,11 +45,12 @@ async function listarPorClienta(idUsuario) {
     return filas;
 }
 
-// Datos de una cita con la duración de su servicio (para reprogramar)
+// Datos de una cita con la duración de su servicio (para reprogramar o calificar)
 async function buscarPorId(idCita) {
     const [filas] = await db.query(`
         SELECT c.id_cita, c.id_cliente, c.id_estilista, c.id_servicio, c.estado,
-               cl.id_usuario AS id_usuario_clienta, s.duracion_min
+               cl.id_usuario AS id_usuario_clienta,
+               COALESCE(c.duracion_min, s.duracion_min) AS duracion_min
         FROM citas c
         JOIN clientas cl ON cl.id_clienta = c.id_cliente
         JOIN servicios s ON s.id_servicio = c.id_servicio
@@ -57,12 +58,11 @@ async function buscarPorId(idCita) {
     return filas[0] || null;
 }
 
-// Citas activas de una estilista en un día, con la duración de cada servicio.
-// Sirve para saber si un horario nuevo se cruza con otro.
-// excluirId: al reprogramar, la propia cita no cuenta como cruce.
+// Citas activas de una estilista en un día, con la duración real de cada cita.
 async function ocupadasDelDia(idEstilista, fecha, excluirId = 0) {
     const [filas] = await db.query(`
-        SELECT TIME_FORMAT(c.hora, '%H:%i') AS hora, s.duracion_min
+        SELECT TIME_FORMAT(c.hora, '%H:%i') AS hora,
+               COALESCE(c.duracion_min, s.duracion_min) AS duracion_min
         FROM citas c
         JOIN servicios s ON s.id_servicio = c.id_servicio
         WHERE c.id_estilista = ? AND c.fecha = ? AND c.estado <> 'Cancelada' AND c.id_cita <> ?`,
@@ -73,7 +73,8 @@ async function ocupadasDelDia(idEstilista, fecha, excluirId = 0) {
 // Citas activas de una clienta en un día (para que no agende dos a la misma hora)
 async function ocupadasClientaDelDia(idClienta, fecha, excluirId = 0) {
     const [filas] = await db.query(`
-        SELECT TIME_FORMAT(c.hora, '%H:%i') AS hora, s.duracion_min
+        SELECT TIME_FORMAT(c.hora, '%H:%i') AS hora,
+               COALESCE(c.duracion_min, s.duracion_min) AS duracion_min
         FROM citas c
         JOIN servicios s ON s.id_servicio = c.id_servicio
         WHERE c.id_cliente = ? AND c.fecha = ? AND c.estado <> 'Cancelada' AND c.id_cita <> ?`,
@@ -81,13 +82,23 @@ async function ocupadasClientaDelDia(idClienta, fecha, excluirId = 0) {
     return filas;
 }
 
-// Se guarda el precio del momento: si luego cambia el precio del servicio,
-// las citas anteriores (ingresos y comisiones) no se alteran.
-async function crear({ idClienta, idEstilista, idServicio, fecha, hora, precio, observaciones }) {
+// Crea una cita guardando duración exacta, precio total y producto adicional (si aplica)
+async function crear({ idClienta, idEstilista, idServicio, fecha, hora, duracionMin, precio, productoAdicional, precioProducto, observaciones }) {
     const [resultado] = await db.query(
-        `INSERT INTO citas (id_cliente, id_estilista, id_servicio, fecha, hora, precio, observaciones, estado)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'Pendiente')`,
-        [idClienta, idEstilista, idServicio, fecha, hora, precio, observaciones || null]
+        `INSERT INTO citas (id_cliente, id_estilista, id_servicio, fecha, hora, duracion_min, precio, producto_adicional, precio_producto, observaciones, estado)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pendiente')`,
+        [
+            idClienta,
+            idEstilista,
+            idServicio,
+            fecha,
+            hora,
+            duracionMin || 60,
+            precio,
+            productoAdicional || null,
+            precioProducto || 0,
+            observaciones || null
+        ]
     );
     return resultado.insertId;
 }
@@ -97,32 +108,39 @@ async function cambiarEstado(idCita, estado) {
     return resultado.affectedRows > 0;
 }
 
+// Guarda la calificación (1 a 5 estrellas) y reseña de una cita finalizada
+async function calificar(idCita, calificacion, comentario) {
+    const [resultado] = await db.query(
+        'UPDATE citas SET calificacion = ?, comentario_calificacion = ? WHERE id_cita = ?',
+        [calificacion, comentario || null, idCita]
+    );
+    return resultado.affectedRows > 0;
+}
+
 // Cambia fecha y hora. La cita vuelve a Pendiente para que el salón la confirme otra vez.
 async function reprogramar(idCita, fecha, hora) {
     await db.query("UPDATE citas SET fecha = ?, hora = ?, estado = 'Pendiente' WHERE id_cita = ?", [fecha, hora, idCita]);
 }
 
-// Quiénes participan en una cita (para el chat y la calificación)
-async function buscarParticipantes(idCita) {
-    const [filas] = await db.query(`
-        SELECT c.id_cita, c.estado, c.id_estilista,
-               cl.id_usuario AS id_usuario_clienta,
-               e.id_usuario AS id_usuario_estilista,
-               CONCAT(cl.nombres, ' ', cl.apellidos) AS cliente,
-               CONCAT(e.nombres, ' ', e.apellidos) AS estilista,
-               s.nombre AS servicio,
-               DATE_FORMAT(c.fecha, '%Y-%m-%d') AS fecha,
-               TIME_FORMAT(c.hora, '%H:%i') AS hora
-        FROM citas c
-        JOIN clientas cl ON cl.id_clienta = c.id_cliente
-        JOIN estilistas e ON e.id_estilista = c.id_estilista
-        JOIN servicios s ON s.id_servicio = c.id_servicio
-        WHERE c.id_cita = ?`, [idCita]);
-    return filas[0] || null;
+// Mensajes directos dentro de una cita específica (Clienta <-> Estilista / Salón)
+async function listarMensajesCita(idCita) {
+    const [filas] = await db.query(
+        'SELECT id_mensaje_cita AS id, id_cita, autor, rol_autor, texto, hora FROM mensajes_cita WHERE id_cita = ? ORDER BY id_mensaje_cita ASC',
+        [idCita]
+    );
+    return filas;
+}
+
+async function agregarMensajeCita(idCita, autor, rolAutor, texto) {
+    const [res] = await db.query(
+        'INSERT INTO mensajes_cita (id_cita, autor, rol_autor, texto) VALUES (?, ?, ?, ?)',
+        [idCita, autor, rolAutor, texto]
+    );
+    return res.insertId;
 }
 
 module.exports = {
-    buscarParticipantes,
     listarTodas, listarPorEstilista, listarPorClienta, buscarPorId,
-    ocupadasDelDia, ocupadasClientaDelDia, crear, cambiarEstado, reprogramar
+    ocupadasDelDia, ocupadasClientaDelDia, crear, cambiarEstado, calificar, reprogramar,
+    listarMensajesCita, agregarMensajeCita
 };

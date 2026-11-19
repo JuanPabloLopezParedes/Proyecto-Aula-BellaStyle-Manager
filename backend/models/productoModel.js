@@ -12,6 +12,11 @@ async function listarTodos() {
     return filas;
 }
 
+async function buscarPorId(idProducto) {
+    const [filas] = await db.query('SELECT * FROM productos WHERE id_producto = ?', [idProducto]);
+    return filas[0] || null;
+}
+
 async function crear({ nombre, precio, stock }) {
     const [resultado] = await db.query(
         'INSERT INTO productos (nombre, precio, stock) VALUES (?, ?, ?)',
@@ -28,9 +33,14 @@ async function actualizar(idProducto, { nombre, precio, stock }) {
     return resultado.affectedRows > 0;
 }
 
+async function descontarStock(idProducto) {
+    const [resultado] = await db.query('UPDATE productos SET stock = stock - 1 WHERE id_producto = ?', [idProducto]);
+    return resultado.affectedRows > 0;
+}
+
 async function cambiarEstado(idProducto, estado) {
     const [resultado] = await db.query('UPDATE productos SET estado = ? WHERE id_producto = ?', [estado, idProducto]);
     return resultado.affectedRows > 0;
 }
 
-module.exports = { listarActivos, listarTodos, crear, actualizar, cambiarEstado };
+module.exports = { listarActivos, listarTodos, buscarPorId, crear, actualizar, descontarStock, cambiarEstado };

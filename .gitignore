@@ -1,0 +1,6 @@
+node_modules/
+backend/node_modules/
+.env
+backend/.env
+backend/config/smtp.local.json
+backend/config/estado_memoria.local.json

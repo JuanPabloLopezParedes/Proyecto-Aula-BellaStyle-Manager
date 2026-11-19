@@ -10,10 +10,10 @@ const app = express();
 // Permite leer JSON en el cuerpo de las peticiones
 app.use(express.json());
 
-// La dirección principal (http://localhost:3000) abre el inicio de sesión
-app.get('/', (req, res) => res.redirect('/index.html'));
+// La dirección principal (http://localhost:3000) abre la Landing Page (welcome.html)
+app.get('/', (req, res) => res.redirect('/welcome.html'));
 
-// Sirve las páginas del frontend (index.html, panel.html, etc.)
+// Sirve las páginas del frontend (welcome.html, index.html, panel.html, etc.)
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Todas las rutas de la API empiezan por /api
@@ -22,17 +22,20 @@ app.use('/api', rutas);
 // Revisa que la base de datos sea la versión actual (contraseñas cifradas).
 // Si es la versión vieja, el login no funcionaría.
 async function revisarBaseDeDatos() {
+    // Migración automática: permiso para crear otras administradoras
+    const [colPermiso] = await db.query("SHOW COLUMNS FROM usuarios LIKE 'puede_crear_admins'");
+    if (colPermiso.length === 0) {
+        await db.query('ALTER TABLE usuarios ADD COLUMN puede_crear_admins BOOLEAN NOT NULL DEFAULT FALSE');
+        await db.query("UPDATE usuarios SET puede_crear_admins = TRUE WHERE username = 'admin'");
+    }
+
     const [columnas] = await db.query("SHOW COLUMNS FROM citas LIKE 'precio'");
     const [chat] = await db.query("SHOW TABLES LIKE 'mensajes'");
-    const [horarios] = await db.query("SHOW TABLES LIKE 'horarios'");
     const [usuarios] = await db.query('SELECT password FROM usuarios LIMIT 1');
     const cifradas = usuarios.length === 0 || usuarios[0].password.startsWith('$2');
     if (columnas.length === 0 || chat.length === 0 || !cifradas) {
         console.error('ATENCION: la base de datos es la version vieja.');
         console.error('Ejecuta INSTALAR_BASE_DE_DATOS.bat y vuelve a iniciar el servidor.');
-    } else if (horarios.length === 0) {
-        console.error('ATENCION: faltan las tablas de horarios, calificaciones y chat de citas.');
-        console.error('Ejecuta "node actualizar_bd.js" (no borra datos) y vuelve a iniciar el servidor.');
     }
 }
 

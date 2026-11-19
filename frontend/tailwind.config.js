@@ -2,8 +2,6 @@
 // "content" le dice a Tailwind en qué archivos buscar clases,
 // así el CSS final solo incluye las clases que se usan.
 module.exports = {
-  // El modo oscuro se activa con la clase "oscuro" en <html> (js/tema.js)
-  darkMode: ['class', '.oscuro'],
   content: {
     relative: true, // las rutas se leen desde esta carpeta (frontend)
     files: ['./*.html', './js/*.js'],
@@ -12,42 +10,36 @@ module.exports = {
   safelist: ['estado-Pendiente', 'estado-Confirmada', 'estado-Finalizada', 'estado-Cancelada'],
   theme: {
     extend: {
-      // Los colores salen de variables CSS (src/estilos.css).
-      // Así el modo oscuro solo cambia las variables y no hay que tocar el HTML.
       colors: {
-        // tinta: color del texto
-        tinta: 'rgb(var(--tinta) / <alpha-value>)',
-        // blanco: fondo de tarjetas y campos (en modo oscuro es un gris oscuro)
-        white: 'rgb(var(--blanco) / <alpha-value>)',
-        // bella: rosa pastel (botones, acentos). Los tonos 600-800 se usan para texto.
+        // Paleta propia del salón (tonos pastel de lujo y fondos mate cálidos)
         bella: {
-          50: 'rgb(var(--bella-50) / <alpha-value>)',
-          100: 'rgb(var(--bella-100) / <alpha-value>)',
-          200: 'rgb(var(--bella-200) / <alpha-value>)',
-          300: 'rgb(var(--bella-300) / <alpha-value>)',
-          400: 'rgb(var(--bella-400) / <alpha-value>)',
-          500: 'rgb(var(--bella-500) / <alpha-value>)',
-          600: 'rgb(var(--bella-600) / <alpha-value>)',
-          700: 'rgb(var(--bella-700) / <alpha-value>)',
-          800: 'rgb(var(--bella-800) / <alpha-value>)',
-          900: 'rgb(var(--bella-900) / <alpha-value>)',
+          50:  '#fdf4f7',
+          100: '#fbe8ef',
+          200: '#f5d0df',
+          300: '#ebb0c8',
+          400: '#dc85a9',
+          500: '#c75b89',
+          600: '#ab406e',
+          700: '#8d2f58',
+          800: '#6e2445',
+          900: '#4a182f',
         },
-        // lavanda: segundo color pastel (detalles)
-        lavanda: {
-          100: 'rgb(var(--lavanda-100) / <alpha-value>)',
-          200: 'rgb(var(--lavanda-200) / <alpha-value>)',
-          300: 'rgb(var(--lavanda-300) / <alpha-value>)',
-          400: 'rgb(var(--lavanda-400) / <alpha-value>)',
-          500: 'rgb(var(--lavanda-500) / <alpha-value>)',
+        pastel: {
+          crema:    '#f3e9eb',
+          perla:    '#eadce0',
+          rosa:     '#f2d7e2',
+          lavanda:  '#e4dcf2',
+          menta:    '#d8efe6',
+          durazno:  '#f7e3d4',
+          tinta:    '#1e1017',
+          subtinta: '#47303c',
         },
-        // noche: fondo de la página
         noche: {
-          800: 'rgb(var(--noche-800) / <alpha-value>)',
-          900: 'rgb(var(--noche-900) / <alpha-value>)',
-          950: 'rgb(var(--noche-950) / <alpha-value>)',
+          800: '#1c0e17',
+          900: '#11080e',
+          950: '#090408',
         },
-        // oro: dorado para precios
-        oro: 'rgb(var(--oro) / <alpha-value>)',
+        oro: '#d4af7a',
       },
       fontFamily: {
         titulo: ['"Cormorant Garamond"', 'serif'],

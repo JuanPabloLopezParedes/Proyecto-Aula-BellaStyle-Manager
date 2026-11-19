@@ -1,74 +1,84 @@
-// Controlador de citas: listar, horas libres, crear (con asignación automática),
-// reprogramar y cambiar estado
+// Controlador de citas: listar, consultar disponibilidad en vivo, crear (con envío de correo y producto adicional),
+// reprogramar, cambiar estado y calificar atención.
 const citaModel = require('../models/citaModel');
 const clienteModel = require('../models/clienteModel');
 const servicioModel = require('../models/servicioModel');
+const productoModel = require('../models/productoModel');
 const estilistaModel = require('../models/estilistaModel');
-const horarioModel = require('../models/horarioModel');
-const {
-    APERTURA, CIERRE, INTERVALO, aMinutos, aHora, seCruzan,
-    diaDeLaSemana, ahoraColombia, fechaValida, horaValida
-} = require('../utils/agenda');
+const { enviarCorreoConfirmacionCita, enviarCorreoActualizacionCita, obtenerCorreoDeCita } = require('../utils/correo');
 
+const APERTURA = 8 * 60;  // 8:00 a.m. en minutos
+const CIERRE = 19 * 60;   // 7:00 p.m. en minutos
 const ESTADOS = ['Pendiente', 'Confirmada', 'Finalizada', 'Cancelada'];
 
-// Carga de una sola vez lo que se necesita para saber si una estilista
-// puede atender un día: su horario, si está ausente y las citas que ya tiene.
-// excluirId: al reprogramar, la propia cita no se cuenta.
-async function agendaDelDia(idEstilista, fecha, excluirId = 0) {
-    const horario = await horarioModel.horarioDelDia(idEstilista, diaDeLaSemana(fecha));
-    const ausente = await horarioModel.ausenteEn(idEstilista, fecha);
+// "14:30" -> 870 minutos
+function aMinutos(hora) {
+    const [h, m] = hora.split(':').map(Number);
+    return h * 60 + m;
+}
+
+// Dos rangos se cruzan si uno empieza antes de que el otro termine
+function seCruzan(inicioA, finA, inicioB, finB) {
+    return inicioA < finB && inicioB < finA;
+}
+
+// Revisa si la estilista trabaja ese día dentro de su turno y si está libre entre inicio y fin.
+async function revisarDisponibilidad(idEstilista, fecha, inicio, fin, excluirId = 0) {
+    const diaSemana = new Date(fecha + 'T12:00:00').getDay();
+    const turno = await estilistaModel.obtenerTurnoDia(idEstilista, diaSemana);
+
+    if (!turno.trabaja) {
+        return {
+            libre: false,
+            carga: 999,
+            motivo: 'La estilista tiene día de descanso en esa fecha. Por favor elige otro día u otra estilista.'
+        };
+    }
+
+    const inicioTurno = aMinutos(turno.hora_inicio);
+    const finTurno = aMinutos(turno.hora_fin);
+    if (inicio < inicioTurno || fin > finTurno) {
+        return {
+            libre: false,
+            carga: 999,
+            motivo: `La estilista atiende ese día de ${turno.hora_inicio} a ${turno.hora_fin}.`
+        };
+    }
+
     const citas = await citaModel.ocupadasDelDia(idEstilista, fecha, excluirId);
+    const ocupada = citas.some((c) => {
+        const otroInicio = aMinutos(c.hora);
+        return seCruzan(inicio, fin, otroInicio, otroInicio + Number(c.duracion_min || 60));
+    });
     return {
-        horario,
-        ausente,
-        ocupadas: citas.map((c) => ({ inicio: aMinutos(c.hora), fin: aMinutos(c.hora) + c.duracion_min }))
+        libre: !ocupada,
+        carga: citas.length,
+        motivo: ocupada ? 'La estilista ya tiene una cita en ese horario.' : null
     };
 }
-
-// ¿Puede la estilista atender entre inicio y fin?
-// Devuelve null si puede, o el motivo por el que no:
-// 'ausente', 'no_trabaja', 'fuera_de_horario' u 'ocupada'.
-function motivoNoDisponible(agenda, inicio, fin) {
-    if (agenda.ausente) return 'ausente';
-    if (!agenda.horario) return 'no_trabaja';
-    if (inicio < aMinutos(agenda.horario.hora_inicio) || fin > aMinutos(agenda.horario.hora_fin)) {
-        return 'fuera_de_horario';
-    }
-    if (agenda.ocupadas.some((o) => seCruzan(inicio, fin, o.inicio, o.fin))) return 'ocupada';
-    return null;
-}
-
-const MENSAJES_NO_DISPONIBLE = {
-    ausente: 'La estilista no trabaja ese día (está ausente).',
-    no_trabaja: 'La estilista no trabaja ese día de la semana.',
-    fuera_de_horario: 'Esa hora está fuera del horario de la estilista.',
-    ocupada: 'La estilista ya tiene una cita en ese horario.'
-};
 
 // Revisa si la clienta ya tiene otra cita que se cruce con ese horario
 async function clientaTieneCruce(idClienta, fecha, inicio, fin, excluirId = 0) {
     const citas = await citaModel.ocupadasClientaDelDia(idClienta, fecha, excluirId);
     return citas.some((c) => {
         const otroInicio = aMinutos(c.hora);
-        return seCruzan(inicio, fin, otroInicio, otroInicio + c.duracion_min);
+        return seCruzan(inicio, fin, otroInicio, otroInicio + Number(c.duracion_min || 60));
     });
 }
 
-// Reglas de fecha y hora. Devuelve el mensaje de error, o null si todo está bien.
+// Reglas de fecha y hora
 function validarFechaHora(fecha, hora) {
-    if (!horaValida(hora)) {
+    if (!/^\d{2}:\d{2}$/.test(hora || '')) {
         return 'La hora no tiene un formato válido.';
     }
-    const ahora = ahoraColombia();
-    if (!fechaValida(fecha) || fecha < ahora.fecha) {
+    const dia = new Date(fecha + 'T12:00:00');
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    if (isNaN(dia) || dia < hoy) {
         return 'La fecha no puede ser anterior a hoy.';
     }
-    if (diaDeLaSemana(fecha) === 0) {
+    if (dia.getDay() === 0) {
         return 'El salón no atiende los domingos.';
-    }
-    if (fecha === ahora.fecha && aMinutos(hora) <= ahora.minutos) {
-        return 'Esa hora ya pasó. Escoge una hora más tarde.';
     }
     return null;
 }
@@ -76,6 +86,109 @@ function validarFechaHora(fecha, hora) {
 // La cita completa debe caber entre 8:00 y 19:00
 function fueraDeHorario(inicio, fin) {
     return inicio < APERTURA || fin > CIERRE;
+}
+
+// GET /api/citas/disponibilidad?fecha=2026-11-02&idServicio=1&idEstilista=2&idUsuario=5&duracionEspecialidad=60
+async function disponibilidad(req, res) {
+    const { fecha, idServicio, idEstilista, idUsuario, idClienta, excluirId, duracionEspecialidad } = req.query;
+    if (!fecha || !idServicio) {
+        return res.status(400).json({ success: false, message: 'Falta fecha o servicio.' });
+    }
+
+    const dia = new Date(fecha + 'T12:00:00');
+    if (isNaN(dia) || dia.getDay() === 0) {
+        return res.json({ success: true, domingo: true, data: [] });
+    }
+    const diaSemana = dia.getDay();
+
+    try {
+        const servicio = await servicioModel.buscarPorId(idServicio);
+        if (!servicio) {
+            return res.status(404).json({ success: false, message: 'El servicio no existe.' });
+        }
+
+        const duracionReal = Number(duracionEspecialidad) >= 15
+            ? Number(duracionEspecialidad)
+            : Number(servicio.duracion_min || 60);
+
+        const candidatas = idEstilista
+            ? [{ id_estilista: Number(idEstilista) }]
+            : await estilistaModel.capacitadasPara(idServicio);
+
+        let citasClienta = [];
+        let clientaObj = null;
+        if (idClienta) {
+            clientaObj = await clienteModel.buscarPorId(idClienta);
+        } else if (idUsuario) {
+            clientaObj = await clienteModel.buscarPorUsuario(idUsuario);
+        }
+        if (clientaObj) {
+            citasClienta = await citaModel.ocupadasClientaDelDia(clientaObj.id_clienta, fecha, Number(excluirId) || 0);
+        }
+
+        const mapaCitasEstilista = new Map();
+        const mapaTurnoEstilista = new Map();
+        for (const est of candidatas) {
+            const ocupadas = await citaModel.ocupadasDelDia(est.id_estilista, fecha, Number(excluirId) || 0);
+            const turno = await estilistaModel.obtenerTurnoDia(est.id_estilista, diaSemana);
+            mapaCitasEstilista.set(est.id_estilista, ocupadas);
+            mapaTurnoEstilista.set(est.id_estilista, turno);
+        }
+
+        if (idEstilista) {
+            const turnoElegida = mapaTurnoEstilista.get(Number(idEstilista));
+            if (turnoElegida && !turnoElegida.trabaja) {
+                return res.json({
+                    success: true,
+                    domingo: false,
+                    descansoEstilista: true,
+                    duracion: duracionReal,
+                    data: []
+                });
+            }
+        }
+
+        const horarios = [];
+        for (let minutos = 8 * 60; minutos <= 18 * 60 + 30; minutos += 30) {
+            const fin = minutos + duracionReal;
+            if (fueraDeHorario(minutos, fin)) continue;
+
+            const h = String(Math.floor(minutos / 60)).padStart(2, '0');
+            const m = String(minutos % 60).padStart(2, '0');
+            const horaTexto = `${h}:${m}`;
+
+            const cruceClienta = citasClienta.some((c) => {
+                const otroInicio = aMinutos(c.hora);
+                return seCruzan(minutos, fin, otroInicio, otroInicio + Number(c.duracion_min || 60));
+            });
+
+            let estilistasLibres = 0;
+            for (const est of candidatas) {
+                const turno = mapaTurnoEstilista.get(est.id_estilista);
+                if (!turno || !turno.trabaja) continue;
+                if (minutos < aMinutos(turno.hora_inicio) || fin > aMinutos(turno.hora_fin)) continue;
+
+                const ocupadas = mapaCitasEstilista.get(est.id_estilista) || [];
+                const ocupada = ocupadas.some((c) => {
+                    const otroInicio = aMinutos(c.hora);
+                    return seCruzan(minutos, fin, otroInicio, otroInicio + Number(c.duracion_min || 60));
+                });
+                if (!ocupada) estilistasLibres++;
+            }
+
+            horarios.push({
+                hora: horaTexto,
+                disponible: !cruceClienta && estilistasLibres > 0,
+                estilistasLibres,
+                motivo: cruceClienta ? 'La clienta ya tiene cita a esta hora' : (estilistasLibres === 0 ? 'Sin estilista en turno / Ocupado' : 'Disponible')
+            });
+        }
+
+        res.json({ success: true, domingo: false, descansoEstilista: false, duracion: duracionReal, data: horarios });
+    } catch (err) {
+        console.error('Error al consultar disponibilidad:', err.message);
+        res.status(500).json({ success: false, message: 'No se pudo consultar la disponibilidad.' });
+    }
 }
 
 // GET /api/citas?rol=Clienta&idUsuario=3
@@ -97,58 +210,27 @@ async function listar(req, res) {
     }
 }
 
-// GET /api/disponibilidad?idServicio=1&fecha=2026-11-03&idEstilista=2&excluirCita=5
-// Devuelve las horas (cada 30 minutos) en que se puede agendar ese servicio ese día.
-// Con idEstilista: las horas libres de esa estilista.
-// Sin idEstilista: las horas en que al menos una estilista que sabe el servicio está libre.
-async function disponibilidad(req, res) {
-    const { idServicio, fecha, idEstilista } = req.query;
-    const excluirCita = Number(req.query.excluirCita) || 0;
-
-    if (!idServicio || !fechaValida(fecha)) {
-        return res.status(400).json({ success: false, message: 'Escoge el servicio y una fecha válida.' });
-    }
-    const ahora = ahoraColombia();
-    if (fecha < ahora.fecha || diaDeLaSemana(fecha) === 0) {
-        return res.json({ success: true, data: { horas: [] } });
-    }
-
-    try {
-        const servicio = await servicioModel.buscarPorId(idServicio);
-        if (!servicio) {
-            return res.status(404).json({ success: false, message: 'El servicio no existe.' });
-        }
-
-        const candidatas = idEstilista
-            ? [{ id_estilista: Number(idEstilista) }]
-            : await estilistaModel.capacitadasPara(idServicio);
-        const agendas = [];
-        for (const e of candidatas) {
-            agendas.push(await agendaDelDia(e.id_estilista, fecha, excluirCita));
-        }
-
-        const horas = [];
-        for (let inicio = APERTURA; inicio + servicio.duracion_min <= CIERRE; inicio += INTERVALO) {
-            if (fecha === ahora.fecha && inicio <= ahora.minutos) continue;   // hoy: solo horas que no han pasado
-            const fin = inicio + servicio.duracion_min;
-            if (agendas.some((a) => motivoNoDisponible(a, inicio, fin) === null)) {
-                horas.push(aHora(inicio));
-            }
-        }
-        res.json({ success: true, data: { horas, duracion: servicio.duracion_min } });
-    } catch (err) {
-        console.error('Error al calcular la disponibilidad:', err.message);
-        res.status(500).json({ success: false, message: 'No se pudieron consultar las horas libres.' });
-    }
-}
-
 // POST /api/citas
-// Recibe: { idUsuario, idServicio, fecha, hora, idEstilista (opcional), observaciones }
+// Soporta agendamiento por la propia clienta (idUsuario) o por la Administradora en recepción (idClienta),
+// precio/duración por especialidad, producto adicional con descuento de stock y envío de correo de confirmación.
 async function crear(req, res) {
-    const { idUsuario, idServicio, fecha, hora, idEstilista, observaciones } = req.body;
+    const {
+        idUsuario,
+        idClienta,
+        idServicio,
+        fecha,
+        hora,
+        idEstilista,
+        idProducto,
+        precioEspecialidad,
+        duracionEspecialidad,
+        codigoPromo,
+        aplicarVip,
+        observaciones
+    } = req.body;
 
-    if (!idUsuario || !idServicio || !fecha || !hora) {
-        return res.status(400).json({ success: false, message: 'Faltan datos de la cita.' });
+    if ((!idUsuario && !idClienta) || !idServicio || !fecha || !hora) {
+        return res.status(400).json({ success: false, message: 'Faltan datos obligatorios de la cita.' });
     }
     const errorFecha = validarFechaHora(fecha, hora);
     if (errorFecha) {
@@ -156,9 +238,11 @@ async function crear(req, res) {
     }
 
     try {
-        const clienta = await clienteModel.buscarPorUsuario(idUsuario);
+        const clienta = idClienta
+            ? await clienteModel.buscarPorId(idClienta)
+            : await clienteModel.buscarPorUsuario(idUsuario);
         if (!clienta) {
-            return res.status(404).json({ success: false, message: 'Tu cuenta no tiene perfil de clienta.' });
+            return res.status(404).json({ success: false, message: 'No se encontró el perfil de la clienta.' });
         }
 
         const servicio = await servicioModel.buscarPorId(idServicio);
@@ -166,48 +250,90 @@ async function crear(req, res) {
             return res.status(404).json({ success: false, message: 'El servicio no existe.' });
         }
 
+        const duracionMin = Number(duracionEspecialidad) >= 15 && Number(duracionEspecialidad) <= 480
+            ? Number(duracionEspecialidad)
+            : Number(servicio.duracion_min || 60);
+
+        const precioBaseServicio = Number(precioEspecialidad) > 0
+            ? Number(precioEspecialidad)
+            : Number(servicio.precio);
+
         // Regla de horario: la cita completa debe caber entre 8:00 y 19:00
         const inicio = aMinutos(hora);
-        const fin = inicio + servicio.duracion_min;
+        const fin = inicio + duracionMin;
         if (fueraDeHorario(inicio, fin)) {
             return res.status(400).json({
                 success: false,
-                message: `El horario es de 8:00 a 19:00 y este servicio dura ${servicio.duracion_min} minutos.`
+                message: `El horario es de 8:00 a 19:00 y esta especialidad dura ${duracionMin} minutos.`
             });
         }
 
         // La clienta no puede tener dos citas que se crucen
         if (await clientaTieneCruce(clienta.id_clienta, fecha, inicio, fin)) {
-            return res.status(409).json({ success: false, message: 'Ya tienes otra cita en ese horario.' });
+            return res.status(409).json({ success: false, message: 'La clienta ya tiene otra cita agendada en ese horario.' });
+        }
+
+        // Producto adicional opcional
+        let productoNombre = null;
+        let precioProducto = 0;
+        let productoElegido = null;
+        if (idProducto) {
+            productoElegido = await productoModel.buscarPorId(idProducto);
+            if (!productoElegido || productoElegido.estado !== 'Activo') {
+                return res.status(400).json({ success: false, message: 'El producto adicional seleccionado no está disponible.' });
+            }
+            if (Number(productoElegido.stock) <= 0) {
+                return res.status(409).json({ success: false, message: `El producto "${productoElegido.nombre}" está agotado.` });
+            }
+            productoNombre = productoElegido.nombre;
+            precioProducto = Number(productoElegido.precio);
         }
 
         let elegida = null;
+        const capacitadas = await estilistaModel.capacitadasPara(idServicio);
 
         if (idEstilista) {
-            // La clienta escogió estilista: se revisa su horario, ausencias y citas
-            const agenda = await agendaDelDia(idEstilista, fecha);
-            const motivo = motivoNoDisponible(agenda, inicio, fin);
-            if (motivo) {
-                return res.status(409).json({ success: false, message: MENSAJES_NO_DISPONIBLE[motivo] });
+            const { libre, motivo } = await revisarDisponibilidad(idEstilista, fecha, inicio, fin);
+            if (!libre) {
+                return res.status(409).json({ success: false, message: motivo || 'La estilista no está disponible en ese horario.' });
             }
-            const estilista = await estilistaModel.buscarPorId(idEstilista);
-            elegida = { id_estilista: Number(idEstilista), nombre: estilista ? estilista.nombre : null };
+            const infoEst = capacitadas.find((e) => Number(e.id_estilista) === Number(idEstilista));
+            elegida = { id_estilista: Number(idEstilista), nombre: infoEst ? infoEst.nombre : 'Tu estilista asignada' };
         } else {
-            // Asignación automática: de las estilistas que saben hacer el servicio
-            // y pueden atender a esa hora, se escoge la que tenga menos citas ese día.
-            const candidatas = await estilistaModel.capacitadasPara(idServicio);
             let menorCarga = Infinity;
-            for (const estilista of candidatas) {
-                const agenda = await agendaDelDia(estilista.id_estilista, fecha);
-                if (motivoNoDisponible(agenda, inicio, fin) === null && agenda.ocupadas.length < menorCarga) {
+            for (const estilista of capacitadas) {
+                const { libre, carga } = await revisarDisponibilidad(estilista.id_estilista, fecha, inicio, fin);
+                if (libre && carga < menorCarga) {
                     elegida = estilista;
-                    menorCarga = agenda.ocupadas.length;
+                    menorCarga = carga;
                 }
             }
             if (!elegida) {
-                return res.status(409).json({ success: false, message: 'No hay estilistas libres para ese servicio a esa hora. Prueba otro horario.' });
+                return res.status(409).json({ success: false, message: 'No hay estilistas en turno o libres para ese servicio a esa hora. Prueba otro horario.' });
             }
         }
+
+        const subtotal = precioBaseServicio + precioProducto;
+
+        // Evaluar descuento BellaClub VIP (cada 3 citas finalizadas) o cupón BELLA15 (15% OFF)
+        const todasCitas = await citaModel.listarTodas();
+        const finalizadasClienta = todasCitas.filter(
+            (c) => Number(c.id_cliente) === Number(clienta.id_clienta) && c.estado === 'Finalizada'
+        ).length;
+        const cuponLimpio = String(codigoPromo || '').trim().toUpperCase();
+        const tieneBeneficioVip = Boolean(aplicarVip) && finalizadasClienta >= 3;
+        const tieneCuponValido = cuponLimpio === 'BELLA15' || cuponLimpio === 'VIP15';
+
+        let descuentoAplicado = 0;
+        let motivoDescuento = '';
+        if (tieneBeneficioVip || tieneCuponValido) {
+            descuentoAplicado = Math.round(subtotal * 0.15);
+            motivoDescuento = tieneBeneficioVip ? 'BellaClub VIP 15% OFF' : `Cupón ${cuponLimpio} (15% OFF)`;
+        }
+        const precioTotal = Math.max(0, subtotal - descuentoAplicado);
+        const obsFinal = descuentoAplicado > 0
+            ? `${observaciones ? observaciones + ' · ' : ''}[Beneficio aplicado: ${motivoDescuento} (-$${descuentoAplicado.toLocaleString('es-CO')})]`
+            : observaciones;
 
         const idCita = await citaModel.crear({
             idClienta: clienta.id_clienta,
@@ -215,22 +341,89 @@ async function crear(req, res) {
             idServicio,
             fecha,
             hora: hora + ':00',
-            precio: servicio.precio,
-            observaciones
+            duracionMin,
+            precio: precioTotal,
+            productoAdicional: productoNombre,
+            precioProducto,
+            observaciones: obsFinal
         });
 
-        const mensaje = elegida.nombre
-            ? `Cita agendada. Te atenderá ${elegida.nombre}.`
-            : 'Cita agendada.';
-        res.status(201).json({ success: true, message: mensaje, id: idCita, estilista: elegida.nombre });
+        // Si eligió un producto adicional, descontamos 1 unidad del inventario
+        if (productoElegido) {
+            await productoModel.descontarStock(productoElegido.id_producto);
+        }
+
+        // Enviamos el correo de confirmación detallando la fecha, hora y todo lo que se le realizará
+        const clienteNombreCompleto = `${clienta.nombres} ${clienta.apellidos}`.trim();
+        const correo = await enviarCorreoConfirmacionCita({
+            idCita,
+            clienteNombre: clienteNombreCompleto,
+            clienteEmail: clienta.email || 'clienta@bellastyle.com',
+            estilistaNombre: elegida.nombre || 'Estilista BellaStyle',
+            servicioNombre: servicio.nombre,
+            fecha,
+            hora,
+            duracionMin,
+            precioServicio: precioBaseServicio,
+            productoNombre,
+            precioProducto,
+            descuentoAplicado,
+            motivoDescuento,
+            precioTotal,
+            observaciones: obsFinal
+        });
+
+        const mensaje = `Cita BS-${idCita} agendada para el ${fecha} a las ${hora} con ${elegida.nombre || 'tu estilista'}. Se envió confirmación al correo ${correo.para}.`;
+        res.status(201).json({
+            success: true,
+            message: mensaje,
+            id: idCita,
+            correo
+        });
     } catch (err) {
         console.error('Error al crear cita:', err.message);
         res.status(500).json({ success: false, message: 'No se pudo agendar la cita.' });
     }
 }
 
+// GET /api/citas/:id/correo
+// Devuelve el correo de confirmación enviado cuando se apartó la cita
+async function verCorreoCita(req, res) {
+    try {
+        const idCita = Number(req.params.id);
+        let correo = obtenerCorreoDeCita(idCita);
+        if (!correo) {
+            const todas = await citaModel.listarTodas();
+            const c = todas.find((x) => Number(x.id) === idCita);
+            if (!c) {
+                return res.status(404).json({ success: false, message: 'La cita no existe.' });
+            }
+            const precioProd = Number(c.precio_producto || 0);
+            const precioSrv = Number(c.precio) - precioProd;
+            correo = await enviarCorreoConfirmacionCita({
+                idCita: c.id,
+                clienteNombre: c.cliente,
+                clienteEmail: c.cliente_email || 'clienta@bellastyle.com',
+                estilistaNombre: c.estilista,
+                servicioNombre: c.servicio,
+                fecha: c.fecha,
+                hora: c.hora,
+                duracionMin: c.duracion_min,
+                precioServicio: precioSrv,
+                productoNombre: c.producto_adicional,
+                precioProducto: precioProd,
+                precioTotal: c.precio,
+                observaciones: c.observaciones
+            });
+        }
+        res.json({ success: true, data: correo });
+    } catch (err) {
+        console.error('Error al obtener correo de cita:', err.message);
+        res.status(500).json({ success: false, message: 'No se pudo cargar el correo de la cita.' });
+    }
+}
+
 // PUT /api/citas/:id/estado
-// Recibe: { estado }
 async function cambiarEstado(req, res) {
     const { estado } = req.body;
     if (!ESTADOS.includes(estado)) {
@@ -241,15 +434,57 @@ async function cambiarEstado(req, res) {
         if (!actualizada) {
             return res.status(404).json({ success: false, message: 'La cita no existe.' });
         }
-        res.json({ success: true, message: `La cita quedó ${estado.toLowerCase()}.` });
+        // Enviar correo de notificación automática al confirmar, finalizar o cancelar
+        const todas = await citaModel.listarTodas();
+        const c = todas.find((x) => Number(x.id) === Number(req.params.id));
+        if (c && ['Confirmada', 'Cancelada', 'Finalizada'].includes(estado)) {
+            await enviarCorreoActualizacionCita({
+                idCita: c.id,
+                tipoEvento: estado,
+                clienteNombre: c.cliente,
+                clienteEmail: c.cliente_email,
+                estilistaNombre: c.estilista,
+                servicioNombre: c.servicio,
+                fecha: c.fecha,
+                hora: c.hora,
+                duracionMin: c.duracion_min,
+                precioTotal: c.precio,
+                observaciones: c.observaciones
+            });
+        }
+        res.json({ success: true, message: `La cita quedó ${estado.toLowerCase()} y se notificó por correo a la clienta.` });
     } catch (err) {
         console.error('Error al cambiar estado:', err.message);
         res.status(500).json({ success: false, message: 'No se pudo actualizar la cita.' });
     }
 }
 
+// PUT /api/citas/:id/calificar   Recibe: { calificacion: 1..5, comentario }
+async function calificar(req, res) {
+    const estrellas = Number(req.body.calificacion);
+    const comentario = typeof req.body.comentario === 'string' ? req.body.comentario.trim().slice(0, 300) : '';
+
+    if (!Number.isInteger(estrellas) || estrellas < 1 || estrellas > 5) {
+        return res.status(400).json({ success: false, message: 'Selecciona una calificación de 1 a 5 estrellas.' });
+    }
+
+    try {
+        const cita = await citaModel.buscarPorId(req.params.id);
+        if (!cita) {
+            return res.status(404).json({ success: false, message: 'La cita no existe.' });
+        }
+        if (cita.estado !== 'Finalizada') {
+            return res.status(400).json({ success: false, message: 'Solo puedes calificar citas que ya hayan finalizado.' });
+        }
+        await citaModel.calificar(cita.id_cita, estrellas, comentario);
+        res.json({ success: true, message: '¡Gracias por tu calificación! Tu reseña ha sido registrada.' });
+    } catch (err) {
+        console.error('Error al calificar cita:', err.message);
+        res.status(500).json({ success: false, message: 'No se pudo guardar la calificación.' });
+    }
+}
+
 // PUT /api/citas/:id/reprogramar
-// Recibe: { fecha, hora }. Se mantiene la misma estilista y el mismo servicio.
 async function reprogramar(req, res) {
     const { fecha, hora } = req.body;
 
@@ -268,7 +503,7 @@ async function reprogramar(req, res) {
         }
 
         const inicio = aMinutos(hora);
-        const fin = inicio + cita.duracion_min;
+        const fin = inicio + Number(cita.duracion_min || 60);
         if (fueraDeHorario(inicio, fin)) {
             return res.status(400).json({
                 success: false,
@@ -276,21 +511,90 @@ async function reprogramar(req, res) {
             });
         }
 
-        const agenda = await agendaDelDia(cita.id_estilista, fecha, cita.id_cita);
-        const motivo = motivoNoDisponible(agenda, inicio, fin);
-        if (motivo) {
-            return res.status(409).json({ success: false, message: MENSAJES_NO_DISPONIBLE[motivo] });
+        const { libre, motivo } = await revisarDisponibilidad(cita.id_estilista, fecha, inicio, fin, cita.id_cita);
+        if (!libre) {
+            return res.status(409).json({ success: false, message: motivo || 'La estilista ya tiene una cita en ese horario.' });
         }
         if (await clientaTieneCruce(cita.id_cliente, fecha, inicio, fin, cita.id_cita)) {
             return res.status(409).json({ success: false, message: 'Ya tienes otra cita en ese horario.' });
         }
 
         await citaModel.reprogramar(cita.id_cita, fecha, hora + ':00');
-        res.json({ success: true, message: 'Cita reprogramada. Queda pendiente de confirmación.' });
+        const todas = await citaModel.listarTodas();
+        const c = todas.find((x) => Number(x.id) === Number(cita.id_cita));
+        if (c) {
+            await enviarCorreoActualizacionCita({
+                idCita: c.id,
+                tipoEvento: 'Reprogramada',
+                clienteNombre: c.cliente,
+                clienteEmail: c.cliente_email,
+                estilistaNombre: c.estilista,
+                servicioNombre: c.servicio,
+                fecha,
+                hora,
+                duracionMin: c.duracion_min,
+                precioTotal: c.precio,
+                observaciones: c.observaciones
+            });
+        }
+        res.json({ success: true, message: 'Cita reprogramada y notificada por correo. Queda pendiente de confirmación.' });
     } catch (err) {
         console.error('Error al reprogramar:', err.message);
         res.status(500).json({ success: false, message: 'No se pudo reprogramar la cita.' });
     }
 }
 
-module.exports = { listar, disponibilidad, crear, reprogramar, cambiarEstado };
+// GET /api/resenas  (Reseñas verificadas para mostrar en la Landing Page)
+async function resenasPublicas(_req, res) {
+    try {
+        const todas = await citaModel.listarTodas();
+        const resenas = todas
+            .filter((c) => Number(c.calificacion) >= 4)
+            .slice(0, 6)
+            .map((c) => ({
+                id: c.id,
+                cliente: c.cliente,
+                estilista: c.estilista,
+                servicio: c.servicio,
+                fecha: c.fecha,
+                calificacion: Number(c.calificacion),
+                comentario: c.comentario_calificacion || 'Excelente atención y resultados profesionales.',
+                especialidad: c.observaciones || ''
+            }));
+        res.json({ success: true, data: resenas });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Error al cargar reseñas.' });
+    }
+}
+
+// GET /api/citas/:id/mensajes  (Chat directo dentro de una cita)
+async function mensajesDeCita(req, res) {
+    try {
+        const msgs = await citaModel.listarMensajesCita(req.params.id);
+        res.json({ success: true, data: msgs });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'No se pudieron cargar los mensajes de la cita.' });
+    }
+}
+
+// POST /api/citas/:id/mensajes  Recibe: { autor, rolAutor, texto }
+async function enviarMensajeCita(req, res) {
+    const texto = typeof req.body.texto === 'string' ? req.body.texto.trim().slice(0, 400) : '';
+    const autor = typeof req.body.autor === 'string' && req.body.autor.trim() ? req.body.autor.trim() : 'Usuario';
+    const rolAutor = typeof req.body.rolAutor === 'string' && req.body.rolAutor.trim() ? req.body.rolAutor.trim() : 'Clienta';
+    if (!texto) {
+        return res.status(400).json({ success: false, message: 'Escribe un mensaje antes de enviar.' });
+    }
+    try {
+        await citaModel.agregarMensajeCita(req.params.id, autor, rolAutor, texto);
+        const msgs = await citaModel.listarMensajesCita(req.params.id);
+        res.status(201).json({ success: true, message: 'Mensaje enviado.', data: msgs });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'No se pudo enviar el mensaje.' });
+    }
+}
+
+module.exports = {
+    listar, disponibilidad, crear, verCorreoCita, reprogramar, cambiarEstado, calificar,
+    resenasPublicas, mensajesDeCita, enviarMensajeCita
+};
