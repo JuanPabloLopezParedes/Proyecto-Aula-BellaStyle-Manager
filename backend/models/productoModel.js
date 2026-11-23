@@ -1,4 +1,4 @@
-// Modelo de la tabla productos
+// Modelo de la tabla productos (incluye foto obligatoria, categoría y descripción)
 const db = require('../config/db');
 
 async function listarActivos() {
@@ -17,18 +17,18 @@ async function buscarPorId(idProducto) {
     return filas[0] || null;
 }
 
-async function crear({ nombre, precio, stock }) {
+async function crear({ nombre, precio, stock, imagen, categoria, descripcion }) {
     const [resultado] = await db.query(
-        'INSERT INTO productos (nombre, precio, stock) VALUES (?, ?, ?)',
-        [nombre, precio, stock]
+        'INSERT INTO productos (nombre, precio, stock, imagen, categoria, descripcion) VALUES (?, ?, ?, ?, ?, ?)',
+        [nombre, precio, stock, imagen || null, categoria || null, descripcion || null]
     );
     return resultado.insertId;
 }
 
-async function actualizar(idProducto, { nombre, precio, stock }) {
+async function actualizar(idProducto, { nombre, precio, stock, imagen, categoria, descripcion }) {
     const [resultado] = await db.query(
-        'UPDATE productos SET nombre = ?, precio = ?, stock = ? WHERE id_producto = ?',
-        [nombre, precio, stock, idProducto]
+        'UPDATE productos SET nombre = ?, precio = ?, stock = ?, imagen = ?, categoria = ?, descripcion = ? WHERE id_producto = ?',
+        [nombre, precio, stock, imagen || null, categoria || null, descripcion || null, idProducto]
     );
     return resultado.affectedRows > 0;
 }

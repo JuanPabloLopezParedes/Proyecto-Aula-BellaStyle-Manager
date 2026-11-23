@@ -93,24 +93,24 @@ const datos = {
         { id_estilista: 6, dia_semana: 6, trabaja: true,  hora_inicio: '09:00:00', hora_fin: '18:00:00' }
     ],
     servicios: [
-        { id_servicio: 1, nombre: 'Corte de Cabello',    precio: 35000,  duracion_min: 45,  estado: 'Disponible' },
-        { id_servicio: 2, nombre: 'Tinte / Coloración',  precio: 120000, duracion_min: 120, estado: 'Disponible' },
-        { id_servicio: 3, nombre: 'Mechas / Balayage',   precio: 180000, duracion_min: 150, estado: 'Disponible' },
-        { id_servicio: 4, nombre: 'Peinado para Evento', precio: 60000,  duracion_min: 60,  estado: 'Disponible' },
-        { id_servicio: 5, nombre: 'Manicure',            precio: 25000,  duracion_min: 45,  estado: 'Disponible' },
-        { id_servicio: 6, nombre: 'Pedicure',            precio: 30000,  duracion_min: 60,  estado: 'Disponible' },
-        { id_servicio: 7, nombre: 'Tratamiento Capilar', precio: 55000,  duracion_min: 60,  estado: 'Disponible' }
+        { id_servicio: 1, nombre: 'Corte de Cabello',    precio: 35000,  duracion_min: 45,  estado: 'Disponible', imagen: 'img/servicios/cat-corte.jpg', subtitulo: 'Cortes visagistas para dama y caballero con ejemplo visual de cada estilo', ejemplos: null },
+        { id_servicio: 2, nombre: 'Tinte / Coloración',  precio: 120000, duracion_min: 120, estado: 'Disponible', imagen: 'img/servicios/cat-tinte.jpg', subtitulo: 'Colorimetría profesional, cubrimiento de canas, tonos cobrizos y decoloración', ejemplos: null },
+        { id_servicio: 3, nombre: 'Mechas / Balayage',   precio: 180000, duracion_min: 150, estado: 'Disponible', imagen: 'img/servicios/cat-mechas.jpg', subtitulo: 'Diseño de rubios, iluminaciones y aclaraciones protegidas con Plex capilar', ejemplos: null },
+        { id_servicio: 4, nombre: 'Peinado para Evento', precio: 60000,  duracion_min: 60,  estado: 'Disponible', imagen: 'img/servicios/cat-peinado.jpg', subtitulo: 'Estructuras duraderas para novias, grados, quinceañeras y fiestas', ejemplos: null },
+        { id_servicio: 5, nombre: 'Manicure',            precio: 25000,  duracion_min: 45,  estado: 'Disponible', imagen: 'img/servicios/cat-manicure.jpg', subtitulo: 'Sistemas profesionales de extensión, gel, acrílico y cuidado integral de manos', ejemplos: null },
+        { id_servicio: 6, nombre: 'Pedicure',            precio: 30000,  duracion_min: 60,  estado: 'Disponible', imagen: 'img/servicios/cat-pedicure.jpg', subtitulo: 'Relajación, exfoliación podal y estética impecable para tus pies', ejemplos: null },
+        { id_servicio: 7, nombre: 'Tratamiento Capilar', precio: 55000,  duracion_min: 60,  estado: 'Disponible', imagen: 'img/servicios/cat-tratamiento.jpg', subtitulo: 'Terapias intensivas de hidratación, queratina, bótox capilar y alisado orgánico', ejemplos: null }
     ],
     productos: [
-        { id_producto: 1, nombre: 'Shampoo Hidratante Argán',     precio: 28000, stock: 20, estado: 'Activo' },
-        { id_producto: 2, nombre: 'Mascarilla Capilar Nutritiva', precio: 35000, stock: 15, estado: 'Activo' },
-        { id_producto: 3, nombre: 'Esmalte Gel Premium',          precio: 12000, stock: 40, estado: 'Activo' },
-        { id_producto: 4, nombre: 'Spray Fijador Extra Fuerte',   precio: 22000, stock: 18, estado: 'Activo' },
-        { id_producto: 5, nombre: 'Sérum Termoprotector Brillo',  precio: 42000, stock: 12, estado: 'Activo' },
-        { id_producto: 6, nombre: 'Ampolla Reparadora Keratina',  precio: 18000, stock: 8,  estado: 'Activo' },
-        { id_producto: 7, nombre: 'Aceite de Cutícula Almendras', precio: 15000, stock: 25, estado: 'Activo' },
-        { id_producto: 8, nombre: 'Matizador Violeta Silver',     precio: 38000, stock: 6,  estado: 'Activo' },
-        { id_producto: 9, nombre: 'Crema Exfoliante Podal Menta', precio: 29000, stock: 14, estado: 'Activo' }
+        { id_producto: 1, nombre: 'Shampoo Hidratante Argán',     precio: 28000, stock: 20, estado: 'Activo', imagen: 'img/productos/shampoo-argan.jpg', categoria: 'Cuidado Capilar · Argán', descripcion: 'Fórmula libre de sal enriquecida con aceite puro de Argán marroquí que limpia suavemente, hidrata y devuelve el brillo natural.' },
+        { id_producto: 2, nombre: 'Mascarilla Capilar Nutritiva', precio: 35000, stock: 15, estado: 'Activo', imagen: 'img/productos/mascarilla-capilar.jpg', categoria: 'Nutrición Intensiva', descripcion: 'Tratamiento cremoso de reparación profunda con keratina y manteca de karité para hebras secas, teñidas o decoloradas.' },
+        { id_producto: 3, nombre: 'Esmalte Gel Premium',          precio: 12000, stock: 40, estado: 'Activo', imagen: 'img/productos/esmalte-gel.jpg', categoria: 'Manicure & Uñas', descripcion: 'Esmalte profesional de alto pigmento y brillo espejo con duración de hasta 21 días sin descascararse.' },
+        { id_producto: 4, nombre: 'Spray Fijador Extra Fuerte',   precio: 22000, stock: 18, estado: 'Activo', imagen: 'img/productos/spray-fijador.jpg', categoria: 'Finalizador & Peinado', descripcion: 'Fijación extra fuerte resistente a la humedad costera sin dejar residuos blancos ni acartonar el peinado.' },
+        { id_producto: 5, nombre: 'Sérum Termoprotector Brillo',  precio: 42000, stock: 12, estado: 'Activo', imagen: 'img/productos/protector-termico.jpg', categoria: 'Protección Térmica', descripcion: 'Escudo capilar hasta 230 °C indispensable antes del cepillado, planchado o diseño de ondas con pinza.' },
+        { id_producto: 6, nombre: 'Ampolla Reparadora Keratina',  precio: 18000, stock: 8,  estado: 'Activo', imagen: 'img/productos/kit-post-queratina.jpg', categoria: 'Kit Completo Post-Alisado', descripcion: 'Concentrado profesional sellador que prolonga el efecto de la queratina o bótox capilar en casa.' },
+        { id_producto: 7, nombre: 'Aceite de Cutícula Almendras', precio: 15000, stock: 25, estado: 'Activo', imagen: 'img/productos/oleo-argan.jpg', categoria: 'Elixir de Brillo', descripcion: 'Gotero concentrado de Óleo de Argán & Almendras que hidrata cutículas, sella puntas y aporta suavidad inmediata.' },
+        { id_producto: 8, nombre: 'Matizador Violeta Silver',     precio: 38000, stock: 6,  estado: 'Activo', imagen: 'img/productos/matizador-violeta.jpg', categoria: 'Especial Rubios & Mechas', descripcion: 'Neutraliza reflejos amarillos o cobrizos no deseados manteniendo tus mechas, balayage o canas en tono frío perfecto.' },
+        { id_producto: 9, nombre: 'Crema Exfoliante Podal Menta', precio: 29000, stock: 14, estado: 'Activo', imagen: 'img/productos/crema-pedispa.jpg', categoria: 'Spa de Manos y Pies', descripcion: 'Crema exfoliante con microgránulos naturales y mentol que renueva la piel, suaviza talones y descansa los pies.' }
     ],
     estilista_servicios: [
         { id_estilista: 1, id_servicio: 2 },
@@ -297,13 +297,42 @@ async function ejecutarConsulta(sql, params = []) {
         return [datos.servicios.filter((x) => String(x.id_servicio) === String(params[0]))];
     }
     if (s.startsWith('INSERT INTO servicios')) {
-        const id_servicio = datos.servicios.length + 1;
-        datos.servicios.push({ id_servicio, nombre: params[0], precio: Number(params[1]), duracion_min: Number(params[2]), estado: 'Disponible' });
+        const id_servicio = datos.servicios.reduce((max, x) => Math.max(max, Number(x.id_servicio) || 0), 0) + 1;
+        let ejemplos = params[5] || null;
+        if (typeof ejemplos === 'string') {
+            try { ejemplos = JSON.parse(ejemplos); } catch (_) {}
+        }
+        datos.servicios.push({
+            id_servicio,
+            nombre: params[0],
+            precio: Number(params[1]),
+            duracion_min: Number(params[2]),
+            imagen: params[3] || null,
+            subtitulo: params[4] || null,
+            ejemplos: Array.isArray(ejemplos) ? ejemplos : null,
+            estado: 'Disponible'
+        });
         return [{ insertId: id_servicio, affectedRows: 1 }];
     }
     if (s.startsWith('UPDATE servicios SET nombre = ?')) {
-        const srv = datos.servicios.find((x) => String(x.id_servicio) === String(params[3]));
-        if (srv) { srv.nombre = params[0]; srv.precio = Number(params[1]); srv.duracion_min = Number(params[2]); }
+        const idTarget = params.length >= 7 ? params[6] : params[3];
+        const srv = datos.servicios.find((x) => String(x.id_servicio) === String(idTarget));
+        if (srv) {
+            srv.nombre = params[0];
+            srv.precio = Number(params[1]);
+            srv.duracion_min = Number(params[2]);
+            if (params.length >= 7) {
+                if (params[3]) srv.imagen = params[3];
+                if (params[4] !== undefined) srv.subtitulo = params[4];
+                if (params[5] !== undefined && params[5] !== null) {
+                    let ej = params[5];
+                    if (typeof ej === 'string') {
+                        try { ej = JSON.parse(ej); } catch (_) {}
+                    }
+                    srv.ejemplos = Array.isArray(ej) ? ej : null;
+                }
+            }
+        }
         return [{ affectedRows: srv ? 1 : 0 }];
     }
     if (s.startsWith('UPDATE servicios SET estado = ?')) {
@@ -323,13 +352,32 @@ async function ejecutarConsulta(sql, params = []) {
         return [datos.productos.filter((x) => String(x.id_producto) === String(params[0]))];
     }
     if (s.startsWith('INSERT INTO productos')) {
-        const id_producto = datos.productos.length + 1;
-        datos.productos.push({ id_producto, nombre: params[0], precio: Number(params[1]), stock: Number(params[2]), estado: 'Activo' });
+        const id_producto = datos.productos.reduce((max, x) => Math.max(max, Number(x.id_producto) || 0), 0) + 1;
+        datos.productos.push({
+            id_producto,
+            nombre: params[0],
+            precio: Number(params[1]),
+            stock: Number(params[2]),
+            imagen: params[3] || null,
+            categoria: params[4] || null,
+            descripcion: params[5] || null,
+            estado: 'Activo'
+        });
         return [{ insertId: id_producto, affectedRows: 1 }];
     }
     if (s.startsWith('UPDATE productos SET nombre = ?')) {
-        const pr = datos.productos.find((x) => String(x.id_producto) === String(params[3]));
-        if (pr) { pr.nombre = params[0]; pr.precio = Number(params[1]); pr.stock = Number(params[2]); }
+        const idTarget = params.length >= 7 ? params[6] : params[3];
+        const pr = datos.productos.find((x) => String(x.id_producto) === String(idTarget));
+        if (pr) {
+            pr.nombre = params[0];
+            pr.precio = Number(params[1]);
+            pr.stock = Number(params[2]);
+            if (params.length >= 7) {
+                if (params[3]) pr.imagen = params[3];
+                if (params[4] !== undefined && params[4] !== null) pr.categoria = params[4];
+                if (params[5] !== undefined && params[5] !== null) pr.descripcion = params[5];
+            }
+        }
         return [{ affectedRows: pr ? 1 : 0 }];
     }
     if (s.startsWith('UPDATE productos SET stock = stock - 1 WHERE id_producto = ?')) {

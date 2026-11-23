@@ -24,35 +24,89 @@ function errorServidor(res, err) {
 // SERVICIOS
 // ---------------------------------------------------------------
 
-function validarServicio(body) {
-    if (!textoValido(body.nombre)) return 'El nombre debe tener entre 2 y 100 caracteres.';
+function imagenValida(img) {
+    return typeof img === 'string' && img.trim().length >= 5;
+}
+
+function normalizarEjemplosServicio(ejemplosRaw, precioBase, duracionBase) {
+    if (!Array.isArray(ejemplosRaw)) return [];
+    return ejemplosRaw
+        .map((ej) => ({
+            nombre: typeof ej?.nombre === 'string' ? ej.nombre.trim() : '',
+            detalle: typeof ej?.detalle === 'string' && ej.detalle.trim()
+                ? ej.detalle.trim()
+                : 'Procedimiento profesional personalizado realizado por nuestras especialistas en salón.',
+            precio: Number(ej?.precio) > 0 ? Math.round(Number(ej.precio)) : Number(precioBase),
+            duracion: Number(ej?.duracion) >= 15 ? Math.round(Number(ej.duracion)) : Number(duracionBase),
+            imagen: typeof ej?.imagen === 'string' ? ej.imagen.trim() : ''
+        }))
+        .filter((ej) => ej.nombre.length >= 2 || ej.imagen.length > 0);
+}
+
+function validarServicio(body, exigirEjemplos = false) {
+    if (!textoValido(body.nombre)) return 'El nombre del servicio debe tener entre 2 y 100 caracteres.';
     if (!numeroValido(body.precio) || Number(body.precio) === 0) return 'El precio debe ser un número mayor que cero.';
     if (!numeroValido(body.duracion) || Number(body.duracion) < 15 || Number(body.duracion) > 480) {
         return 'La duración debe estar entre 15 y 480 minutos.';
     }
+    if (!imagenValida(body.imagen)) {
+        return 'Es obligatorio añadir una foto principal para el servicio.';
+    }
+    const ejemplos = normalizarEjemplosServicio(body.ejemplos, body.precio, body.duracion);
+    if (exigirEjemplos && ejemplos.length === 0) {
+        return 'Debes añadir al menos un ejemplo con su foto para que se muestre en el catálogo y en la galería.';
+    }
+    for (let i = 0; i < ejemplos.length; i++) {
+        if (ejemplos[i].nombre.length < 2) {
+            return `El ejemplo #${i + 1} debe tener un nombre válido.`;
+        }
+        if (!imagenValida(ejemplos[i].imagen)) {
+            return `El ejemplo "${ejemplos[i].nombre}" debe incluir obligatoriamente una foto.`;
+        }
+    }
     return null;
 }
 
-// POST /api/servicios   Recibe: { nombre, precio, duracion }
+// POST /api/servicios   Recibe: { nombre, precio, duracion, imagen, subtitulo, ejemplos }
 async function crearServicio(req, res) {
-    const error = validarServicio(req.body);
+    const error = validarServicio(req.body, true);
     if (error) return res.status(400).json({ success: false, message: error });
     try {
-        const { nombre, precio, duracion } = req.body;
-        await servicioModel.crear({ nombre: nombre.trim(), precio, duracion });
-        res.status(201).json({ success: true, message: 'Servicio creado.' });
+        const { nombre, precio, duracion, imagen, subtitulo } = req.body;
+        const ejemplos = normalizarEjemplosServicio(req.body.ejemplos, precio, duracion);
+        await servicioModel.crear({
+            nombre: nombre.trim(),
+            precio: Number(precio),
+            duracion: Number(duracion),
+            imagen: imagen.trim(),
+            subtitulo: typeof subtitulo === 'string' && subtitulo.trim()
+                ? subtitulo.trim()
+                : 'Servicio profesional personalizado con ejemplos reales del salón',
+            ejemplos
+        });
+        res.status(201).json({ success: true, message: 'Servicio creado con su foto y ejemplos en catálogo y galería.' });
     } catch (err) { errorServidor(res, err); }
 }
 
-// PUT /api/servicios/:id   Recibe: { nombre, precio, duracion }
+// PUT /api/servicios/:id   Recibe: { nombre, precio, duracion, imagen, subtitulo, ejemplos }
 async function editarServicio(req, res) {
-    const error = validarServicio(req.body);
+    const error = validarServicio(req.body, false);
     if (error) return res.status(400).json({ success: false, message: error });
     try {
-        const { nombre, precio, duracion } = req.body;
-        const ok = await servicioModel.actualizar(req.params.id, { nombre: nombre.trim(), precio, duracion });
+        const { nombre, precio, duracion, imagen, subtitulo } = req.body;
+        const ejemplos = Array.isArray(req.body.ejemplos)
+            ? normalizarEjemplosServicio(req.body.ejemplos, precio, duracion)
+            : null;
+        const ok = await servicioModel.actualizar(req.params.id, {
+            nombre: nombre.trim(),
+            precio: Number(precio),
+            duracion: Number(duracion),
+            imagen: imagen.trim(),
+            subtitulo: typeof subtitulo === 'string' ? subtitulo.trim() : null,
+            ejemplos: ejemplos && ejemplos.length > 0 ? ejemplos : null
+        });
         if (!ok) return res.status(404).json({ success: false, message: 'El servicio no existe.' });
-        res.json({ success: true, message: 'Servicio actualizado.' });
+        res.json({ success: true, message: 'Servicio actualizado con su foto y ejemplos.' });
     } catch (err) { errorServidor(res, err); }
 }
 
@@ -73,31 +127,55 @@ async function estadoServicio(req, res) {
 // PRODUCTOS
 // ---------------------------------------------------------------
 
-function validarProducto(body) {
-    if (!textoValido(body.nombre)) return 'El nombre debe tener entre 2 y 100 caracteres.';
+function validarProducto(body, exigirImagen = true) {
+    if (!textoValido(body.nombre)) return 'El nombre del producto debe tener entre 2 y 100 caracteres.';
     if (!numeroValido(body.precio) || Number(body.precio) === 0) return 'El precio debe ser un número mayor que cero.';
     if (!numeroValido(body.stock)) return 'El stock debe ser un número entero de 0 en adelante.';
+    if (exigirImagen && !imagenValida(body.imagen)) {
+        return 'Es obligatorio añadir una foto del producto para que las clientas puedan verlo.';
+    }
     return null;
 }
 
-// POST /api/productos   Recibe: { nombre, precio, stock }
+// POST /api/productos   Recibe: { nombre, precio, stock, imagen, categoria, descripcion }
 async function crearProducto(req, res) {
-    const error = validarProducto(req.body);
+    const error = validarProducto(req.body, true);
     if (error) return res.status(400).json({ success: false, message: error });
     try {
-        const { nombre, precio, stock } = req.body;
-        await productoModel.crear({ nombre: nombre.trim(), precio, stock });
-        res.status(201).json({ success: true, message: 'Producto creado.' });
+        const { nombre, precio, stock, imagen, categoria, descripcion } = req.body;
+        await productoModel.crear({
+            nombre: nombre.trim(),
+            precio: Number(precio),
+            stock: Number(stock),
+            imagen: imagen.trim(),
+            categoria: typeof categoria === 'string' && categoria.trim() ? categoria.trim() : 'Producto Profesional de Salón',
+            descripcion: typeof descripcion === 'string' && descripcion.trim()
+                ? descripcion.trim()
+                : 'Fórmula cosmética de grado profesional recomendada por nuestras especialistas para el cuidado en casa.'
+        });
+        res.status(201).json({ success: true, message: 'Producto registrado con su fotografía en la tienda.' });
     } catch (err) { errorServidor(res, err); }
 }
 
-// PUT /api/productos/:id   Recibe: { nombre, precio, stock }
+// PUT /api/productos/:id   Recibe: { nombre, precio, stock, imagen, categoria, descripcion }
 async function editarProducto(req, res) {
-    const error = validarProducto(req.body);
+    const existente = await productoModel.buscarPorId(req.params.id);
+    if (!existente) return res.status(404).json({ success: false, message: 'El producto no existe.' });
+
+    const imagenFinal = imagenValida(req.body.imagen) ? req.body.imagen.trim() : (existente.imagen || '');
+    const error = validarProducto({ ...req.body, imagen: imagenFinal }, Boolean(req.body.imagen !== undefined));
     if (error) return res.status(400).json({ success: false, message: error });
+
     try {
-        const { nombre, precio, stock } = req.body;
-        const ok = await productoModel.actualizar(req.params.id, { nombre: nombre.trim(), precio, stock });
+        const { nombre, precio, stock, categoria, descripcion } = req.body;
+        const ok = await productoModel.actualizar(req.params.id, {
+            nombre: nombre.trim(),
+            precio: Number(precio),
+            stock: Number(stock),
+            imagen: imagenFinal || null,
+            categoria: typeof categoria === 'string' && categoria.trim() ? categoria.trim() : (existente.categoria || null),
+            descripcion: typeof descripcion === 'string' && descripcion.trim() ? descripcion.trim() : (existente.descripcion || null)
+        });
         if (!ok) return res.status(404).json({ success: false, message: 'El producto no existe.' });
         res.json({ success: true, message: 'Producto actualizado.' });
     } catch (err) { errorServidor(res, err); }

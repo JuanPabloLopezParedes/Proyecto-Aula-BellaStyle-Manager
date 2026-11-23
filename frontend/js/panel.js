@@ -639,7 +639,7 @@ function actualizarResumenTotalCita() {
     const descuento = aplicaDescuento ? Math.round(subtotal * 0.15) : 0;
     const total = Math.max(0, subtotal - descuento);
 
-    const infoProd = prod && typeof obtenerFichaProducto === 'function' ? obtenerFichaProducto(prod.nombre) : null;
+    const infoProd = prod && typeof obtenerFichaProducto === 'function' ? obtenerFichaProducto(prod) : null;
 
     cajaResumen.innerHTML = `
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -864,8 +864,8 @@ async function iniciarClienta() {
     const contenedorBotones = document.getElementById('botonesCatalogoClienta');
     if (contenedorBotones) {
         contenedorBotones.innerHTML = conEstilista.map((s) => {
-            const ficha = typeof buscarDetalleServicio === 'function' ? buscarDetalleServicio(s.nombre) : null;
-            const imgSrv = (ficha && ficha.imagen) ? ficha.imagen : 'img/servicios/cat-corte.jpg';
+            const ficha = typeof buscarDetalleServicio === 'function' ? buscarDetalleServicio(s) : null;
+            const imgSrv = s.imagen || (ficha && ficha.imagen) || 'img/servicios/cat-corte.jpg';
             return `
             <button type="button"
                     data-explorar-id="${s.id_servicio}"
@@ -1938,21 +1938,113 @@ function editarClienta(idClienta) {
         });
 }
 
+// --- Utilidad para cargar fotos desde el equipo (comprimidas en DataURL) o por URL ---
+
+function comprimirArchivoImagen(archivo, maxAncho = 720, calidad = 0.82) {
+    return new Promise((resolve, reject) => {
+        if (!archivo || !archivo.type.startsWith('image/')) {
+            return reject(new Error('Selecciona un archivo de imagen válido (JPG, PNG, WEBP).'));
+        }
+        const lector = new FileReader();
+        lector.onerror = () => reject(new Error('No se pudo leer la imagen seleccionada.'));
+        lector.onload = (ev) => {
+            const img = new Image();
+            img.onerror = () => resolve(ev.target.result);
+            img.onload = () => {
+                let ancho = img.width;
+                let alto = img.height;
+                if (ancho > maxAncho) {
+                    alto = Math.round((alto * maxAncho) / ancho);
+                    ancho = maxAncho;
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = ancho;
+                canvas.height = alto;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, ancho, alto);
+                resolve(canvas.toDataURL('image/jpeg', calidad));
+            };
+            img.src = ev.target.result;
+        };
+        lector.readAsDataURL(archivo);
+    });
+}
+
+function conectarSelectorImagen({ idFile, idUrl, idHidden, idPreview, idPlaceholder }) {
+    const inputFile = document.getElementById(idFile);
+    const inputUrl = document.getElementById(idUrl);
+    const inputHidden = document.getElementById(idHidden);
+    const imgPreview = document.getElementById(idPreview);
+    const placeholder = document.getElementById(idPlaceholder);
+
+    const actualizarVista = (src) => {
+        const limpio = (src || '').trim();
+        if (inputHidden) inputHidden.value = limpio;
+        if (imgPreview) {
+            if (limpio) {
+                imgPreview.src = limpio;
+                imgPreview.classList.remove('hidden');
+                if (placeholder) placeholder.classList.add('hidden');
+            } else {
+                imgPreview.src = '';
+                imgPreview.classList.add('hidden');
+                if (placeholder) placeholder.classList.remove('hidden');
+            }
+        }
+    };
+
+    if (inputFile) {
+        inputFile.addEventListener('change', async () => {
+            const file = inputFile.files?.[0];
+            if (!file) return;
+            try {
+                const dataUrl = await comprimirArchivoImagen(file);
+                if (inputUrl) inputUrl.value = '';
+                actualizarVista(dataUrl);
+            } catch (err) {
+                avisar(err.message);
+            }
+        });
+    }
+
+    if (inputUrl) {
+        inputUrl.addEventListener('input', () => {
+            actualizarVista(inputUrl.value);
+        });
+    }
+}
+
 // --- Servicios ---
 
 async function cargarServiciosAdmin() {
     serviciosAdmin = (await pedir('/servicios?todos=1')).data || [];
     servicios = serviciosAdmin.filter((s) => s.estado === 'Disponible');
+    if (typeof window.sincronizarCatalogoConServicios === 'function') {
+        window.sincronizarCatalogoConServicios(serviciosAdmin);
+    }
     const tabla = document.getElementById('tablaServicios');
 
     tabla.innerHTML = serviciosAdmin.length === 0 ? filaVacia(5) : serviciosAdmin.map((s) => {
         const cambio = s.estado === 'Disponible'
             ? botonAccion('Desactivar', 'rojo', `/servicios/${s.id_servicio}/estado`, { estado: 'No disponible' })
             : botonAccion('Activar', 'verde', `/servicios/${s.id_servicio}/estado`, { estado: 'Disponible' });
-        const verTipos = `<button type="button" class="btn-mini bg-pastel-rosa text-bella-900 hover:bg-bella-200" data-ver-tipos="${s.id_servicio}">&#10022; Ver tipos</button>`;
+        const ficha = typeof buscarDetalleServicio === 'function' ? buscarDetalleServicio(s) : null;
+        const imgSrv = s.imagen || (ficha && ficha.imagen) || 'img/servicios/cat-corte.jpg';
+        const cantEjemplos = Array.isArray(s.ejemplos) && s.ejemplos.length > 0
+            ? s.ejemplos.length
+            : (ficha ? ficha.grupos.reduce((acc, g) => acc + g.opciones.length, 0) : 0);
+        const verTipos = `<button type="button" class="btn-mini bg-pastel-rosa text-bella-900 hover:bg-bella-200" data-ver-tipos="${s.id_servicio}">&#10022; Ver ejemplos (${cantEjemplos})</button>`;
         return `
             <tr>
-                <td class="font-medium text-white">${escapar(s.nombre)}</td>
+                <td>
+                    <div class="flex items-center gap-3">
+                        <img src="${escapar(imgSrv)}" alt="${escapar(s.nombre)}" class="h-11 w-11 shrink-0 rounded-xl object-cover ring-1 ring-bella-300/60 shadow-sm">
+                        <div>
+                            <span class="block font-medium text-white">${escapar(s.nombre)}</span>
+                            <span class="block text-[11px] text-bella-200/80">${cantEjemplos} ejemplo(s) con foto en galería</span>
+                        </div>
+                    </div>
+                </td>
                 <td>${pesos(s.precio)}</td>
                 <td>${s.duracion_min} min</td>
                 <td>${etiquetaActivo(s.estado)}</td>
@@ -1973,23 +2065,241 @@ async function cargarServiciosAdmin() {
     dibujarCasillasNuevo();
 }
 
-function editarServicio(idServicio) {
-    const s = serviciosAdmin.find((x) => String(x.id_servicio) === String(idServicio)) || { nombre: '', precio: '', duracion_min: 60 };
-    abrirVentana(idServicio ? 'Editar servicio' : 'Nuevo servicio',
-        campo('vNombre', 'Nombre', s.nombre, 'text', 'required') +
-        campo('vPrecio', 'Precio (pesos)', s.precio ? Math.round(s.precio) : '', 'number', 'min="0" step="500" required') +
-        campo('vDuracion', 'Duración (minutos)', s.duracion_min, 'number', 'min="15" max="480" step="15" required'),
-        async () => {
-            const datos = { nombre: valor('vNombre'), precio: Number(valor('vPrecio')), duracion: Number(valor('vDuracion')) };
-            const respuesta = idServicio
-                ? await pedir(`/servicios/${idServicio}`, 'PUT', datos)
-                : await pedir('/servicios', 'POST', datos);
-            if (respuesta.success) cargarServiciosAdmin();
-            return respuesta;
-        });
+function obtenerEjemplosInicialesDeServicio(s) {
+    if (Array.isArray(s.ejemplos) && s.ejemplos.length > 0) {
+        return s.ejemplos;
+    }
+    if (s.id_servicio && typeof buscarDetalleServicio === 'function') {
+        const ficha = buscarDetalleServicio(s);
+        if (ficha && Array.isArray(ficha.grupos)) {
+            const lista = [];
+            ficha.grupos.forEach((g) => {
+                (g.opciones || []).forEach((op) => {
+                    lista.push({
+                        nombre: op.nombre,
+                        detalle: op.detalle,
+                        precio: op.precio,
+                        duracion: op.duracion,
+                        imagen: op.imagen || s.imagen || ficha.imagen
+                    });
+                });
+            });
+            if (lista.length > 0) return lista;
+        }
+    }
+    return [
+        {
+            nombre: '',
+            detalle: '',
+            precio: s.precio ? Math.round(s.precio) : '',
+            duracion: s.duracion_min || 60,
+            imagen: ''
+        }
+    ];
 }
 
-// --- Productos (con botones rápidos -1 / +1 de stock) ---
+function editarServicio(idServicio) {
+    const s = serviciosAdmin.find((x) => String(x.id_servicio) === String(idServicio)) || {
+        nombre: '',
+        precio: '',
+        duracion_min: 60,
+        imagen: '',
+        subtitulo: '',
+        ejemplos: null
+    };
+    const fichaActual = s.id_servicio && typeof buscarDetalleServicio === 'function' ? buscarDetalleServicio(s) : null;
+    const imagenInicial = s.imagen || (fichaActual && fichaActual.imagen) || '';
+    const subtituloInicial = s.subtitulo || (fichaActual && fichaActual.subtitulo) || '';
+    const ejemplosIniciales = obtenerEjemplosInicialesDeServicio(s);
+
+    const html = `
+        <div class="grid gap-3 sm:grid-cols-3">
+            <div class="sm:col-span-1">
+                ${campo('vNombre', 'Nombre del servicio *', s.nombre, 'text', 'placeholder="Ej. Maquillaje Profesional" required')}
+            </div>
+            <div>
+                ${campo('vPrecio', 'Precio base (pesos) *', s.precio ? Math.round(s.precio) : '', 'number', 'min="1000" step="500" placeholder="Ej. 75000" required')}
+            </div>
+            <div>
+                ${campo('vDuracion', 'Duración (minutos) *', s.duracion_min, 'number', 'min="15" max="480" step="5" required')}
+            </div>
+        </div>
+
+        <div>
+            ${campo('vSubtitulo', 'Descripción corta del servicio', subtituloInicial, 'text', 'placeholder="Ej. Maquillaje social, novias y eventos especiales con acabado HD"')}
+        </div>
+
+        <!-- Foto principal obligatoria del servicio -->
+        <div class="rounded-2xl border-2 border-bella-400/70 bg-pastel-perla p-3.5">
+            <div class="flex items-center justify-between gap-2">
+                <label class="text-xs font-extrabold uppercase tracking-wider text-bella-900">📷 Foto principal del servicio (Obligatoria) *</label>
+                <span class="rounded-full bg-bella-600/15 px-2.5 py-0.5 text-[10px] font-bold text-bella-900">Requerida</span>
+            </div>
+            <p class="mt-0.5 text-[11px] font-medium text-pastel-subtinta">Sube una imagen desde tu computadora o pega la dirección de la foto. No se puede publicar el servicio sin foto.</p>
+            <div class="mt-2.5 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div class="flex h-24 w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-bella-300 bg-white shadow-inner">
+                    <img id="vServicioImgPreview" src="${atributo(imagenInicial)}" alt="Vista previa" class="${imagenInicial ? '' : 'hidden'} h-full w-full object-cover">
+                    <span id="vServicioImgPlaceholder" class="${imagenInicial ? 'hidden' : ''} px-2 text-center text-[10px] font-bold text-pastel-subtinta">Sin foto</span>
+                </div>
+                <div class="flex-1 space-y-2">
+                    <input id="vServicioFile" type="file" accept="image/*" class="block w-full text-xs font-semibold text-pastel-tinta file:mr-2.5 file:rounded-xl file:border-0 file:bg-bella-600 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white hover:file:bg-bella-700">
+                    <input id="vServicioUrl" type="text" class="campo-pastel py-1.5 text-xs" value="${atributo(imagenInicial.startsWith('data:') ? '' : imagenInicial)}" placeholder="O escribe la ruta/URL de la foto (ej. img/servicios/cat-corte.jpg o https://...)">
+                    <input id="vServicioImagenHidden" type="hidden" value="${atributo(imagenInicial)}">
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista dinámica de Ejemplos debajo de la foto para que se vean en el catálogo y en la galería -->
+        <div class="rounded-2xl border-2 border-bella-400/70 bg-pastel-rosa/50 p-3.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-bella-900">✨ Ejemplos de este servicio con foto (Para Catálogo y Galería) *</h3>
+                    <p class="text-[11px] font-medium text-pastel-subtinta">Añade debajo varios ejemplos reales con su foto, nombre y precio para que las clientas los vean en la galería normal y al explorar el servicio.</p>
+                </div>
+                <button type="button" id="btnAgregarEjemploServicio" class="rounded-xl bg-bella-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700">
+                    + Añadir otro ejemplo
+                </button>
+            </div>
+            <div id="listaEjemplosServicioModal" class="mt-3 max-h-72 space-y-3 overflow-y-auto pr-1"></div>
+        </div>`;
+
+    abrirVentana(idServicio ? 'Editar servicio, foto y ejemplos' : 'Nuevo servicio con foto y ejemplos', html, async () => {
+        const nombre = valor('vNombre');
+        const precio = Number(valor('vPrecio'));
+        const duracion = Number(valor('vDuracion'));
+        const subtitulo = valor('vSubtitulo');
+        const imagen = valor('vServicioImagenHidden');
+
+        if (!imagen) {
+            return { success: false, message: '⚠️ Debes añadir obligatoriamente la foto principal del servicio antes de guardarlo.' };
+        }
+
+        const tarjetasEjemplos = [...document.querySelectorAll('#listaEjemplosServicioModal [data-item-ejemplo]')];
+        if (tarjetasEjemplos.length === 0) {
+            return { success: false, message: '⚠️ Debes añadir al menos un ejemplo debajo del servicio para mostrar en la galería.' };
+        }
+
+        const ejemplos = [];
+        for (let i = 0; i < tarjetasEjemplos.length; i++) {
+            const card = tarjetasEjemplos[i];
+            const ejNombre = card.querySelector('[data-ej-nombre]')?.value.trim() || '';
+            const ejDetalle = card.querySelector('[data-ej-detalle]')?.value.trim() || '';
+            const ejPrecio = Number(card.querySelector('[data-ej-precio]')?.value) || precio;
+            const ejDuracion = Number(card.querySelector('[data-ej-duracion]')?.value) || duracion;
+            const ejImagen = card.querySelector('[data-ej-imagen]')?.value.trim() || '';
+
+            if (!ejNombre) {
+                return { success: false, message: `⚠️ Escribe el nombre del Ejemplo #${i + 1}.` };
+            }
+            if (!ejImagen) {
+                return { success: false, message: `⚠️ El ejemplo "${ejNombre}" debe tener obligatoriamente una foto.` };
+            }
+
+            ejemplos.push({
+                nombre: ejNombre,
+                detalle: ejDetalle || `Ejemplo real de ${ejNombre} realizado por nuestras especialistas en salón.`,
+                precio: ejPrecio,
+                duracion: ejDuracion,
+                imagen: ejImagen
+            });
+        }
+
+        const datos = { nombre, precio, duracion, imagen, subtitulo, ejemplos };
+        const respuesta = idServicio
+            ? await pedir(`/servicios/${idServicio}`, 'PUT', datos)
+            : await pedir('/servicios', 'POST', datos);
+        if (respuesta.success) await cargarServiciosAdmin();
+        return respuesta;
+    });
+
+    conectarSelectorImagen({
+        idFile: 'vServicioFile',
+        idUrl: 'vServicioUrl',
+        idHidden: 'vServicioImagenHidden',
+        idPreview: 'vServicioImgPreview',
+        idPlaceholder: 'vServicioImgPlaceholder'
+    });
+
+    const contenedorEjemplos = document.getElementById('listaEjemplosServicioModal');
+    let contadorEj = 0;
+
+    const agregarTarjetaEjemplo = (ej = {}) => {
+        contadorEj += 1;
+        const idx = contadorEj;
+        const imgEj = ej.imagen || '';
+        const div = document.createElement('div');
+        div.setAttribute('data-item-ejemplo', String(idx));
+        div.className = 'rounded-2xl border border-bella-300 bg-white p-3 shadow-sm';
+        div.innerHTML = `
+            <div class="flex items-center justify-between gap-2 border-b border-bella-200/70 pb-2">
+                <span class="text-xs font-extrabold text-bella-900">Ejemplo visual #${idx}</span>
+                <button type="button" data-quitar-ejemplo class="rounded-lg bg-red-500/15 px-2.5 py-0.5 text-[11px] font-bold text-red-800 hover:bg-red-500/25">
+                    Quitar ejemplo
+                </button>
+            </div>
+            <div class="mt-2.5 grid gap-2.5 sm:grid-cols-3">
+                <div class="sm:col-span-1">
+                    <label class="block text-[11px] font-bold text-pastel-tinta">Nombre del ejemplo *</label>
+                    <input type="text" data-ej-nombre class="campo-pastel py-1.5 text-xs" value="${atributo(ej.nombre || '')}" placeholder="Ej. Maquillaje Social Nude" required>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-pastel-tinta">Precio (pesos) *</label>
+                    <input type="number" data-ej-precio min="1000" step="500" class="campo-pastel py-1.5 text-xs" value="${atributo(ej.precio ? Math.round(ej.precio) : (s.precio ? Math.round(s.precio) : ''))}" placeholder="Ej. 80000" required>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-pastel-tinta">Duración (min) *</label>
+                    <input type="number" data-ej-duracion min="15" max="480" step="5" class="campo-pastel py-1.5 text-xs" value="${atributo(ej.duracion || s.duracion_min || 60)}" required>
+                </div>
+            </div>
+            <div class="mt-2">
+                <label class="block text-[11px] font-bold text-pastel-tinta">Descripción de lo que incluye este ejemplo</label>
+                <input type="text" data-ej-detalle class="campo-pastel py-1.5 text-xs" value="${atributo(ej.detalle || '')}" placeholder="Ej. Preparación de piel, diseño de ojos, pestañas punto a punto y sellado larga duración">
+            </div>
+            <div class="mt-2.5 flex flex-col gap-2.5 sm:flex-row sm:items-center">
+                <div class="flex h-16 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-bella-300 bg-pastel-perla">
+                    <img id="ejPreview_${idx}" src="${atributo(imgEj)}" alt="" class="${imgEj ? '' : 'hidden'} h-full w-full object-cover">
+                    <span id="ejPlaceholder_${idx}" class="${imgEj ? 'hidden' : ''} text-[10px] font-bold text-pastel-subtinta">Foto *</span>
+                </div>
+                <div class="flex-1 space-y-1.5">
+                    <input id="ejFile_${idx}" type="file" accept="image/*" class="block w-full text-[11px] font-semibold text-pastel-tinta file:mr-2 file:rounded-lg file:border-0 file:bg-bella-600 file:px-2.5 file:py-1 file:text-[11px] file:font-bold file:text-white hover:file:bg-bella-700">
+                    <input id="ejUrl_${idx}" type="text" class="campo-pastel py-1 text-xs" value="${atributo(imgEj.startsWith('data:') ? '' : imgEj)}" placeholder="O pega ruta/URL de la foto del ejemplo *">
+                    <input id="ejHidden_${idx}" data-ej-imagen type="hidden" value="${atributo(imgEj)}">
+                </div>
+            </div>`;
+
+        contenedorEjemplos.appendChild(div);
+
+        conectarSelectorImagen({
+            idFile: `ejFile_${idx}`,
+            idUrl: `ejUrl_${idx}`,
+            idHidden: `ejHidden_${idx}`,
+            idPreview: `ejPreview_${idx}`,
+            idPlaceholder: `ejPlaceholder_${idx}`
+        });
+
+        div.querySelector('[data-quitar-ejemplo]')?.addEventListener('click', () => {
+            const totalActual = contenedorEjemplos.querySelectorAll('[data-item-ejemplo]').length;
+            if (totalActual <= 1) {
+                return avisar('El servicio debe tener al menos un ejemplo con foto.');
+            }
+            div.remove();
+        });
+    };
+
+    ejemplosIniciales.forEach((ej) => agregarTarjetaEjemplo(ej));
+    document.getElementById('btnAgregarEjemploServicio')?.addEventListener('click', () => {
+        agregarTarjetaEjemplo({
+            nombre: '',
+            detalle: '',
+            precio: valor('vPrecio') || '',
+            duracion: valor('vDuracion') || 60,
+            imagen: ''
+        });
+        contenedorEjemplos.scrollTop = contenedorEjemplos.scrollHeight;
+    });
+}
+
+// --- Productos (con fotografía obligatoria y botones rápidos -1 / +1 de stock) ---
 
 async function cargarProductosAdmin() {
     productosAdmin = (await pedir('/productos?todos=1')).data || [];
@@ -1999,7 +2309,7 @@ async function cargarProductosAdmin() {
         const cambio = p.estado === 'Activo'
             ? botonAccion('Desactivar', 'rojo', `/productos/${p.id_producto}/estado`, { estado: 'Inactivo' })
             : botonAccion('Activar', 'verde', `/productos/${p.id_producto}/estado`, { estado: 'Activo' });
-        const infoProd = typeof obtenerFichaProducto === 'function' ? obtenerFichaProducto(p.nombre) : { imagen: 'img/productos/shampoo-argan.jpg', categoria: '' };
+        const infoProd = typeof obtenerFichaProducto === 'function' ? obtenerFichaProducto(p) : { imagen: p.imagen || 'img/productos/shampoo-argan.jpg', categoria: p.categoria || '' };
         return `
             <tr>
                 <td>
@@ -2032,11 +2342,15 @@ async function cargarProductosAdmin() {
         btn.addEventListener('click', async () => {
             const p = productosAdmin.find((x) => String(x.id_producto) === String(btn.dataset.stockId));
             if (!p) return;
+            const infoProd = typeof obtenerFichaProducto === 'function' ? obtenerFichaProducto(p) : { imagen: p.imagen };
             const nuevoStock = Math.max(0, Number(p.stock) + Number(btn.dataset.stockDelta));
             const res = await pedir(`/productos/${p.id_producto}`, 'PUT', {
                 nombre: p.nombre,
                 precio: Math.round(Number(p.precio)),
-                stock: nuevoStock
+                stock: nuevoStock,
+                imagen: p.imagen || infoProd.imagen,
+                categoria: p.categoria || infoProd.categoria,
+                descripcion: p.descripcion || infoProd.descripcion
             });
             if (res.success) {
                 cargarProductosAdmin();
@@ -2050,19 +2364,88 @@ async function cargarProductosAdmin() {
 }
 
 function editarProducto(idProducto) {
-    const p = productosAdmin.find((x) => String(x.id_producto) === String(idProducto)) || { nombre: '', precio: '', stock: 0 };
-    abrirVentana(idProducto ? 'Editar producto' : 'Nuevo producto',
-        campo('vNombre', 'Nombre', p.nombre, 'text', 'required') +
-        campo('vPrecio', 'Precio (pesos)', p.precio ? Math.round(p.precio) : '', 'number', 'min="0" step="500" required') +
-        campo('vStock', 'Stock (unidades)', p.stock, 'number', 'min="0" step="1" required'),
-        async () => {
-            const datos = { nombre: valor('vNombre'), precio: Number(valor('vPrecio')), stock: Number(valor('vStock')) };
-            const respuesta = idProducto
-                ? await pedir(`/productos/${idProducto}`, 'PUT', datos)
-                : await pedir('/productos', 'POST', datos);
-            if (respuesta.success) cargarProductosAdmin();
-            return respuesta;
-        });
+    const p = productosAdmin.find((x) => String(x.id_producto) === String(idProducto)) || {
+        nombre: '',
+        precio: '',
+        stock: 10,
+        imagen: '',
+        categoria: '',
+        descripcion: ''
+    };
+    const infoActual = p.id_producto && typeof obtenerFichaProducto === 'function' ? obtenerFichaProducto(p) : null;
+    const imagenInicial = p.imagen || (infoActual && infoActual.imagen) || '';
+    const categoriaInicial = p.categoria || (infoActual && infoActual.categoria) || '';
+    const descripcionInicial = p.descripcion || (infoActual && infoActual.descripcion) || '';
+
+    const html = `
+        <div class="grid gap-3 sm:grid-cols-3">
+            <div class="sm:col-span-1">
+                ${campo('vNombre', 'Nombre del producto *', p.nombre, 'text', 'placeholder="Ej. Acondicionador de Argán" required')}
+            </div>
+            <div>
+                ${campo('vPrecio', 'Precio (pesos) *', p.precio ? Math.round(p.precio) : '', 'number', 'min="500" step="500" placeholder="Ej. 32000" required')}
+            </div>
+            <div>
+                ${campo('vStock', 'Stock (unidades) *', p.stock, 'number', 'min="0" step="1" required')}
+            </div>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2">
+            <div>
+                ${campo('vCategoriaProd', 'Categoría en la tienda', categoriaInicial, 'text', 'placeholder="Ej. Cuidado Capilar · Hidratación"')}
+            </div>
+            <div>
+                ${campo('vDescripcionProd', 'Descripción para la clienta', descripcionInicial, 'text', 'placeholder="Ej. Hidrata y sella la cutícula sin sal"')}
+            </div>
+        </div>
+
+        <!-- Foto obligatoria del producto -->
+        <div class="rounded-2xl border-2 border-bella-400/70 bg-pastel-perla p-3.5">
+            <div class="flex items-center justify-between gap-2">
+                <label class="text-xs font-extrabold uppercase tracking-wider text-bella-900">📷 Foto del producto (Obligatoria) *</label>
+                <span class="rounded-full bg-bella-600/15 px-2.5 py-0.5 text-[10px] font-bold text-bella-900">Requerida</span>
+            </div>
+            <p class="mt-0.5 text-[11px] font-medium text-pastel-subtinta">Selecciona una foto del producto desde tu PC o pega la URL de la imagen para que la clienta lo vea en la tienda.</p>
+            <div class="mt-2.5 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div class="flex h-24 w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-bella-300 bg-white shadow-inner">
+                    <img id="vProdImgPreview" src="${atributo(imagenInicial)}" alt="Vista previa del producto" class="${imagenInicial ? '' : 'hidden'} h-full w-full object-cover">
+                    <span id="vProdImgPlaceholder" class="${imagenInicial ? 'hidden' : ''} px-2 text-center text-[10px] font-bold text-pastel-subtinta">Sin foto</span>
+                </div>
+                <div class="flex-1 space-y-2">
+                    <input id="vProdFile" type="file" accept="image/*" class="block w-full text-xs font-semibold text-pastel-tinta file:mr-2.5 file:rounded-xl file:border-0 file:bg-bella-600 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white hover:file:bg-bella-700">
+                    <input id="vProdUrl" type="text" class="campo-pastel py-1.5 text-xs" value="${atributo(imagenInicial.startsWith('data:') ? '' : imagenInicial)}" placeholder="O pega la ruta/URL de la foto (ej. img/productos/shampoo-argan.jpg o https://...)">
+                    <input id="vProdImagenHidden" type="hidden" value="${atributo(imagenInicial)}">
+                </div>
+            </div>
+        </div>`;
+
+    abrirVentana(idProducto ? 'Editar producto y fotografía' : 'Registrar nuevo producto con foto', html, async () => {
+        const imagen = valor('vProdImagenHidden');
+        if (!imagen) {
+            return { success: false, message: '⚠️ Es obligatorio añadir una foto del producto antes de guardarlo.' };
+        }
+        const datos = {
+            nombre: valor('vNombre'),
+            precio: Number(valor('vPrecio')),
+            stock: Number(valor('vStock')),
+            imagen,
+            categoria: valor('vCategoriaProd') || 'Producto Profesional de Salón',
+            descripcion: valor('vDescripcionProd') || 'Fórmula cosmética profesional recomendada por nuestras especialistas.'
+        };
+        const respuesta = idProducto
+            ? await pedir(`/productos/${idProducto}`, 'PUT', datos)
+            : await pedir('/productos', 'POST', datos);
+        if (respuesta.success) await cargarProductosAdmin();
+        return respuesta;
+    });
+
+    conectarSelectorImagen({
+        idFile: 'vProdFile',
+        idUrl: 'vProdUrl',
+        idHidden: 'vProdImagenHidden',
+        idPreview: 'vProdImgPreview',
+        idPlaceholder: 'vProdImgPlaceholder'
+    });
 }
 
 // --- Registrar usuario ---
@@ -2299,6 +2682,9 @@ async function iniciar() {
     prepararEncabezado();
 
     servicios = (await pedir('/servicios')).data || [];
+    if (typeof window.sincronizarCatalogoConServicios === 'function') {
+        window.sincronizarCatalogoConServicios(servicios);
+    }
     estilistas = (await pedir('/estilistas')).data || [];
     productosDisponibles = (await pedir('/productos')).data || [];
 

@@ -82,6 +82,9 @@ CREATE TABLE servicios (
     nombre       VARCHAR(100) NOT NULL,
     precio       DECIMAL(10,2) NOT NULL DEFAULT 0,
     duracion_min INT NOT NULL DEFAULT 60,
+    imagen       MEDIUMTEXT DEFAULT NULL,
+    subtitulo    VARCHAR(255) DEFAULT NULL,
+    ejemplos     MEDIUMTEXT DEFAULT NULL,
     estado       ENUM('Disponible','No disponible') NOT NULL DEFAULT 'Disponible'
 );
 
@@ -91,6 +94,9 @@ CREATE TABLE productos (
     nombre      VARCHAR(100) NOT NULL,
     precio      DECIMAL(10,2) NOT NULL DEFAULT 0,
     stock       INT NOT NULL DEFAULT 0,
+    imagen      MEDIUMTEXT DEFAULT NULL,
+    categoria   VARCHAR(100) DEFAULT NULL,
+    descripcion TEXT DEFAULT NULL,
     estado      ENUM('Activo','Inactivo') NOT NULL DEFAULT 'Activo'
 );
 

@@ -594,55 +594,214 @@ function limpiarTextoCatalogo(texto) {
         .replace(/[\u0300-\u036f]/g, '');
 }
 
-function obtenerFichaProducto(nombreProducto = '') {
+// Sincroniza los servicios de la API (incluyendo servicios nuevos o editados con foto y ejemplos por el Admin)
+window.sincronizarCatalogoConServicios = function (listaServicios = []) {
+    if (!Array.isArray(listaServicios)) return;
+    window.SERVICIOS_DINAMICOS_CACHE = listaServicios;
+
+    listaServicios.forEach((s) => {
+        if (!s || !s.nombre) return;
+        const limpio = limpiarTextoCatalogo(s.nombre);
+        const existente = CATALOGO_DETALLES.find((item) =>
+            item.titulo.toLowerCase() === s.nombre.toLowerCase() ||
+            item.claves.some((c) => limpio.includes(c))
+        );
+
+        const ejemplosValidos = Array.isArray(s.ejemplos) && s.ejemplos.length > 0
+            ? s.ejemplos.map((ej) => ({
+                nombre: ej.nombre || s.nombre,
+                detalle: ej.detalle || 'Procedimiento profesional personalizado realizado en nuestro salón.',
+                precio: Number(ej.precio) > 0 ? Number(ej.precio) : Number(s.precio || 45000),
+                duracion: Number(ej.duracion) > 0 ? Number(ej.duracion) : Number(s.duracion_min || 60),
+                imagen: ej.imagen || s.imagen || 'img/servicios/cat-corte.jpg'
+            }))
+            : null;
+
+        if (existente) {
+            if (s.imagen) existente.imagen = s.imagen;
+            if (s.subtitulo) existente.subtitulo = s.subtitulo;
+            if (ejemplosValidos) {
+                existente.grupos = [
+                    {
+                        categoria: `Ejemplos y Especialidades de ${s.nombre}`,
+                        icono: '✦',
+                        opciones: ejemplosValidos
+                    }
+                ];
+            }
+        } else {
+            const primeraPalabra = limpio.split(/\s+/)[0] || limpio;
+            CATALOGO_DETALLES.push({
+                claves: [limpio, primeraPalabra].filter(Boolean),
+                etiquetaCorta: `✦ ${s.nombre}`,
+                titulo: s.nombre,
+                subtitulo: s.subtitulo || 'Servicio profesional personalizado con ejemplos reales del salón',
+                colorPastel: 'bg-pastel-rosa',
+                imagen: s.imagen || 'img/servicios/cat-corte.jpg',
+                grupos: [
+                    {
+                        categoria: `Ejemplos y Especialidades de ${s.nombre}`,
+                        icono: '✦',
+                        opciones: ejemplosValidos || [
+                            {
+                                nombre: `${s.nombre} — Sesión Profesional`,
+                                detalle: 'Incluye diagnóstico previo con la estilista, aplicación con productos profesionales y acabado final.',
+                                precio: Number(s.precio) || 45000,
+                                duracion: Number(s.duracion_min) || 60,
+                                imagen: s.imagen || 'img/servicios/cat-corte.jpg'
+                            }
+                        ]
+                    }
+                ]
+            });
+        }
+    });
+};
+
+// Construye la lista completa de trabajos para la Galería (los 12 base + los ejemplos de servicios nuevos/editados por el Admin)
+window.obtenerTrabajosGaleriaCompleta = function (listaServicios = []) {
+    const trabajos = GALERIA_TRABAJOS_12.slice();
+    const serviciosFuente = Array.isArray(listaServicios) && listaServicios.length > 0
+        ? listaServicios
+        : (window.SERVICIOS_DINAMICOS_CACHE || []);
+
+    let siguienteId = trabajos.length + 1;
+    serviciosFuente.forEach((s) => {
+        if (!s || !Array.isArray(s.ejemplos) || s.ejemplos.length === 0) return;
+        const limpio = limpiarTextoCatalogo(s.nombre);
+        let filtro = 'peinado';
+        if (limpio.includes('corte') || limpio.includes('barba')) filtro = 'corte';
+        else if (limpio.includes('tinte') || limpio.includes('mecha') || limpio.includes('color') || limpio.includes('balayage')) filtro = 'color';
+        else if (limpio.includes('una') || limpio.includes('manicure') || limpio.includes('pedicure')) filtro = 'unas';
+
+        s.ejemplos.forEach((ej) => {
+            if (!ej || !ej.nombre || !ej.imagen) return;
+            const yaExiste = trabajos.some((t) =>
+                t.variedad.toLowerCase() === ej.nombre.toLowerCase() &&
+                t.servicioBase.toLowerCase() === s.nombre.toLowerCase()
+            );
+            if (!yaExiste) {
+                trabajos.push({
+                    id: siguienteId++,
+                    filtro,
+                    categoria: s.nombre,
+                    servicioBase: s.nombre,
+                    variedad: ej.nombre,
+                    titulo: `${String(siguienteId - 1).padStart(2, '0')} · ${ej.nombre}`,
+                    detalle: ej.detalle || `Ejemplo real del servicio ${s.nombre} realizado en BellaStyle.`,
+                    estilista: 'Equipo BellaStyle',
+                    precio: Number(ej.precio) > 0 ? Number(ej.precio) : Number(s.precio || 45000),
+                    duracion: Number(ej.duracion) > 0 ? Number(ej.duracion) : Number(s.duracion_min || 60),
+                    imagen: ej.imagen || s.imagen
+                });
+            }
+        });
+    });
+
+    return trabajos;
+};
+
+function obtenerFichaProducto(productoONombre = '') {
+    const esObjeto = productoONombre && typeof productoONombre === 'object';
+    const nombreProducto = esObjeto ? (productoONombre.nombre || '') : String(productoONombre || '');
     const limpio = limpiarTextoCatalogo(nombreProducto);
+
+    let base = null;
     for (const item of CATALOGO_PRODUCTOS_TIENDA) {
         if (item.claves.some((c) => limpio.includes(c))) {
-            return item;
+            base = item;
+            break;
         }
     }
-    return {
+
+    const fallback = base || {
         imagen: 'img/productos/shampoo-argan.jpg',
         categoria: 'Producto Profesional de Salón',
         descripcion: 'Fórmula cosmética de grado profesional recomendada por nuestras especialistas para el cuidado en casa.'
     };
+
+    if (esObjeto) {
+        return {
+            imagen: (productoONombre.imagen && String(productoONombre.imagen).trim()) ? productoONombre.imagen : fallback.imagen,
+            categoria: (productoONombre.categoria && String(productoONombre.categoria).trim()) ? productoONombre.categoria : fallback.categoria,
+            descripcion: (productoONombre.descripcion && String(productoONombre.descripcion).trim()) ? productoONombre.descripcion : fallback.descripcion
+        };
+    }
+    return fallback;
 }
 
-// Busca la ficha detallada según el nombre del servicio o categoría.
-function buscarDetalleServicio(nombreServicio, precioBase = null, duracionBase = null) {
+// Busca la ficha detallada según el nombre o el objeto completo del servicio.
+function buscarDetalleServicio(servicioONombre, precioBase = null, duracionBase = null) {
+    const esObjeto = servicioONombre && typeof servicioONombre === 'object';
+    const nombreServicio = esObjeto ? (servicioONombre.nombre || '') : String(servicioONombre || '');
+    const precio = esObjeto ? (servicioONombre.precio ?? precioBase) : precioBase;
+    const duracion = esObjeto ? (servicioONombre.duracion_min ?? duracionBase) : duracionBase;
+
+    if (esObjeto) {
+        window.sincronizarCatalogoConServicios([servicioONombre]);
+    }
+
     const limpio = limpiarTextoCatalogo(nombreServicio);
     for (const item of CATALOGO_DETALLES) {
-        if (item.claves.some((c) => limpio.includes(c))) {
+        if (item.titulo.toLowerCase() === nombreServicio.toLowerCase() || item.claves.some((c) => limpio.includes(c))) {
+            if (esObjeto && Array.isArray(servicioONombre.ejemplos) && servicioONombre.ejemplos.length > 0) {
+                return {
+                    ...item,
+                    imagen: servicioONombre.imagen || item.imagen,
+                    subtitulo: servicioONombre.subtitulo || item.subtitulo,
+                    grupos: [
+                        {
+                            categoria: `Ejemplos y Especialidades de ${nombreServicio}`,
+                            icono: '✦',
+                            opciones: servicioONombre.ejemplos.map((ej) => ({
+                                nombre: ej.nombre,
+                                detalle: ej.detalle || 'Procedimiento profesional personalizado realizado en nuestro salón.',
+                                precio: Number(ej.precio) > 0 ? Number(ej.precio) : Number(precio || 45000),
+                                duracion: Number(ej.duracion) > 0 ? Number(ej.duracion) : Number(duracion || 60),
+                                imagen: ej.imagen || servicioONombre.imagen || item.imagen
+                            }))
+                        }
+                    ]
+                };
+            }
+            if (esObjeto && servicioONombre.imagen) {
+                return { ...item, imagen: servicioONombre.imagen, subtitulo: servicioONombre.subtitulo || item.subtitulo };
+            }
             return item;
         }
     }
+
+    const imgPrincipal = (esObjeto && servicioONombre.imagen) ? servicioONombre.imagen : 'img/servicios/cat-corte.jpg';
+    const ejemplosPersonalizados = (esObjeto && Array.isArray(servicioONombre.ejemplos) && servicioONombre.ejemplos.length > 0)
+        ? servicioONombre.ejemplos.map((ej) => ({
+            nombre: ej.nombre,
+            detalle: ej.detalle || 'Incluye diagnóstico previo con la estilista, aplicación con productos profesionales y acabado final.',
+            precio: Number(ej.precio) > 0 ? Number(ej.precio) : (precio || 45000),
+            duracion: Number(ej.duracion) > 0 ? Number(ej.duracion) : (duracion || 60),
+            imagen: ej.imagen || imgPrincipal
+        }))
+        : [
+            {
+                nombre: `${nombreServicio} — Sesión Estándar`,
+                detalle: 'Incluye diagnóstico previo con la estilista, aplicación con productos profesionales y acabado final.',
+                precio: precio || 45000,
+                duracion: duracion || 60,
+                imagen: imgPrincipal
+            }
+        ];
+
     return {
-        claves: [],
+        claves: [limpio],
         etiquetaCorta: nombreServicio || 'Servicio',
         titulo: nombreServicio || 'Servicio BellaStyle',
-        subtitulo: 'Atención personalizada con productos profesionales de salón',
+        subtitulo: (esObjeto && servicioONombre.subtitulo) ? servicioONombre.subtitulo : 'Atención personalizada con productos profesionales de salón',
         colorPastel: 'bg-pastel-rosa',
-        imagen: 'img/servicios/cat-corte.jpg',
+        imagen: imgPrincipal,
         grupos: [
             {
-                categoria: 'Opciones incluidas en este servicio',
+                categoria: 'Ejemplos y opciones incluidas en este servicio',
                 icono: '✦',
-                opciones: [
-                    {
-                        nombre: `${nombreServicio} — Sesión Estándar`,
-                        detalle: 'Incluye diagnóstico previo con la estilista, aplicación con productos profesionales y acabado final.',
-                        precio: precioBase || 45000,
-                        duracion: duracionBase || 60,
-                        imagen: 'img/servicios/cat-corte.jpg'
-                    },
-                    {
-                        nombre: `${nombreServicio} — Sesión Premium + Hidratación`,
-                        detalle: 'Servicio completo acompañado de sellado protector de brillo y asesoría de cuidado en casa.',
-                        precio: precioBase ? Number(precioBase) + 20000 : 65000,
-                        duracion: duracionBase ? Number(duracionBase) + 20 : 80,
-                        imagen: 'img/servicios/cat-tratamiento.jpg'
-                    }
-                ]
+                opciones: ejemplosPersonalizados
             }
         ]
     };

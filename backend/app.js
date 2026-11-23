@@ -7,8 +7,26 @@ const rutas = require('./routes/rutas');
 
 const app = express();
 
-// Permite leer JSON en el cuerpo de las peticiones
-app.use(express.json());
+// Permite leer JSON en el cuerpo de las peticiones (hasta 15MB para fotos de productos y ejemplos de servicios)
+app.use(express.json({ limit: '15mb' }));
+
+// Migración automática de columnas nuevas en MySQL (si usa MySQL real)
+async function asegurarColumnasFotos() {
+    try {
+        const [colProdImg] = await db.query("SHOW COLUMNS FROM productos LIKE 'imagen'");
+        if (colProdImg.length === 0) {
+            await db.query('ALTER TABLE productos ADD COLUMN imagen MEDIUMTEXT DEFAULT NULL');
+            await db.query('ALTER TABLE productos ADD COLUMN categoria VARCHAR(100) DEFAULT NULL');
+            await db.query('ALTER TABLE productos ADD COLUMN descripcion TEXT DEFAULT NULL');
+        }
+        const [colSrvImg] = await db.query("SHOW COLUMNS FROM servicios LIKE 'imagen'");
+        if (colSrvImg.length === 0) {
+            await db.query('ALTER TABLE servicios ADD COLUMN imagen MEDIUMTEXT DEFAULT NULL');
+            await db.query('ALTER TABLE servicios ADD COLUMN subtitulo VARCHAR(255) DEFAULT NULL');
+            await db.query('ALTER TABLE servicios ADD COLUMN ejemplos MEDIUMTEXT DEFAULT NULL');
+        }
+    } catch (_) {}
+}
 
 // La dirección principal (http://localhost:3000) abre la Landing Page (welcome.html)
 app.get('/', (req, res) => res.redirect('/welcome.html'));
@@ -43,6 +61,7 @@ async function revisarBaseDeDatos() {
 if (!process.env.VERCEL && require.main === module) {
     db.query('SELECT 1')
         .then(revisarBaseDeDatos)
+        .then(asegurarColumnasFotos)
         .then(() => {
             app.listen(config.puerto, () => {
                 console.log('Conectado a MySQL');

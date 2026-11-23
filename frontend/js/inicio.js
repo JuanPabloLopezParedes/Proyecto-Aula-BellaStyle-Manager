@@ -27,14 +27,21 @@ function animarNumero(elemento, final) {
     requestAnimationFrame(paso);
 }
 
-// 1. Dibuja la Galería / Portafolio con los 12 ejemplos reales de trabajos hechos
-function dibujarGaleria12(filtro = 'todos') {
+// 1. Dibuja la Galería / Portafolio con los 12 ejemplos reales + los ejemplos de nuevos servicios creados por la Administradora
+let filtroGaleriaActual = 'todos';
+
+function dibujarGaleria12(filtro = filtroGaleriaActual) {
+    filtroGaleriaActual = filtro;
     const cont = document.getElementById('grillaGaleria12');
     if (!cont || typeof GALERIA_TRABAJOS_12 === 'undefined') return;
 
+    const fuenteCompleta = typeof window.obtenerTrabajosGaleriaCompleta === 'function'
+        ? window.obtenerTrabajosGaleriaCompleta()
+        : GALERIA_TRABAJOS_12;
+
     const lista = filtro === 'todos'
-        ? GALERIA_TRABAJOS_12
-        : GALERIA_TRABAJOS_12.filter((item) => {
+        ? fuenteCompleta
+        : fuenteCompleta.filter((item) => {
             if (filtro === 'peinado') return item.filtro === 'peinado' || item.filtro === 'tratamiento';
             return item.filtro === filtro;
         });
@@ -108,8 +115,8 @@ function dibujarTiendaProductos(productos = []) {
 
     cont.innerHTML = productos.map((p) => {
         const info = typeof obtenerFichaProducto === 'function'
-            ? obtenerFichaProducto(p.nombre)
-            : { imagen: 'img/productos/shampoo-argan.jpg', categoria: 'Cuidado Capilar', descripcion: 'Producto profesional de salón.' };
+            ? obtenerFichaProducto(p)
+            : { imagen: p.imagen || 'img/productos/shampoo-argan.jpg', categoria: p.categoria || 'Cuidado Capilar', descripcion: p.descripcion || 'Producto profesional de salón.' };
         const disponible = Number(p.stock) > 0;
 
         return `
@@ -168,6 +175,13 @@ async function cargarDatos() {
         pedir('/productos')
     ]);
 
+    if (servicios && servicios.success && Array.isArray(servicios.data)) {
+        if (typeof window.sincronizarCatalogoConServicios === 'function') {
+            window.sincronizarCatalogoConServicios(servicios.data);
+        }
+        dibujarGaleria12(filtroGaleriaActual);
+    }
+
     if (productos && productos.success) {
         dibujarTiendaProductos(productos.data);
     }
@@ -218,12 +232,12 @@ async function cargarDatos() {
         return;
     }
 
-    // Botones superiores para abrir cualquiera de los 7 servicios con 1 clic
+    // Botones superiores para abrir cualquiera de los servicios con 1 clic
     const barraRapida = document.getElementById('filtrosRapidosServicios');
     if (barraRapida) {
         barraRapida.innerHTML = servicios.data.map((s) => {
-            const ficha = typeof buscarDetalleServicio === 'function' ? buscarDetalleServicio(s.nombre) : null;
-            const img = (ficha && ficha.imagen) ? ficha.imagen : 'img/servicios/cat-corte.jpg';
+            const ficha = typeof buscarDetalleServicio === 'function' ? buscarDetalleServicio(s) : null;
+            const img = s.imagen || (ficha && ficha.imagen) || 'img/servicios/cat-corte.jpg';
             return `
                 <button type="button"
                         data-abrir-cat="${escapar(s.nombre)}"
@@ -244,10 +258,10 @@ async function cargarDatos() {
         });
     }
 
-    // Dibuja cada uno de los 7 servicios con todos sus sub-servicios e imágenes de ejemplo clicables
+    // Dibuja cada uno de los servicios con todos sus sub-servicios e imágenes de ejemplo clicables
     lista.innerHTML = servicios.data.map((s) => {
         const ficha = typeof buscarDetalleServicio === 'function'
-            ? buscarDetalleServicio(s.nombre, s.precio, s.duracion_min)
+            ? buscarDetalleServicio(s, s.precio, s.duracion_min)
             : null;
 
         const bloquesOpciones = ficha
@@ -288,7 +302,7 @@ async function cargarDatos() {
             ? ficha.grupos.reduce((acc, g) => acc + g.opciones.length, 0)
             : 2;
 
-        const imgCategoria = (ficha && ficha.imagen) ? ficha.imagen : 'img/servicios/cat-corte.jpg';
+        const imgCategoria = s.imagen || (ficha && ficha.imagen) || 'img/servicios/cat-corte.jpg';
 
         return `
             <article class="tarjeta-pastel group flex flex-col justify-between p-5 transition duration-300 hover:-translate-y-1 hover:border-bella-500">
