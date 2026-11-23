@@ -388,44 +388,100 @@
 
         <!-- Registrar usuario -->
         <div data-panel="nuevo" class="hidden p-5 sm:p-6">
-          <h2 class="text-2xl font-bold text-bella-50">Registrar estilista, clienta o administradora</h2>
-          <p id="notaPermisosAdmin" class="mt-1 text-xs text-bella-200/70"></p>
-          <div id="alertaNuevo" class="alerta mt-4"></div>
-          <form id="formNuevo" class="mt-5 grid max-w-2xl gap-4 sm:grid-cols-2">
+          <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <label for="nuevoRol" class="etiqueta">Tipo de cuenta</label>
+              <h2 class="text-2xl font-bold text-bella-50">Registrar estilista, clienta o administradora</h2>
+              <p id="notaPermisosAdmin" class="mt-1 text-xs text-bella-200/80"></p>
+            </div>
+            <span id="insigniaNivelMiAdmin" class="rounded-full bg-pastel-rosa px-3 py-1 text-xs font-extrabold text-bella-900 shadow-sm"></span>
+          </div>
+
+          <div id="alertaNuevo" class="alerta mt-4"></div>
+
+          <form id="formNuevo" class="mt-5 grid max-w-3xl gap-4 sm:grid-cols-2">
+            <div>
+              <label for="nuevoRol" class="etiqueta">Tipo de cuenta a crear</label>
               <select id="nuevoRol" class="campo">
                 <option value="estilista">Estilista</option>
                 <option value="cliente">Clienta</option>
               </select>
             </div>
-            <div id="bloquePermisoAdmin" class="hidden">
-              <label for="nuevoPermisoAdmin" class="etiqueta">Permisos de la nueva administradora</label>
-              <select id="nuevoPermisoAdmin" class="campo">
-                <option value="limitado">Limitado: solo crear clientas y estilistas</option>
-                <option value="total">Total: también puede crear otras administradoras</option>
-              </select>
-            </div>
             <div>
               <label for="nuevoNombre" class="etiqueta">Nombre completo</label>
-              <input id="nuevoNombre" class="campo" required>
+              <input id="nuevoNombre" class="campo" placeholder="Ej. Laura Gómez" required>
             </div>
             <div>
-              <label for="nuevoUsuario" class="etiqueta">Usuario</label>
-              <input id="nuevoUsuario" class="campo" required>
+              <label for="nuevoUsuario" class="etiqueta">Usuario para iniciar sesión</label>
+              <input id="nuevoUsuario" class="campo" placeholder="Ej. laura.admin" required>
             </div>
             <div>
               <label for="nuevoPassword" class="etiqueta">Contraseña</label>
-              <input id="nuevoPassword" class="campo" type="text" minlength="6" required>
+              <input id="nuevoPassword" class="campo" type="text" minlength="6" placeholder="Mínimo 6 caracteres" required>
             </div>
+
+            <!-- Selector visual del nivel de autoridad cuando se elige crear otra Administradora -->
+            <div id="bloquePermisoAdmin" class="hidden sm:col-span-2">
+              <div class="rounded-2xl border-2 border-bella-400/70 bg-pastel-crema p-4 text-pastel-tinta shadow-md">
+                <span class="inline-block rounded-full bg-bella-600/15 px-3 py-0.5 text-[11px] font-extrabold uppercase tracking-wider text-bella-900">
+                  👑 Nivel de autoridad del nuevo Administrador
+                </span>
+                <h3 class="mt-1 text-base font-bold text-pastel-tinta">Elige si este administrador tendrá superposición o permiso estándar:</h3>
+                <input type="hidden" id="nuevoPermisoAdmin" value="limitado">
+                <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label data-card-permiso="limitado" class="flex cursor-pointer items-start gap-3 rounded-2xl border-2 border-bella-600 bg-pastel-rosa p-3.5 transition">
+                    <input type="radio" name="radioPermisoAdmin" value="limitado" class="mt-1 h-4 w-4 accent-bella-600" checked>
+                    <div>
+                      <p class="text-sm font-extrabold text-bella-900">🛡️ Administrador Estándar (Crear todo menos Administradores)</p>
+                      <p class="mt-1 text-xs leading-relaxed text-pastel-subtinta">
+                        Puede gestionar todo el salón (citas, servicios con foto, productos con foto, horarios, crear <strong>clientas</strong> y <strong>estilistas</strong>), pero <strong>NO puede crear otros administradores</strong>.
+                      </p>
+                    </div>
+                  </label>
+                  <label data-card-permiso="total" class="flex cursor-pointer items-start gap-3 rounded-2xl border-2 border-bella-300/80 bg-white p-3.5 transition hover:border-bella-500">
+                    <input type="radio" name="radioPermisoAdmin" value="total" class="mt-1 h-4 w-4 accent-bella-600">
+                    <div>
+                      <p class="text-sm font-extrabold text-bella-900">👑 Administrador con Superposición (Control Total)</p>
+                      <p class="mt-1 text-xs leading-relaxed text-pastel-subtinta">
+                        Tiene <strong>superposición completa</strong>: además de gestionar todo el salón, <strong>también puede crear otros administradores</strong> y decidir sus permisos.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <div id="bloqueServicios" class="sm:col-span-2">
-              <p class="etiqueta">Servicios que realiza</p>
+              <p class="etiqueta">Servicios que realiza la estilista</p>
               <div id="nuevoServicios" class="grid gap-2 sm:grid-cols-3"></div>
             </div>
             <div class="sm:col-span-2">
               <button type="submit" class="btn-primario">Registrar cuenta</button>
             </div>
           </form>
+
+          <!-- Tabla de Administradores del sistema y su nivel (Superposición vs Estándar) -->
+          <div class="mt-8 border-t border-white/10 pt-6">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 class="text-xl font-bold text-bella-50">Administradores registrados y nivel de superposición</h3>
+                <p class="text-xs text-bella-200/70">Si tu cuenta tiene superposición, puedes cambiar en cualquier momento si otro administrador tiene superposición o solo puede crear todo menos administradores.</p>
+              </div>
+            </div>
+            <div class="mt-3 overflow-x-auto rounded-2xl border border-white/10">
+              <table class="tabla">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Usuario</th>
+                    <th>Nivel de permisos</th>
+                    <th>Alcance</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaAdministradoras"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </section>

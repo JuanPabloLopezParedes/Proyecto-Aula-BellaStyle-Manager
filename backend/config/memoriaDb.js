@@ -285,6 +285,14 @@ async function ejecutarConsulta(sql, params = []) {
         if (u) u.password = params[0];
         return [{ affectedRows: u ? 1 : 0 }];
     }
+    if (s.startsWith("SELECT id_usuario, nombre, username, rol, foto, puede_crear_admins FROM usuarios WHERE rol = 'Administradora'")) {
+        return [datos.usuarios.filter((u) => u.rol === 'Administradora')];
+    }
+    if (s.startsWith('UPDATE usuarios SET puede_crear_admins = ? WHERE id_usuario = ?')) {
+        const u = datos.usuarios.find((x) => String(x.id_usuario) === String(params[1]) && x.rol === 'Administradora');
+        if (u) u.puede_crear_admins = Boolean(Number(params[0]));
+        return [{ affectedRows: u ? 1 : 0 }];
+    }
 
     // SERVICIOS
     if (s.startsWith("SELECT * FROM servicios WHERE estado = 'Disponible'")) {

@@ -2448,7 +2448,13 @@ function editarProducto(idProducto) {
     });
 }
 
-// --- Registrar usuario ---
+// --- Registrar usuario y control de jerarquía de Administradores (Superposición vs Estándar) ---
+
+let administradorasLista = [];
+
+function tieneSuperposicionActual() {
+    return Boolean(usuario.puedeCrearAdmins) || usuario.username === 'admin' || Number(usuario.id) === 1;
+}
 
 function dibujarCasillasNuevo() {
     document.getElementById('nuevoServicios').innerHTML = servicios.map((s) => `
@@ -2458,18 +2464,97 @@ function dibujarCasillasNuevo() {
         </label>`).join('');
 }
 
+async function cargarAdministradorasAdmin() {
+    const tabla = document.getElementById('tablaAdministradoras');
+    if (!tabla) return;
+
+    const res = await pedir('/administradoras');
+    administradorasLista = res.data || [];
+    const soySuper = tieneSuperposicionActual();
+
+    tabla.innerHTML = administradorasLista.length === 0
+        ? filaVacia(5, 'No hay administradores registrados')
+        : administradorasLista.map((adm) => {
+            const esPrincipal = adm.username === 'admin';
+            const esSuper = Boolean(adm.puede_crear_admins) || esPrincipal;
+            const badge = esSuper
+                ? `<span class="inline-flex items-center gap-1 rounded-full bg-pastel-rosa px-3 py-0.5 text-xs font-extrabold text-bella-900 shadow-sm">👑 Con Superposición</span>`
+                : `<span class="inline-flex items-center gap-1 rounded-full bg-pastel-menta px-3 py-0.5 text-xs font-extrabold text-emerald-950 shadow-sm">🛡️ Estándar (Sin superposición)</span>`;
+
+            const alcance = esSuper
+                ? 'Puede crear otros administradores, estilistas, clientas, servicios y productos'
+                : 'Puede crear y gestionar todo menos otros administradores';
+
+            let acciones = '<span class="text-xs text-white/40">Cuenta principal</span>';
+            if (!esPrincipal) {
+                if (soySuper) {
+                    acciones = esSuper
+                        ? botonAccion('Quitar superposición', 'rojo', `/administradoras/${adm.id_usuario}/permiso`, { puedeCrearAdmins: false })
+                        : botonAccion('Dar superposición', 'verde', `/administradoras/${adm.id_usuario}/permiso`, { puedeCrearAdmins: true });
+                } else {
+                    acciones = '<span class="text-xs text-white/40">Requiere superposición</span>';
+                }
+            }
+
+            return `
+                <tr>
+                    <td class="font-semibold text-white">${escapar(adm.nombre)}</td>
+                    <td class="font-mono text-xs text-bella-200">${escapar(adm.username)}</td>
+                    <td>${badge}</td>
+                    <td class="text-xs text-bella-100/85">${alcance}</td>
+                    <td class="whitespace-nowrap text-right">${acciones}</td>
+                </tr>`;
+        }).join('');
+
+    activarBotones(tabla, cargarAdministradorasAdmin);
+}
+
 function prepararFormNuevo() {
     const selectRol = document.getElementById('nuevoRol');
     const bloquePermiso = document.getElementById('bloquePermisoAdmin');
+    const inputHiddenPermiso = document.getElementById('nuevoPermisoAdmin');
     const nota = document.getElementById('notaPermisosAdmin');
+    const insigniaNivel = document.getElementById('insigniaNivelMiAdmin');
+    const soySuper = tieneSuperposicionActual();
 
-    // Solo una administradora con permiso total puede crear otras administradoras
-    if (usuario.puedeCrearAdmins) {
-        selectRol.insertAdjacentHTML('beforeend', '<option value="admin">Administradora</option>');
-        if (nota) nota.textContent = 'Tu cuenta tiene permiso total: puedes crear clientas, estilistas y otras administradoras (con permiso total o limitado).';
-    } else if (nota) {
-        nota.textContent = 'Tu cuenta tiene permiso limitado: puedes crear clientas y estilistas, pero no otras administradoras.';
+    // Solo una administradora con superposición puede crear otras administradoras
+    if (soySuper) {
+        if (!selectRol.querySelector('option[value="admin"]')) {
+            selectRol.insertAdjacentHTML('beforeend', '<option value="admin">Administradora (con o sin superposición)</option>');
+        }
+        if (nota) {
+            nota.textContent = 'Tu cuenta tiene Superposición activa: puedes crear clientas, estilistas y también otros administradores (eligiendo si tendrán superposición o si podrán crear todo menos administradores).';
+        }
+        if (insigniaNivel) {
+            insigniaNivel.textContent = '👑 Tu nivel: Administrador con Superposición';
+            insigniaNivel.className = 'rounded-full bg-pastel-rosa px-3 py-1 text-xs font-extrabold text-bella-900 shadow-sm';
+        }
+    } else {
+        if (nota) {
+            nota.textContent = 'Tu cuenta es de Administrador Estándar (sin superposición): puedes gestionar todo el salón y crear clientas y estilistas, pero no otros administradores.';
+        }
+        if (insigniaNivel) {
+            insigniaNivel.textContent = '🛡️ Tu nivel: Administrador Estándar (Todo menos crear Admins)';
+            insigniaNivel.className = 'rounded-full bg-pastel-menta px-3 py-1 text-xs font-extrabold text-emerald-950 shadow-sm';
+        }
     }
+
+    // Interacción de las tarjetas de radio (Superposición vs Todo menos administradores)
+    const actualizarTarjetasPermiso = (valorElegido) => {
+        if (inputHiddenPermiso) inputHiddenPermiso.value = valorElegido;
+        document.querySelectorAll('[data-card-permiso]').forEach((card) => {
+            const activo = card.dataset.cardPermiso === valorElegido;
+            card.className = activo
+                ? 'flex cursor-pointer items-start gap-3 rounded-2xl border-2 border-bella-600 bg-pastel-rosa p-3.5 transition shadow-sm'
+                : 'flex cursor-pointer items-start gap-3 rounded-2xl border-2 border-bella-300/80 bg-white p-3.5 transition hover:border-bella-500';
+            const radio = card.querySelector('input[type="radio"]');
+            if (radio) radio.checked = activo;
+        });
+    };
+
+    document.querySelectorAll('input[name="radioPermisoAdmin"]').forEach((radio) => {
+        radio.addEventListener('change', () => actualizarTarjetasPermiso(radio.value));
+    });
 
     const actualizarBloques = () => {
         document.getElementById('bloqueServicios').classList.toggle('hidden', selectRol.value !== 'estilista');
@@ -2477,6 +2562,7 @@ function prepararFormNuevo() {
     };
     selectRol.addEventListener('change', actualizarBloques);
     actualizarBloques();
+    cargarAdministradorasAdmin();
 
     document.getElementById('formNuevo').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -2491,16 +2577,18 @@ function prepararFormNuevo() {
             datos.servicios = [...document.querySelectorAll('input[name="nuevoServicio"]:checked')].map((c) => Number(c.value));
         }
         if (datos.rol === 'admin') {
-            datos.permisoAdmin = document.getElementById('nuevoPermisoAdmin').value;
+            datos.permisoAdmin = inputHiddenPermiso ? inputHiddenPermiso.value : 'limitado';
         }
 
         const respuesta = await pedir('/register', 'POST', datos);
         if (respuesta.success) {
             mostrarAlerta(alerta, `${respuesta.message} Usuario: ${datos.username} · Contraseña: ${datos.password}`, 'ok');
             e.target.reset();
+            actualizarTarjetasPermiso('limitado');
             actualizarBloques();
             cargarEstilistasAdmin();
             cargarClientasAdmin();
+            cargarAdministradorasAdmin();
         } else {
             mostrarAlerta(alerta, respuesta.message);
         }

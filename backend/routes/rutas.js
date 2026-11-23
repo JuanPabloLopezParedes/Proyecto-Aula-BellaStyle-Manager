@@ -10,10 +10,12 @@ const gestion = require('../controllers/gestionController');
 const chat = require('../controllers/chatController');
 const { protegerRuta } = require('../utils/token');
 
-// Autenticación
+// Autenticación y gestión de jerarquía de Administradoras
 router.post('/login', auth.login);
 router.post('/register', auth.registrar);
 router.post('/recuperar-password', auth.recuperarPassword);
+router.get('/administradoras', protegerRuta(['Administradora']), auth.listarAdministradoras);
+router.put('/administradoras/:id/permiso', protegerRuta(['Administradora']), auth.cambiarPermisoAdministradora);
 
 // Citas, disponibilidad en tiempo real, correo de confirmación, chat de cita y calificación
 router.get('/resenas', citas.resenasPublicas);

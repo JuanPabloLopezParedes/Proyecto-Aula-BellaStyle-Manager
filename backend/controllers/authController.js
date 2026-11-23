@@ -50,9 +50,10 @@ async function login(req, res) {
             user: {
                 id: usuario.id_usuario,
                 nombre: usuario.nombre,
+                username: usuario.username,
                 rol: usuario.rol,
                 foto: usuario.foto,
-                puedeCrearAdmins: Boolean(Number(usuario.puede_crear_admins)),
+                puedeCrearAdmins: Boolean(Number(usuario.puede_crear_admins)) || usuario.username === 'admin',
                 token
             }
         });
@@ -94,14 +95,15 @@ async function registrar(req, res) {
             return res.status(403).json({ success: false, message: 'Solo una administradora puede crear cuentas de estilista o administradora.' });
         }
         if (rolBD === 'Administradora') {
-            if (!Boolean(Number(creador.puede_crear_admins))) {
+            const tieneSuperposicion = Boolean(Number(creador.puede_crear_admins)) || creador.username === 'admin';
+            if (!tieneSuperposicion) {
                 return res.status(403).json({
                     success: false,
-                    message: 'Tu cuenta no tiene permiso para crear otras administradoras. Solo puedes crear clientas o estilistas.'
+                    message: 'Tu cuenta de administradora no tiene superposición (permiso para crear otros administradores). Solo puedes crear todo lo demás (clientas, estilistas, servicios, productos y citas).'
                 });
             }
-            // Permiso total (puede crear administradoras) o limitado (solo clientas y estilistas)
-            puedeCrearAdmins = req.body.permisoAdmin === 'total';
+            // Superposición / Permiso total (puede crear otras administradoras) o limitado (todo menos administradoras)
+            puedeCrearAdmins = req.body.permisoAdmin === 'total' || req.body.permisoAdmin === 'superposicion';
         }
     }
 
@@ -166,7 +168,7 @@ async function registrar(req, res) {
         await conexion.commit();
         const mensajeOk = rolBD === 'Clienta'
             ? 'Cuenta creada. Ya puedes iniciar sesión.'
-            : `Cuenta de ${rolBD.toLowerCase()} creada correctamente.${rolBD === 'Administradora' ? (puedeCrearAdmins ? ' Tiene permiso total (puede crear otras administradoras).' : ' Permiso limitado: solo puede crear clientas y estilistas.') : ''}`;
+            : `Cuenta de ${rolBD.toLowerCase()} creada correctamente.${rolBD === 'Administradora' ? (puedeCrearAdmins ? ' Nivel asignado: Superposición / Permiso Total (puede crear otros administradores y gestionar todo).' : ' Nivel asignado: Estándar / Sin superposición (puede crear y gestionar todo menos otros administradores).') : ''}`;
         return res.status(201).json({ success: true, message: mensajeOk });
     } catch (err) {
         await conexion.rollback();
@@ -198,4 +200,54 @@ async function recuperarPassword(req, res) {
     }
 }
 
-module.exports = { login, registrar, recuperarPassword };
+// GET /api/administradoras (lista las cuentas de administradora y su nivel de superposición)
+async function listarAdministradoras(req, res) {
+    try {
+        const lista = await usuarioModel.listarAdministradoras();
+        return res.json({ success: true, data: lista });
+    } catch (err) {
+        console.error('Error al listar administradoras:', err.message);
+        return res.status(500).json({ success: false, message: 'No se pudo cargar la lista de administradoras.' });
+    }
+}
+
+// PUT /api/administradoras/:id/permiso (cambia si una administradora tiene superposición o permiso estándar)
+async function cambiarPermisoAdministradora(req, res) {
+    try {
+        const auth = req.headers.authorization || '';
+        const datosToken = auth.startsWith('Bearer ') ? verificarToken(auth.slice(7).trim()) : null;
+        if (!datosToken) {
+            return res.status(401).json({ success: false, message: 'Debes iniciar sesión.' });
+        }
+        const creador = await usuarioModel.buscarPorId(datosToken.id);
+        const tieneSuperposicion = creador && creador.rol === 'Administradora' && (Boolean(Number(creador.puede_crear_admins)) || creador.username === 'admin');
+        if (!tieneSuperposicion) {
+            return res.status(403).json({
+                success: false,
+                message: 'Solo un administrador con superposición puede cambiar el nivel de otros administradores.'
+            });
+        }
+
+        const objetivo = await usuarioModel.buscarPorId(req.params.id);
+        if (!objetivo || objetivo.rol !== 'Administradora') {
+            return res.status(404).json({ success: false, message: 'La cuenta de administradora no existe.' });
+        }
+        if (objetivo.username === 'admin') {
+            return res.status(400).json({ success: false, message: 'La cuenta principal (admin) siempre conserva la superposición principal.' });
+        }
+
+        const nuevoPermiso = Boolean(req.body.puedeCrearAdmins);
+        await usuarioModel.cambiarPermisoAdmin(req.params.id, nuevoPermiso);
+        return res.json({
+            success: true,
+            message: nuevoPermiso
+                ? `Se otorgó Superposición a ${objetivo.nombre}: ahora también puede crear otros administradores.`
+                : `Se cambió ${objetivo.nombre} a Administrador Estándar: puede gestionar y crear todo menos otros administradores.`
+        });
+    } catch (err) {
+        console.error('Error al cambiar permiso de administradora:', err.message);
+        return res.status(500).json({ success: false, message: 'No se pudo actualizar el permiso.' });
+    }
+}
+
+module.exports = { login, registrar, recuperarPassword, listarAdministradoras, cambiarPermisoAdministradora };

@@ -25,4 +25,24 @@ async function actualizarPassword(username, passwordHash) {
     await db.query('UPDATE usuarios SET password = ? WHERE username = ?', [passwordHash, username]);
 }
 
-module.exports = { buscarPorUsername, buscarPorId, crear, actualizarPassword };
+async function listarAdministradoras() {
+    const [filas] = await db.query("SELECT id_usuario, nombre, username, rol, foto, puede_crear_admins FROM usuarios WHERE rol = 'Administradora' ORDER BY id_usuario");
+    return filas.map((u) => ({
+        id_usuario: u.id_usuario,
+        nombre: u.nombre,
+        username: u.username,
+        rol: u.rol,
+        foto: u.foto,
+        puede_crear_admins: Boolean(Number(u.puede_crear_admins)) || u.username === 'admin'
+    }));
+}
+
+async function cambiarPermisoAdmin(idUsuario, puedeCrearAdmins) {
+    const [resultado] = await db.query(
+        "UPDATE usuarios SET puede_crear_admins = ? WHERE id_usuario = ? AND rol = 'Administradora'",
+        [puedeCrearAdmins ? 1 : 0, idUsuario]
+    );
+    return resultado.affectedRows > 0;
+}
+
+module.exports = { buscarPorUsername, buscarPorId, crear, actualizarPassword, listarAdministradoras, cambiarPermisoAdmin };
