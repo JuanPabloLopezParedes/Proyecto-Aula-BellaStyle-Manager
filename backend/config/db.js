@@ -15,6 +15,11 @@ let usarMemoria = false;
 
 async function verificarModo() {
     if (usarMemoria) return true;
+    if (process.env.VERCEL && !process.env.DB_HOST) {
+        usarMemoria = true;
+        console.log('Aviso (Vercel): usando base de datos en memoria precargada con los datos de BellaStyle.');
+        return true;
+    }
     try {
         await pool.query('SELECT 1');
         return false;

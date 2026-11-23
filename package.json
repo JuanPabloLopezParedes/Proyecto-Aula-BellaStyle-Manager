@@ -1,0 +1,15 @@
+{
+  "name": "proyecto-aula-bellastyle-manager",
+  "version": "2.0.0",
+  "description": "BellaStyle Manager - Fullstack Node.js + Express + Frontend para Vercel y servidor local",
+  "main": "backend/app.js",
+  "scripts": {
+    "start": "node backend/app.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.19.2",
+    "mysql2": "^3.11.0",
+    "nodemailer": "^10.3.1"
+  }
+}

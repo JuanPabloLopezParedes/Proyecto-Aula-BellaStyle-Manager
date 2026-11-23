@@ -39,17 +39,21 @@ async function revisarBaseDeDatos() {
     }
 }
 
-// Antes de arrancar, se comprueba que MySQL responda
-db.query('SELECT 1')
-    .then(revisarBaseDeDatos)
-    .then(() => {
-        app.listen(config.puerto, () => {
-            console.log('Conectado a MySQL');
-            console.log(`Servidor en http://localhost:${config.puerto}`);
+// Antes de arrancar en servidor local/tradicional, se comprueba que MySQL (o memoriaDb) responda
+if (!process.env.VERCEL && require.main === module) {
+    db.query('SELECT 1')
+        .then(revisarBaseDeDatos)
+        .then(() => {
+            app.listen(config.puerto, () => {
+                console.log('Conectado a MySQL');
+                console.log(`Servidor en http://localhost:${config.puerto}`);
+            });
+        })
+        .catch((err) => {
+            console.error('No se pudo conectar a MySQL:', err.message);
+            console.error('Revisa usuario y contraseña en backend/config/config.js');
+            process.exit(1);
         });
-    })
-    .catch((err) => {
-        console.error('No se pudo conectar a MySQL:', err.message);
-        console.error('Revisa usuario y contraseña en backend/config/config.js');
-        process.exit(1);
-    });
+}
+
+module.exports = app;

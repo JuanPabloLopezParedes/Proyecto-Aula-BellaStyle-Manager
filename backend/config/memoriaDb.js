@@ -3,8 +3,11 @@
 // y persiste todos los cambios en disco (estado_memoria.local.json) para no perder pruebas.
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
-const RUTA_PERSISTENCIA = path.join(__dirname, 'estado_memoria.local.json');
+const RUTA_PERSISTENCIA = process.env.VERCEL
+    ? path.join(os.tmpdir(), 'estado_memoria.local.json')
+    : path.join(__dirname, 'estado_memoria.local.json');
 
 const datos = {
     usuarios: [
