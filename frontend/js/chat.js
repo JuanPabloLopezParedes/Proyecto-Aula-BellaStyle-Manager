@@ -5,9 +5,9 @@
 // como al Modo Claro Pastel.
 
 document.body.insertAdjacentHTML('beforeend', `
-  <div class="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-3 sm:bottom-5 sm:right-5">
-    <!-- Ventana del chat con fondo translúcido adaptable a modo oscuro y modo claro -->
-    <div id="chatVentana" class="chat-ventana-adaptable hidden h-[33rem] max-h-[82vh] w-[23rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl border border-bella-400/40 bg-noche-900/80 text-bella-50 shadow-2xl backdrop-blur-xl">
+  <div class="fixed bottom-3 right-3 z-40 flex flex-col items-end gap-2.5 sm:bottom-5 sm:right-5 sm:gap-3">
+    <!-- Ventana del chat con fondo translúcido adaptable a modo oscuro y modo claro (100% responsive en celular y PC) -->
+    <div id="chatVentana" class="chat-ventana-adaptable hidden h-[32rem] max-h-[80dvh] w-[calc(100vw-1.5rem)] max-w-[23.5rem] flex-col overflow-hidden rounded-3xl border border-bella-400/40 bg-noche-900/85 text-bella-50 shadow-2xl backdrop-blur-xl sm:h-[33rem]">
       <div class="flex items-center justify-between bg-gradient-to-r from-bella-700 to-bella-500 px-4 py-3.5 text-white shadow-sm">
         <div>
           <p class="font-semibold text-white">💬 Asesoría &amp; Cotización BellaStyle</p>

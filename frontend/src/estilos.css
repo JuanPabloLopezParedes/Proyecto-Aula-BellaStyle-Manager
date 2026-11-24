@@ -348,11 +348,23 @@ html.tema-claro .bg-white\/5        { background-color: #f9ebf2 !important; colo
 html.tema-claro .texto-brillo       { background-image: linear-gradient(90deg, #9d174d, #b45309, #9d174d) !important; }
 
 /* =====================================================================
-   VISTA DE TARJETAS INTELIGENTES EN CELULAR (100% MOBILE-FIRST)
-   En pantallas pequeñas (< 640px) las tablas se apilan como tarjetas
-   para evitar desplazamientos horizontales incómodos.
+   DISEÑO 100% RESPONSIVE (MÓVIL, TABLET Y ESCRITORIO)
+   - En pantallas móviles y tablets (< 768px) las tablas se transforman
+     en tarjetas apiladas limpias sin scroll horizontal forzado.
+   - Los botones de acción se ajustan automáticamente con flex-wrap.
+   - Evita cualquier desbordamiento horizontal en pantallas desde 320px.
    ===================================================================== */
-@media (max-width: 640px) {
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+dialog {
+  max-height: 92dvh;
+}
+
+@media (max-width: 768px) {
   .tabla thead {
     display: none;
   }
@@ -364,30 +376,49 @@ html.tema-claro .texto-brillo       { background-image: linear-gradient(90deg, #
     width: 100%;
   }
   .tabla tbody tr {
-    margin: 0.65rem 0.75rem;
-    width: calc(100% - 1.5rem);
-    border-radius: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background-color: rgba(255, 255, 255, 0.04);
-    padding: 0.75rem 0.85rem;
+    margin: 0.65rem 0.65rem;
+    width: calc(100% - 1.3rem);
+    border-radius: 1.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 0.85rem 0.95rem;
+    box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.35);
   }
   html.tema-claro .tabla tbody tr {
-    border-color: rgba(219, 39, 119, 0.25) !important;
-    background-color: rgba(253, 246, 249, 0.92) !important;
+    border-color: rgba(219, 39, 119, 0.28) !important;
+    background-color: rgba(253, 246, 249, 0.95) !important;
+    box-shadow: 0 6px 18px -6px rgba(90, 28, 59, 0.12) !important;
   }
   .tabla td {
     border: 0 !important;
-    padding: 0.3rem 0 !important;
+    padding: 0.32rem 0 !important;
     text-align: left !important;
     white-space: normal !important;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
   .tabla td:last-child {
-    margin-top: 0.45rem;
-    padding-top: 0.55rem !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    margin-top: 0.5rem;
+    padding-top: 0.65rem !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  html.tema-claro .tabla td:last-child {
+    border-top-color: rgba(219, 39, 119, 0.2) !important;
+  }
+  .tabla td:last-child .btn-mini {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .pestana {
+    padding: 0.45rem 0.5rem;
+    font-size: 0.75rem;
   }
 }
 

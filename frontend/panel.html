@@ -15,18 +15,18 @@
 
   <!-- Barra superior responsive -->
   <header class="sticky top-0 z-20 border-b border-white/10 bg-noche-950/90 backdrop-blur-md">
-    <div class="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:px-6">
-      <a href="welcome.html" class="font-titulo text-2xl font-bold text-bella-50">Bella<span class="text-bella-400">Style</span></a>
-      <div class="flex items-center gap-2 sm:gap-3">
-        <button type="button" data-toggle-tema class="inline-flex items-center gap-1.5 rounded-xl border border-bella-300/60 bg-pastel-crema px-3 py-1.5 text-xs font-bold text-pastel-tinta shadow-sm transition hover:bg-pastel-rosa">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3.5 py-2.5 sm:px-6 sm:py-3">
+      <a href="welcome.html" class="font-titulo text-xl font-bold text-bella-50 sm:text-2xl">Bella<span class="text-bella-400">Style</span></a>
+      <div class="flex items-center gap-1.5 sm:gap-3">
+        <button type="button" data-toggle-tema class="inline-flex items-center gap-1 rounded-xl border border-bella-300/60 bg-pastel-crema px-2.5 py-1.5 text-[11px] font-bold text-pastel-tinta shadow-sm transition hover:bg-pastel-rosa sm:px-3 sm:text-xs">
           &#9728;&#65039; Claro
         </button>
-        <img id="fotoUsuario" src="" alt="" class="h-9 w-9 rounded-full object-cover ring-2 ring-bella-500/50">
-        <div class="text-right leading-tight">
-          <p id="nombreUsuario" class="max-w-[9rem] truncate text-xs font-semibold text-bella-50 sm:max-w-none sm:text-sm"></p>
-          <p id="rolUsuario" class="text-[11px] font-medium text-bella-300 sm:text-xs"></p>
+        <img id="fotoUsuario" src="" alt="" class="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-bella-500/50 sm:h-9 sm:w-9">
+        <div class="hidden text-right leading-tight xs:block sm:block">
+          <p id="nombreUsuario" class="max-w-[7.5rem] truncate text-xs font-semibold text-bella-50 sm:max-w-none sm:text-sm"></p>
+          <p id="rolUsuario" class="text-[10px] font-medium text-bella-300 sm:text-xs"></p>
         </div>
-        <button id="btnSalir" class="btn-secundario px-3 py-1.5 text-xs sm:text-sm">Salir</button>
+        <button id="btnSalir" class="btn-secundario px-2.5 py-1.5 text-xs sm:px-3 sm:text-sm">Salir</button>
       </div>
     </div>
   </header>
@@ -93,8 +93,8 @@
               <label for="hora" class="etiqueta-oscura">4. Hora disponible</label>
               <span id="estadoDisponibilidad" class="text-[11px] font-bold text-bella-800"></span>
             </div>
-            <!-- Cuadrícula interactiva de horarios en tiempo real -->
-            <div id="grillaHoras" class="mt-1 grid grid-cols-4 gap-1.5 sm:grid-cols-5"></div>
+            <!-- Cuadrícula interactiva de horarios en tiempo real (3 col en móvil pequeño, 4 en móvil estándar, 5 en tablet/PC) -->
+            <div id="grillaHoras" class="mt-1 grid grid-cols-3 gap-1.5 xs:grid-cols-4 sm:grid-cols-5"></div>
             <select id="hora" class="sr-only" required></select>
           </div>
 
@@ -123,14 +123,14 @@
               <span class="rounded-full bg-emerald-600/15 px-2.5 py-0.5 text-[10px] font-bold text-emerald-950">🔒 Pasarela segura</span>
             </div>
             <input type="hidden" id="metodoPagoCita" value="Efectivo en Salón">
-            <div class="mt-2 grid grid-cols-3 gap-1.5">
-              <button type="button" data-btn-metodo="Efectivo en Salón" class="rounded-xl border-2 border-bella-600 bg-pastel-rosa px-2 py-2 text-center text-[11px] font-extrabold text-bella-900 shadow-sm transition">
+            <div class="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-3">
+              <button type="button" data-btn-metodo="Efectivo en Salón" class="rounded-xl border-2 border-bella-600 bg-pastel-rosa px-2.5 py-2 text-center text-xs font-extrabold text-bella-900 shadow-sm transition sm:text-[11px]">
                 💵 En Salón
               </button>
-              <button type="button" data-btn-metodo="Nequi / Daviplata" class="rounded-xl border border-bella-300 bg-white px-2 py-2 text-center text-[11px] font-bold text-pastel-tinta transition hover:bg-pastel-rosa/50">
+              <button type="button" data-btn-metodo="Nequi / Daviplata" class="rounded-xl border border-bella-300 bg-white px-2.5 py-2 text-center text-xs font-bold text-pastel-tinta transition hover:bg-pastel-rosa/50 sm:text-[11px]">
                 📲 Nequi / QR
               </button>
-              <button type="button" data-btn-metodo="Tarjeta / PSE" class="rounded-xl border border-bella-300 bg-white px-2 py-2 text-center text-[11px] font-bold text-pastel-tinta transition hover:bg-pastel-rosa/50">
+              <button type="button" data-btn-metodo="Tarjeta / PSE" class="rounded-xl border border-bella-300 bg-white px-2.5 py-2 text-center text-xs font-bold text-pastel-tinta transition hover:bg-pastel-rosa/50 sm:text-[11px]">
                 💳 PSE / Tarjeta
               </button>
             </div>
@@ -269,15 +269,16 @@
       <!-- Panel gráfico de analítica en tonos pastel -->
       <div id="graficasAdmin" class="mt-5 grid gap-4 lg:grid-cols-3"></div>
 
-      <nav id="pestanas" class="mt-6 flex gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-noche-900/90 p-1.5">
-        <button class="pestana pestana-activa" data-pestana="citas">Citas</button>
-        <button class="pestana" data-pestana="nomina">💰 Nómina y Comisiones</button>
-        <button class="pestana" data-pestana="estilistas">Estilistas</button>
-        <button class="pestana" data-pestana="clientas">Clientas</button>
-        <button class="pestana" data-pestana="servicios">Servicios</button>
-        <button class="pestana" data-pestana="productos">Productos</button>
-        <button class="pestana" data-pestana="nuevo">Registrar usuario</button>
-        <button class="pestana relative" data-pestana="mensajes">
+      <!-- Menú de pestañas de la Administradora: cuadrícula 2 columnas en móvil, 4 en tablet y fila flexible en PC -->
+      <nav id="pestanas" class="mt-6 grid grid-cols-2 gap-1.5 rounded-2xl border border-white/10 bg-noche-900/90 p-2 sm:grid-cols-4 lg:flex lg:flex-wrap lg:gap-1 lg:p-1.5">
+        <button class="pestana pestana-activa text-center" data-pestana="citas">Citas</button>
+        <button class="pestana text-center" data-pestana="nomina">💰 Nómina y Comisiones</button>
+        <button class="pestana text-center" data-pestana="estilistas">Estilistas</button>
+        <button class="pestana text-center" data-pestana="clientas">Clientas</button>
+        <button class="pestana text-center" data-pestana="servicios">Servicios</button>
+        <button class="pestana text-center" data-pestana="productos">Productos</button>
+        <button class="pestana text-center" data-pestana="nuevo">Registrar usuario</button>
+        <button class="pestana relative text-center" data-pestana="mensajes">
           Mensajes
           <span id="contadorMensajes" class="ml-1 hidden rounded-full bg-oro px-2 py-0.5 text-xs font-bold text-noche-950">0</span>
         </button>
@@ -286,11 +287,11 @@
       <div class="tarjeta mt-4 overflow-hidden">
         <!-- Citas -->
         <div data-panel="citas">
-          <div class="flex flex-wrap items-center justify-between gap-3 p-5 pb-3 sm:p-6 sm:pb-3">
+          <div class="flex flex-col gap-3 p-4 pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:p-6 sm:pb-3">
             <h2 class="text-2xl font-bold text-bella-50">Control de citas</h2>
-            <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-              <input id="buscarCitaAdmin" type="search" class="campo flex-1 py-2 text-xs sm:w-56" placeholder="Buscar clienta, estilista o servicio...">
-              <select id="filtroEstado" class="campo w-auto py-2 text-xs">
+            <div class="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+              <input id="buscarCitaAdmin" type="search" class="campo w-full py-2 text-xs sm:w-56" placeholder="Buscar clienta, estilista o servicio...">
+              <select id="filtroEstado" class="campo w-full py-2 text-xs sm:w-auto">
                 <option value="">Todos los estados</option>
                 <option>Pendiente</option>
                 <option>Confirmada</option>
@@ -585,15 +586,15 @@
     </section>
   </main>
 
-  <!-- Ventana emergente en tono pastel con letra oscura para crear y editar -->
-  <dialog id="ventana" class="w-[calc(100%-1.5rem)] max-w-2xl rounded-3xl border border-bella-300/70 bg-pastel-crema p-0 text-pastel-tinta shadow-2xl backdrop:bg-black/75 backdrop:backdrop-blur-sm">
-    <form id="formVentana" class="max-h-[90vh] overflow-y-auto p-6">
-      <h2 id="tituloVentana" class="text-2xl font-bold text-pastel-tinta"></h2>
-      <div id="alertaVentana" data-tema="pastel" class="alerta mt-4"></div>
-      <div id="camposVentana" class="mt-5 space-y-4"></div>
-      <div class="mt-6 flex justify-end gap-2">
-        <button type="button" id="btnCerrarVentana" class="rounded-xl border border-bella-400/60 bg-pastel-perla px-4 py-2 text-xs font-bold text-pastel-tinta transition hover:bg-bella-200">Cancelar</button>
-        <button type="submit" class="btn-primario px-5 py-2 text-xs">Guardar cambios</button>
+  <!-- Ventana emergente en tono pastel con letra oscura para crear y editar (100% adaptable a celular, tablet y PC) -->
+  <dialog id="ventana" class="w-[calc(100%-1rem)] max-w-2xl rounded-3xl border border-bella-300/70 bg-pastel-crema p-0 text-pastel-tinta shadow-2xl backdrop:bg-black/75 backdrop:backdrop-blur-sm sm:w-[calc(100%-2rem)]">
+    <form id="formVentana" class="max-h-[88dvh] overflow-y-auto p-4 sm:p-6">
+      <h2 id="tituloVentana" class="text-xl font-bold text-pastel-tinta sm:text-2xl"></h2>
+      <div id="alertaVentana" data-tema="pastel" class="alerta mt-3 sm:mt-4"></div>
+      <div id="camposVentana" class="mt-4 space-y-3.5 sm:mt-5 sm:space-y-4"></div>
+      <div class="mt-5 flex flex-col-reverse gap-2 sm:mt-6 sm:flex-row sm:justify-end">
+        <button type="button" id="btnCerrarVentana" class="w-full rounded-xl border border-bella-400/60 bg-pastel-perla px-4 py-2.5 text-xs font-bold text-pastel-tinta transition hover:bg-bella-200 sm:w-auto sm:py-2">Cancelar</button>
+        <button type="submit" class="btn-primario w-full px-5 py-2.5 text-xs sm:w-auto sm:py-2">Guardar cambios</button>
       </div>
     </form>
   </dialog>

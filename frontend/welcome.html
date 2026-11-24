@@ -8,61 +8,70 @@
 </head>
 <body class="overflow-x-hidden bg-noche-950">
 
-  <!-- ===================== MENÚ DE NAVEGACIÓN ===================== -->
-  <header id="menu" class="fixed inset-x-0 top-0 z-30 border-b border-white/10 bg-noche-950/85 backdrop-blur-md transition duration-300">
-    <nav class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-      <a href="welcome.html" class="flex items-center gap-3">
-        <img src="img/bienvenido.jpg" alt="Logo BellaStyle" class="h-10 w-10 rounded-full bg-pastel-crema p-1 shadow-sm">
-        <span class="font-titulo text-2xl font-bold text-bella-50 sm:text-3xl">Bella<span class="text-bella-400">Style</span></span>
+  <!-- ===================== MENÚ DE NAVEGACIÓN (100% RESPONSIVE MÓVIL, TABLET Y PC) ===================== -->
+  <header id="menu" class="fixed inset-x-0 top-0 z-30 border-b border-white/10 bg-noche-950/90 backdrop-blur-md transition duration-300">
+    <nav class="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3.5 py-2.5 sm:px-6 sm:py-3">
+      <a href="welcome.html" class="flex shrink-0 items-center gap-2.5 sm:gap-3">
+        <img src="img/bienvenido.jpg" alt="Logo BellaStyle" class="h-9 w-9 rounded-full bg-pastel-crema p-1 shadow-sm sm:h-10 sm:w-10">
+        <span class="font-titulo text-xl font-bold text-bella-50 sm:text-3xl">Bella<span class="text-bella-400">Style</span></span>
       </a>
-      <div class="flex items-center gap-2 sm:gap-3.5">
-        <a href="#servicios" class="hidden text-xs font-semibold text-bella-100 transition hover:text-bella-300 sm:inline sm:text-sm">Servicios</a>
-        <a href="#galeria" class="hidden text-xs font-semibold text-bella-100 transition hover:text-bella-300 sm:inline sm:text-sm">Galería (12)</a>
-        <a href="#tienda" class="hidden text-xs font-semibold text-bella-100 transition hover:text-bella-300 md:inline sm:text-sm">Tienda</a>
-        <a href="#asesoria" class="hidden text-xs font-semibold text-bella-100 transition hover:text-bella-300 lg:inline sm:text-sm">Asesoría</a>
+      <div class="flex items-center gap-1.5 sm:gap-3">
+        <a href="#servicios" class="hidden text-xs font-semibold text-bella-100 transition hover:text-bella-300 lg:inline sm:text-sm">Servicios</a>
+        <a href="#galeria" class="hidden text-xs font-semibold text-bella-100 transition hover:text-bella-300 lg:inline sm:text-sm">Galería</a>
+        <a href="#tienda" class="hidden text-xs font-semibold text-bella-100 transition hover:text-bella-300 lg:inline sm:text-sm">Tienda</a>
+        <a href="#asesoria" class="hidden text-xs font-semibold text-bella-100 transition hover:text-bella-300 xl:inline sm:text-sm">Asesoría</a>
         <a href="#quienes-somos" class="hidden text-xs font-semibold text-bella-100 transition hover:text-bella-300 xl:inline sm:text-sm">Quiénes somos</a>
-        <button type="button" data-toggle-tema class="inline-flex items-center gap-1.5 rounded-xl border border-bella-400/70 bg-pastel-crema px-3 py-1.5 text-xs font-bold text-pastel-tinta shadow-sm transition hover:bg-pastel-rosa">
+        <button type="button" data-toggle-tema class="inline-flex items-center gap-1 rounded-xl border border-bella-400/70 bg-pastel-crema px-2.5 py-1.5 text-[11px] font-bold text-pastel-tinta shadow-sm transition hover:bg-pastel-rosa sm:px-3 sm:text-xs">
           &#9728;&#65039; Claro
         </button>
-        <a href="register.html?rol=cliente" class="btn-secundario hidden px-3.5 py-2 text-xs sm:inline-flex">Crear cuenta</a>
-        <a href="index.html" class="btn-primario px-3.5 py-2 text-xs sm:px-4 sm:text-sm">Iniciar sesión &rarr;</a>
+        <a href="register.html?rol=cliente" class="btn-secundario hidden px-3 py-1.5 text-xs md:inline-flex">Crear cuenta</a>
+        <a href="index.html" class="btn-primario px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm">Entrar &rarr;</a>
       </div>
     </nav>
+    <!-- Barra de navegación rápida táctil para celulares y tablets -->
+    <div class="flex items-center gap-1.5 overflow-x-auto border-t border-white/10 px-3.5 py-2 lg:hidden">
+      <a href="#servicios" class="shrink-0 rounded-lg bg-white/10 px-2.5 py-1 text-[11px] font-bold text-bella-50 hover:bg-bella-600">✂ Servicios</a>
+      <a href="#galeria" class="shrink-0 rounded-lg bg-white/10 px-2.5 py-1 text-[11px] font-bold text-bella-50 hover:bg-bella-600">📸 Galería</a>
+      <a href="#tienda" class="shrink-0 rounded-lg bg-white/10 px-2.5 py-1 text-[11px] font-bold text-bella-50 hover:bg-bella-600">🧴 Tienda</a>
+      <a href="#asesoria" class="shrink-0 rounded-lg bg-white/10 px-2.5 py-1 text-[11px] font-bold text-bella-50 hover:bg-bella-600">💬 Asesoría</a>
+      <a href="#quienes-somos" class="shrink-0 rounded-lg bg-white/10 px-2.5 py-1 text-[11px] font-bold text-bella-50 hover:bg-bella-600">★ Reseñas</a>
+      <a href="register.html?rol=cliente" class="shrink-0 rounded-lg bg-pastel-rosa px-2.5 py-1 text-[11px] font-extrabold text-bella-900">Crear cuenta</a>
+    </div>
   </header>
 
   <!-- ===================== PORTADA (HERO) ===================== -->
-  <section class="relative flex min-h-screen items-center overflow-hidden pt-20">
-    <div class="mx-auto grid max-w-7xl items-center gap-10 px-5 py-12 lg:grid-cols-12">
+  <section class="relative flex min-h-screen items-center overflow-hidden pt-28 sm:pt-24 lg:pt-20">
+    <div class="mx-auto grid max-w-7xl items-center gap-8 px-4 py-8 sm:px-5 sm:py-12 lg:grid-cols-12 lg:gap-10">
       <!-- Columna izquierda: texto principal sobre panel translúcido para lectura perfecta en claro y oscuro -->
-      <div class="bloque-hero-legible rounded-3xl border border-white/15 bg-noche-900/65 p-6 shadow-2xl backdrop-blur-md sm:p-9 lg:col-span-7">
-        <span class="animate-aparecer inline-flex items-center gap-2 rounded-full bg-pastel-rosa px-3.5 py-1 text-xs font-bold uppercase tracking-widest text-bella-900 shadow-sm">
+      <div class="bloque-hero-legible rounded-3xl border border-white/15 bg-noche-900/65 p-5 shadow-2xl backdrop-blur-md sm:p-9 lg:col-span-7">
+        <span class="animate-aparecer inline-flex items-center gap-2 rounded-full bg-pastel-rosa px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-bella-900 shadow-sm sm:px-3.5 sm:text-xs">
           &#10022; Salón de belleza · Cartagena
         </span>
-        <h1 class="mt-4 animate-aparecer text-4xl font-bold leading-[1.08] text-bella-50 [animation-delay:.1s] sm:text-6xl">
+        <h1 class="mt-3.5 animate-aparecer text-3xl font-bold leading-[1.1] text-bella-50 [animation-delay:.1s] sm:text-6xl">
           Tu estilo,<br><em class="texto-brillo pr-2">a un clic</em> de distancia.
         </h1>
-        <p class="mt-4 max-w-xl animate-aparecer text-sm leading-relaxed text-bella-100 [animation-delay:.2s] sm:text-base">
-          Explora todos nuestros servicios de <strong>corte, manicure, mechas, pedicure, peinados, decoloración y tratamientos</strong> con imágenes reales de ejemplo, conoce nuestra galería de 12 trabajos realizados y nuestra tienda oficial de productos.
+        <p class="mt-3.5 max-w-xl animate-aparecer text-xs leading-relaxed text-bella-100 [animation-delay:.2s] sm:text-base">
+          Explora todos nuestros servicios de <strong>corte, manicure, mechas, pedicure, peinados, decoloración y tratamientos</strong> con imágenes reales de ejemplo, conoce nuestra galería de trabajos realizados y nuestra tienda oficial de productos.
         </p>
-        <div class="mt-7 flex animate-aparecer flex-wrap gap-3 [animation-delay:.3s]">
-          <a href="#servicios" class="btn-primario px-6 py-3 text-sm sm:text-base">Explorar servicios con fotos &darr;</a>
-          <a href="#galeria" class="btn-secundario px-5 py-3 text-sm sm:text-base">Ver galería (12 ejemplos)</a>
-          <a href="#tienda" class="btn-secundario px-5 py-3 text-sm sm:text-base">Ir a la tienda</a>
+        <div class="mt-6 flex animate-aparecer flex-col gap-2.5 [animation-delay:.3s] sm:flex-row sm:flex-wrap sm:gap-3">
+          <a href="#servicios" class="btn-primario w-full px-5 py-3 text-center text-xs sm:w-auto sm:px-6 sm:text-base">Explorar servicios con fotos &darr;</a>
+          <a href="#galeria" class="btn-secundario w-full px-4 py-2.5 text-center text-xs sm:w-auto sm:px-5 sm:py-3 sm:text-base">Ver galería de trabajos</a>
+          <a href="#tienda" class="btn-secundario w-full px-4 py-2.5 text-center text-xs sm:w-auto sm:px-5 sm:py-3 sm:text-base">Ir a la tienda</a>
         </div>
 
         <!-- Resumen rápido de garantías -->
-        <div class="mt-7 grid animate-aparecer grid-cols-3 gap-2.5 border-t border-white/15 pt-5 [animation-delay:.35s]">
+        <div class="mt-6 grid animate-aparecer grid-cols-3 gap-2 border-t border-white/15 pt-4 text-center sm:text-left [animation-delay:.35s]">
           <div>
-            <p class="font-titulo text-2xl font-bold text-bella-300">35 estilos</p>
-            <p class="text-xs text-bella-100">Con foto de ejemplo real</p>
+            <p class="font-titulo text-xl font-bold text-bella-300 sm:text-2xl">35+ estilos</p>
+            <p class="text-[11px] text-bella-100 sm:text-xs">Con foto real</p>
           </div>
           <div>
-            <p class="font-titulo text-2xl font-bold text-bella-300">12 trabajos</p>
-            <p class="text-xs text-bella-100">En nuestro portafolio</p>
+            <p class="font-titulo text-xl font-bold text-bella-300 sm:text-2xl">Galería</p>
+            <p class="text-[11px] text-bella-100 sm:text-xs">Portafolio real</p>
           </div>
           <div>
-            <p class="font-titulo text-2xl font-bold text-bella-300">8:00 – 19:00</p>
-            <p class="text-xs text-bella-100">Lunes a sábado</p>
+            <p class="font-titulo text-xl font-bold text-bella-300 sm:text-2xl">8:00–19:00</p>
+            <p class="text-[11px] text-bella-100 sm:text-xs">Lun a sábado</p>
           </div>
         </div>
       </div>
