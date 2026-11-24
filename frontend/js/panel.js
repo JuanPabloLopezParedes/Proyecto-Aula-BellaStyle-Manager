@@ -84,6 +84,18 @@ function renderizarEtiquetaPago(c) {
     return `<span class="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[10px] font-semibold text-amber-200">⏳ ${escapar(estadoPago)} (${escapar(metodo)})</span>`;
 }
 
+function renderizarMiniaturaResultado(c) {
+    if (!c.foto_resultado) return '';
+    return `
+        <div class="mt-1.5 flex items-center gap-2 rounded-xl border border-bella-300/40 bg-white/10 p-1.5">
+            <img src="${escapar(c.foto_resultado)}" alt="Resultado final" class="h-10 w-10 shrink-0 rounded-lg object-cover ring-1 ring-bella-300/70">
+            <div class="min-w-0">
+                <span class="block text-[10px] font-extrabold uppercase tracking-wider text-pastel-rosa">📸 Foto del resultado final</span>
+                <span class="block truncate text-[11px] text-white/85">${escapar(c.nota_resultado || 'Trabajo finalizado y publicado en Galería')}</span>
+            </div>
+        </div>`;
+}
+
 const COLORES = {
     azul: 'bg-sky-500/15 text-sky-300 hover:bg-sky-500/25',
     verde: 'bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25',
@@ -421,6 +433,102 @@ function pagarCitaModal(idCita) {
         }
         return res;
     }, 'Confirmar y aprobar pago');
+}
+
+// Modal de Galería de Resultado Final de la Cita:
+// - Si es Clienta: visualiza en grande la foto del trabajo que le realizaron y la nota de su estilista.
+// - Si es Estilista o Administradora: permite subir la foto del resultado final (o elegir/pegar una foto),
+//   escribir la nota técnica del resultado y finalizar la cita publicándola en el historial de la clienta y en la Galería.
+function gestionarResultadoCita(idCita) {
+    const c = buscarCitaEnMemoria(idCita);
+    if (!c) return avisar('No se encontró la cita');
+
+    const fotoInicial = c.foto_resultado || '';
+    const notaInicial = c.nota_resultado || '';
+
+    if (usuario.rol === 'Clienta') {
+        if (!fotoInicial) return avisar('Aún no se ha cargado la foto del resultado de esta cita.');
+        const htmlVista = `
+            <div class="overflow-hidden rounded-2xl border-2 border-bella-400 bg-white shadow-md">
+                <img src="${escapar(fotoInicial)}" alt="Resultado de ${escapar(c.servicio)}" class="max-h-96 w-full object-cover">
+                <div class="p-4 text-xs text-pastel-tinta">
+                    <span class="inline-block rounded-full bg-pastel-rosa px-3 py-0.5 text-[11px] font-extrabold text-bella-900">
+                        ✨ Resultado oficial de tu cita #BS-${c.id}
+                    </span>
+                    <h4 class="mt-1.5 text-lg font-bold text-pastel-tinta">${escapar(c.servicio)} · Atendida por ${escapar(c.estilista)}</h4>
+                    <p class="mt-1 text-pastel-subtinta">${escapar(notaInicial || 'Trabajo finalizado con productos profesionales en BellaStyle Studio.')}</p>
+                    <p class="mt-2 text-[11px] font-bold text-bella-800">Fecha: ${escapar(c.fecha)} · ${escapar(c.hora)}</p>
+                </div>
+            </div>`;
+        abrirVentana(`📸 Mi resultado final · Cita BS-${c.id}`, htmlVista, null);
+        return;
+    }
+
+    const aunNoFinalizada = c.estado !== 'Finalizada';
+    const htmlSubir = `
+        <div class="rounded-2xl border border-bella-300 bg-pastel-rosa/70 p-3 text-xs text-pastel-tinta">
+            <p><strong>Cita #BS-${c.id}:</strong> ${escapar(c.servicio)} · Clienta: <strong>${escapar(c.cliente)}</strong></p>
+            <p class="mt-0.5 text-pastel-subtinta">Estilista: <strong>${escapar(c.estilista)}</strong> · Estado actual: <strong>${escapar(c.estado)}</strong></p>
+        </div>
+
+        <div class="rounded-2xl border-2 border-bella-400/70 bg-pastel-perla p-3.5">
+            <div class="flex items-center justify-between gap-2">
+                <label class="text-xs font-extrabold uppercase tracking-wider text-bella-900">📸 Foto del resultado final del trabajo *</label>
+                <span class="rounded-full bg-bella-600/15 px-2.5 py-0.5 text-[10px] font-bold text-bella-900">Se publica en Historial y Galería</span>
+            </div>
+            <p class="mt-0.5 text-[11px] font-medium text-pastel-subtinta">Sube la fotografía de cómo quedó el trabajo realizado a la clienta (o pega la ruta/URL de la foto).</p>
+            <div class="mt-2.5 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div class="flex h-28 w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-bella-300 bg-white shadow-inner">
+                    <img id="vResultadoImgPreview" src="${atributo(fotoInicial)}" alt="Resultado" class="${fotoInicial ? '' : 'hidden'} h-full w-full object-cover">
+                    <span id="vResultadoImgPlaceholder" class="${fotoInicial ? 'hidden' : ''} px-2 text-center text-[10px] font-bold text-pastel-subtinta">Sin foto</span>
+                </div>
+                <div class="flex-1 space-y-2">
+                    <input id="vResultadoFile" type="file" accept="image/*" class="block w-full text-xs font-semibold text-pastel-tinta file:mr-2.5 file:rounded-xl file:border-0 file:bg-bella-600 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white hover:file:bg-bella-700">
+                    <input id="vResultadoUrl" type="text" class="campo-pastel py-1.5 text-xs" value="${atributo(fotoInicial.startsWith('data:') ? '' : fotoInicial)}" placeholder="O pega ruta/URL (ej. img/galeria/trabajo-02-balayage.jpg)">
+                    <input id="vResultadoHidden" type="hidden" value="${atributo(fotoInicial)}">
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <label for="vNotaResultadoCita" class="etiqueta-oscura">Descripción del resultado / Acabado realizado</label>
+            <textarea id="vNotaResultadoCita" rows="2" class="campo-pastel" placeholder="Ej. Balayage rubio champagne con matiz perlado y sellado de cutícula con óleo de argán...">${escapar(notaInicial)}</textarea>
+        </div>
+
+        ${aunNoFinalizada ? `
+        <label class="flex cursor-pointer items-center gap-2 rounded-xl border border-emerald-500/50 bg-pastel-menta p-3 text-xs font-bold text-emerald-950">
+            <input type="checkbox" id="vMarcarFinalizadaResultado" class="h-4 w-4 accent-emerald-700" checked>
+            <span>Marcar automáticamente esta cita como FINALIZADA al guardar la foto del resultado</span>
+        </label>` : ''}`;
+
+    abrirVentana(`📸 Foto del resultado final · BS-${c.id}`, htmlSubir, async () => {
+        const fotoResultado = valor('vResultadoHidden');
+        if (!fotoResultado) {
+            return { success: false, message: '⚠️ Debes subir o seleccionar la foto del resultado final antes de guardar.' };
+        }
+        const finalizarCita = aunNoFinalizada
+            ? Boolean(document.getElementById('vMarcarFinalizadaResultado')?.checked)
+            : false;
+
+        const res = await pedir(`/citas/${c.id}/resultado`, 'PUT', {
+            fotoResultado,
+            notaResultado: valor('vNotaResultadoCita'),
+            finalizarCita
+        });
+        if (res.success) {
+            if (usuario.rol === 'Estilista') await cargarCitasEstilista();
+            if (usuario.rol === 'Administradora') await cargarCitasAdmin();
+        }
+        return res;
+    }, aunNoFinalizada ? 'Guardar foto y finalizar cita' : 'Guardar foto en Galería');
+
+    conectarSelectorImagen({
+        idFile: 'vResultadoFile',
+        idUrl: 'vResultadoUrl',
+        idHidden: 'vResultadoHidden',
+        idPreview: 'vResultadoImgPreview',
+        idPlaceholder: 'vResultadoImgPlaceholder'
+    });
 }
 
 function mostrarModalCorreo(correo) {
@@ -1267,6 +1375,9 @@ async function cargarCitasClienta() {
                 botonEditar('Reprogramar', 'reprogramarCita', c.id) + ' ' +
                 botonAccion('Cancelar', 'rojo', `/citas/${c.id}/estado`, { estado: 'Cancelada' });
         } else if (c.estado === 'Finalizada') {
+            if (c.foto_resultado) {
+                acciones += `<button class="btn-mini bg-pastel-rosa font-bold text-bella-900 hover:bg-bella-200" data-editar="gestionarResultadoCita" data-id="${c.id}">📸 Ver resultado</button> `;
+            }
             acciones += `<button class="btn-mini bg-amber-400/20 font-bold text-amber-300 hover:bg-amber-400/30" data-editar="calificarCita" data-id="${c.id}">★ ${c.calificacion ? 'Editar reseña' : 'Calificar'}</button>`;
         }
         return `
@@ -1278,6 +1389,7 @@ async function cargarCitasClienta() {
                     ${c.observaciones ? `<span class="mt-0.5 block text-xs text-bella-200">${escapar(c.observaciones)}</span>` : ''}
                     ${c.producto_adicional ? `<span class="mt-0.5 block text-xs font-semibold text-emerald-300">🧴 Incluye: ${escapar(c.producto_adicional)} (+${pesos(c.precio_producto)})</span>` : ''}
                     ${renderizarEtiquetaPago(c)}
+                    ${renderizarMiniaturaResultado(c)}
                     ${renderizarEstrellas(c.calificacion, c.comentario_calificacion)}
                 </td>
                 <td class="whitespace-nowrap">${c.fecha} · ${c.hora}</td>
@@ -1418,8 +1530,11 @@ function dibujarCitasEstilista() {
             acciones += botonAccion('Confirmar', 'azul', `/citas/${c.id}/estado`, { estado: 'Confirmada' }) + ' ';
         }
         if (c.estado === 'Pendiente' || c.estado === 'Confirmada') {
+            acciones += `<button class="btn-mini bg-pastel-rosa font-bold text-bella-900 hover:bg-bella-200" data-editar="gestionarResultadoCita" data-id="${c.id}">📸 Finalizar con foto</button> `;
             acciones += botonAccion('Finalizar', 'verde', `/citas/${c.id}/estado`, { estado: 'Finalizada' }) + ' ';
             acciones += botonAccion('Cancelar', 'rojo', `/citas/${c.id}/estado`, { estado: 'Cancelada' });
+        } else if (c.estado === 'Finalizada') {
+            acciones += `<button class="btn-mini bg-pastel-rosa font-bold text-bella-900 hover:bg-bella-200" data-editar="gestionarResultadoCita" data-id="${c.id}">📸 ${c.foto_resultado ? 'Foto resultado' : 'Subir foto'}</button>`;
         }
         return `
             <tr>
@@ -1433,6 +1548,7 @@ function dibujarCitasEstilista() {
                     ${c.observaciones ? `<span class="block text-xs text-bella-200">${escapar(c.observaciones)}</span>` : ''}
                     ${c.producto_adicional ? `<span class="block text-xs font-semibold text-emerald-300">🧴 ${escapar(c.producto_adicional)}</span>` : ''}
                     ${renderizarEtiquetaPago(c)}
+                    ${renderizarMiniaturaResultado(c)}
                     ${renderizarEstrellas(c.calificacion, c.comentario_calificacion)}
                 </td>
                 <td class="whitespace-nowrap">${c.fecha} · ${c.hora}</td>
@@ -1874,8 +1990,11 @@ function dibujarCitasAdmin() {
             acciones += botonAccion('Confirmar', 'azul', `/citas/${c.id}/estado`, { estado: 'Confirmada' }) + ' ';
         }
         if (c.estado === 'Pendiente' || c.estado === 'Confirmada') {
+            acciones += `<button class="btn-mini bg-pastel-rosa font-bold text-bella-900 hover:bg-bella-200" data-editar="gestionarResultadoCita" data-id="${c.id}">📸 Finalizar con foto</button> `;
             acciones += botonAccion('Finalizar', 'verde', `/citas/${c.id}/estado`, { estado: 'Finalizada' }) + ' ';
             acciones += botonAccion('Cancelar', 'rojo', `/citas/${c.id}/estado`, { estado: 'Cancelada' });
+        } else if (c.estado === 'Finalizada') {
+            acciones += `<button class="btn-mini bg-pastel-rosa font-bold text-bella-900 hover:bg-bella-200" data-editar="gestionarResultadoCita" data-id="${c.id}">📸 ${c.foto_resultado ? 'Foto resultado' : 'Subir foto'}</button>`;
         }
         return `
             <tr>
@@ -1890,6 +2009,7 @@ function dibujarCitasAdmin() {
                     ${c.observaciones ? `<span class="block text-xs text-bella-200">${escapar(c.observaciones)}</span>` : ''}
                     ${c.producto_adicional ? `<span class="block text-xs font-semibold text-emerald-300">🧴 ${escapar(c.producto_adicional)} (+${pesos(c.precio_producto)})</span>` : ''}
                     ${renderizarEtiquetaPago(c)}
+                    ${renderizarMiniaturaResultado(c)}
                     ${renderizarEstrellas(c.calificacion, c.comentario_calificacion)}
                 </td>
                 <td>${escapar(c.estilista)}</td>
@@ -3114,6 +3234,7 @@ const EDITORES = {
     abrirChatCita,
     verComprobanteCita,
     pagarCitaModal,
+    gestionarResultadoCita,
     verColillaNominaEstilista,
     verCorreoCita,
     calificarCita,

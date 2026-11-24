@@ -636,7 +636,72 @@ async function registrarPagoCita(req, res) {
     }
 }
 
+// PUT /api/citas/:id/resultado  Recibe: { fotoResultado, notaResultado, finalizarCita }
+async function guardarResultadoCita(req, res) {
+    const fotoResultado = typeof req.body.fotoResultado === 'string' ? req.body.fotoResultado.trim() : '';
+    const notaResultado = typeof req.body.notaResultado === 'string' ? req.body.notaResultado.trim().slice(0, 300) : '';
+    const finalizarCita = Boolean(req.body.finalizarCita);
+
+    if (!fotoResultado || fotoResultado.length < 5) {
+        return res.status(400).json({
+            success: false,
+            message: 'Es obligatorio subir o seleccionar la foto del resultado final del servicio.'
+        });
+    }
+
+    try {
+        const cita = await citaModel.buscarPorId(req.params.id);
+        if (!cita) {
+            return res.status(404).json({ success: false, message: 'La cita no existe.' });
+        }
+
+        await citaModel.guardarFotoResultado(req.params.id, {
+            fotoResultado,
+            notaResultado: notaResultado || 'Trabajo finalizado con productos profesionales en BellaStyle Studio.'
+        });
+
+        if (finalizarCita && cita.estado !== 'Finalizada') {
+            await citaModel.cambiarEstado(req.params.id, 'Finalizada');
+        }
+
+        res.json({
+            success: true,
+            message: finalizarCita && cita.estado !== 'Finalizada'
+                ? 'Cita finalizada y foto del resultado publicada en el historial de la clienta y en la Galería.'
+                : 'Foto del resultado final guardada en la cita y publicada en la Galería.'
+        });
+    } catch (err) {
+        console.error('Error al guardar foto del resultado:', err.message);
+        res.status(500).json({ success: false, message: 'No se pudo guardar la foto del resultado.' });
+    }
+}
+
+// GET /api/galeria-resultados  (Fotos reales de citas finalizadas para mostrar en la Galería de la Landing Page)
+async function galeriaResultadosPublicos(_req, res) {
+    try {
+        const todas = await citaModel.listarTodas();
+        const conFoto = todas
+            .filter((c) => c.foto_resultado && String(c.foto_resultado).trim().length >= 5)
+            .map((c) => ({
+                idCita: c.id,
+                cliente: c.cliente,
+                estilista: c.estilista,
+                servicio: c.servicio,
+                precio: Number(c.precio || 45000),
+                duracion: Number(c.duracion_min || 60),
+                fecha: c.fecha,
+                observaciones: c.observaciones || '',
+                foto_resultado: c.foto_resultado,
+                nota_resultado: c.nota_resultado || c.comentario_calificacion || 'Resultado profesional realizado en BellaStyle.'
+            }));
+        res.json({ success: true, data: conFoto });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Error al cargar galería de resultados.' });
+    }
+}
+
 module.exports = {
-    listar, disponibilidad, crear, registrarPagoCita, verCorreoCita, reprogramar, cambiarEstado, calificar,
+    listar, disponibilidad, crear, registrarPagoCita, guardarResultadoCita, galeriaResultadosPublicos,
+    verCorreoCita, reprogramar, cambiarEstado, calificar,
     resenasPublicas, mensajesDeCita, enviarMensajeCita
 };

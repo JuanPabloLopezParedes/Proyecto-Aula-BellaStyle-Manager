@@ -128,6 +128,8 @@ CREATE TABLE citas (
     observaciones           TEXT,
     calificacion            TINYINT DEFAULT NULL,
     comentario_calificacion VARCHAR(300) DEFAULT NULL,
+    foto_resultado          MEDIUMTEXT DEFAULT NULL,
+    nota_resultado          VARCHAR(300) DEFAULT NULL,
     creado_en               TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_citas_cliente   FOREIGN KEY (id_cliente)   REFERENCES clientas(id_clienta),
     CONSTRAINT fk_citas_estilista FOREIGN KEY (id_estilista) REFERENCES estilistas(id_estilista),

@@ -25,7 +25,9 @@ const SELECT_CITAS = `
            c.estado,
            c.observaciones,
            c.calificacion,
-           c.comentario_calificacion
+           c.comentario_calificacion,
+           c.foto_resultado,
+           c.nota_resultado
     FROM citas c
     JOIN clientas cl ON cl.id_clienta = c.id_cliente
     JOIN estilistas e ON e.id_estilista = c.id_estilista
@@ -119,6 +121,14 @@ async function registrarPago(idCita, { metodoPago, estadoPago, referenciaPago })
     return resultado.affectedRows > 0;
 }
 
+async function guardarFotoResultado(idCita, { fotoResultado, notaResultado }) {
+    const [resultado] = await db.query(
+        'UPDATE citas SET foto_resultado = ?, nota_resultado = ? WHERE id_cita = ?',
+        [fotoResultado || null, notaResultado || null, idCita]
+    );
+    return resultado.affectedRows > 0;
+}
+
 async function cambiarEstado(idCita, estado) {
     const [resultado] = await db.query('UPDATE citas SET estado = ? WHERE id_cita = ?', [estado, idCita]);
     return resultado.affectedRows > 0;
@@ -157,6 +167,6 @@ async function agregarMensajeCita(idCita, autor, rolAutor, texto) {
 
 module.exports = {
     listarTodas, listarPorEstilista, listarPorClienta, buscarPorId,
-    ocupadasDelDia, ocupadasClientaDelDia, crear, registrarPago, cambiarEstado, calificar, reprogramar,
+    ocupadasDelDia, ocupadasClientaDelDia, crear, registrarPago, guardarFotoResultado, cambiarEstado, calificar, reprogramar,
     listarMensajesCita, agregarMensajeCita
 };

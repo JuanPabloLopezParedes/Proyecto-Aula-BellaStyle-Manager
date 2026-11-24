@@ -31,6 +31,11 @@ async function asegurarColumnasFotos() {
             await db.query("ALTER TABLE citas ADD COLUMN estado_pago VARCHAR(40) NOT NULL DEFAULT 'Pendiente en salón'");
             await db.query('ALTER TABLE citas ADD COLUMN referencia_pago VARCHAR(60) DEFAULT NULL');
         }
+        const [colFotoRes] = await db.query("SHOW COLUMNS FROM citas LIKE 'foto_resultado'");
+        if (colFotoRes.length === 0) {
+            await db.query('ALTER TABLE citas ADD COLUMN foto_resultado MEDIUMTEXT DEFAULT NULL');
+            await db.query('ALTER TABLE citas ADD COLUMN nota_resultado VARCHAR(300) DEFAULT NULL');
+        }
     } catch (_) {}
 }
 

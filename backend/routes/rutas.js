@@ -17,8 +17,9 @@ router.post('/recuperar-password', auth.recuperarPassword);
 router.get('/administradoras', protegerRuta(['Administradora']), auth.listarAdministradoras);
 router.put('/administradoras/:id/permiso', protegerRuta(['Administradora']), auth.cambiarPermisoAdministradora);
 
-// Citas, disponibilidad en tiempo real, correo de confirmación, chat de cita y calificación
+// Citas, disponibilidad en tiempo real, correo de confirmación, chat de cita, pasarela de pago, foto de resultado y calificación
 router.get('/resenas', citas.resenasPublicas);
+router.get('/galeria-resultados', citas.galeriaResultadosPublicos);
 router.get('/citas', protegerRuta(), citas.listar);
 router.get('/citas/disponibilidad', citas.disponibilidad);
 router.get('/citas/:id/correo', protegerRuta(), citas.verCorreoCita);
@@ -26,6 +27,7 @@ router.get('/citas/:id/mensajes', protegerRuta(), citas.mensajesDeCita);
 router.post('/citas/:id/mensajes', protegerRuta(), citas.enviarMensajeCita);
 router.post('/citas', protegerRuta(), citas.crear);
 router.put('/citas/:id/pago', protegerRuta(), citas.registrarPagoCita);
+router.put('/citas/:id/resultado', protegerRuta(['Administradora', 'Estilista']), citas.guardarResultadoCita);
 router.put('/citas/:id/estado', protegerRuta(), citas.cambiarEstado);
 router.put('/citas/:id/reprogramar', protegerRuta(), citas.reprogramar);
 router.put('/citas/:id/calificar', protegerRuta(['Clienta', 'Administradora']), citas.calificar);

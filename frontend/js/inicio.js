@@ -168,12 +168,17 @@ function dibujarTiendaProductos(productos = []) {
 async function cargarDatos() {
     prepararFiltrosGaleria12();
 
-    const [servicios, estilistas, resenas, productos] = await Promise.all([
+    const [servicios, estilistas, resenas, productos, galeriaResultados] = await Promise.all([
         pedir('/servicios'),
         pedir('/estilistas'),
         pedir('/resenas'),
-        pedir('/productos')
+        pedir('/productos'),
+        pedir('/galeria-resultados')
     ]);
+
+    if (galeriaResultados && galeriaResultados.success && Array.isArray(galeriaResultados.data)) {
+        window.RESULTADOS_CITAS_CACHE = galeriaResultados.data;
+    }
 
     if (servicios && servicios.success && Array.isArray(servicios.data)) {
         if (typeof window.sincronizarCatalogoConServicios === 'function') {

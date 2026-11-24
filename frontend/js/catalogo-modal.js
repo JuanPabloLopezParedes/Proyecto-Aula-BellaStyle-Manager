@@ -658,14 +658,45 @@ window.sincronizarCatalogoConServicios = function (listaServicios = []) {
     });
 };
 
-// Construye la lista completa de trabajos para la Galería (los 12 base + los ejemplos de servicios nuevos/editados por el Admin)
-window.obtenerTrabajosGaleriaCompleta = function (listaServicios = []) {
+// Construye la lista completa de trabajos para la Galería (los 12 base + los ejemplos de servicios nuevos + las fotos de citas finalizadas)
+window.obtenerTrabajosGaleriaCompleta = function (listaServicios = [], resultadosCitas = []) {
     const trabajos = GALERIA_TRABAJOS_12.slice();
     const serviciosFuente = Array.isArray(listaServicios) && listaServicios.length > 0
         ? listaServicios
         : (window.SERVICIOS_DINAMICOS_CACHE || []);
+    const resultadosFuente = Array.isArray(resultadosCitas) && resultadosCitas.length > 0
+        ? resultadosCitas
+        : (window.RESULTADOS_CITAS_CACHE || []);
 
     let siguienteId = trabajos.length + 1;
+
+    // 1. Añadir fotos reales subidas al finalizar citas (si no están ya entre las 12 imágenes predeterminadas)
+    resultadosFuente.forEach((r) => {
+        if (!r || !r.foto_resultado) return;
+        const yaEnBase = trabajos.some((t) => t.imagen === r.foto_resultado);
+        if (yaEnBase) return;
+        const limpio = limpiarTextoCatalogo(r.servicio || '');
+        let filtro = 'peinado';
+        if (limpio.includes('corte') || limpio.includes('barba')) filtro = 'corte';
+        else if (limpio.includes('tinte') || limpio.includes('mecha') || limpio.includes('color') || limpio.includes('balayage')) filtro = 'color';
+        else if (limpio.includes('una') || limpio.includes('manicure') || limpio.includes('pedicure')) filtro = 'unas';
+
+        trabajos.unshift({
+            id: siguienteId++,
+            filtro,
+            categoria: `${r.servicio} · Resultado Real`,
+            servicioBase: r.servicio,
+            variedad: r.servicio,
+            titulo: `✨ Resultado Cita #BS-${r.idCita} · ${r.servicio}`,
+            detalle: r.nota_resultado || `Trabajo real realizado a ${r.cliente} en BellaStyle Studio.`,
+            estilista: r.estilista || 'Equipo BellaStyle',
+            precio: Number(r.precio) || 45000,
+            duracion: Number(r.duracion) || 60,
+            imagen: r.foto_resultado
+        });
+    });
+
+    // 2. Añadir ejemplos de nuevos servicios creados por la Administradora
     serviciosFuente.forEach((s) => {
         if (!s || !Array.isArray(s.ejemplos) || s.ejemplos.length === 0) return;
         const limpio = limpiarTextoCatalogo(s.nombre);
