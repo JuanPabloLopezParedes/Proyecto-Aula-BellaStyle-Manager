@@ -335,6 +335,20 @@ async function crear(req, res) {
             ? `${observaciones ? observaciones + ' · ' : ''}[Beneficio aplicado: ${motivoDescuento} (-$${descuentoAplicado.toLocaleString('es-CO')})]`
             : observaciones;
 
+        const {
+            metodoPago: metodoPagoRaw,
+            referenciaPago: refPagoRaw
+        } = req.body;
+        const metodoPago = ['Nequi / Daviplata', 'Tarjeta / PSE', 'Efectivo en Salón'].includes(metodoPagoRaw)
+            ? metodoPagoRaw
+            : 'Efectivo en Salón';
+        const esPagoDigital = metodoPago === 'Nequi / Daviplata' || metodoPago === 'Tarjeta / PSE';
+        const estadoPago = esPagoDigital ? 'Pagado en línea' : 'Pendiente en salón';
+        const prefijoRef = metodoPago === 'Nequi / Daviplata' ? 'NEQ' : 'PSE';
+        const referenciaPago = esPagoDigital
+            ? (typeof refPagoRaw === 'string' && refPagoRaw.trim() ? refPagoRaw.trim().slice(0, 40) : `${prefijoRef}-${Math.floor(100000 + Math.random() * 900000)}`)
+            : null;
+
         const idCita = await citaModel.crear({
             idClienta: clienta.id_clienta,
             idEstilista: elegida.id_estilista,
@@ -345,6 +359,9 @@ async function crear(req, res) {
             precio: precioTotal,
             productoAdicional: productoNombre,
             precioProducto,
+            metodoPago,
+            estadoPago,
+            referenciaPago,
             observaciones: obsFinal
         });
 
@@ -594,7 +611,32 @@ async function enviarMensajeCita(req, res) {
     }
 }
 
+// PUT /api/citas/:id/pago  Recibe: { metodoPago, referenciaPago }
+async function registrarPagoCita(req, res) {
+    const metodoPago = ['Nequi / Daviplata', 'Tarjeta / PSE', 'Efectivo en Salón'].includes(req.body.metodoPago)
+        ? req.body.metodoPago
+        : 'Nequi / Daviplata';
+    const estadoPago = metodoPago === 'Efectivo en Salón' ? 'Pagado en salón' : 'Pagado en línea';
+    const prefijo = metodoPago === 'Nequi / Daviplata' ? 'NEQ' : (metodoPago === 'Tarjeta / PSE' ? 'PSE' : 'CAJA');
+    const referenciaPago = typeof req.body.referenciaPago === 'string' && req.body.referenciaPago.trim()
+        ? req.body.referenciaPago.trim().slice(0, 40)
+        : `${prefijo}-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    try {
+        const ok = await citaModel.registrarPago(req.params.id, { metodoPago, estadoPago, referenciaPago });
+        if (!ok) return res.status(404).json({ success: false, message: 'La cita no existe.' });
+        res.json({
+            success: true,
+            message: `Pago registrado exitosamente (${metodoPago} · Ref: ${referenciaPago}).`,
+            data: { metodo_pago: metodoPago, estado_pago: estadoPago, referencia_pago: referenciaPago }
+        });
+    } catch (err) {
+        console.error('Error al registrar pago:', err.message);
+        res.status(500).json({ success: false, message: 'No se pudo procesar el pago.' });
+    }
+}
+
 module.exports = {
-    listar, disponibilidad, crear, verCorreoCita, reprogramar, cambiarEstado, calificar,
+    listar, disponibilidad, crear, registrarPagoCita, verCorreoCita, reprogramar, cambiarEstado, calificar,
     resenasPublicas, mensajesDeCita, enviarMensajeCita
 };

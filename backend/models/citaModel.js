@@ -5,16 +5,21 @@ const db = require('../config/db');
 const SELECT_CITAS = `
     SELECT c.id_cita AS id,
            c.id_cliente,
+           c.id_estilista,
            CONCAT(cl.nombres, ' ', cl.apellidos) AS cliente,
            cl.email AS cliente_email,
            cl.telefono AS cliente_telefono,
            cl.ficha_tecnica,
            CONCAT(e.nombres, ' ', e.apellidos) AS estilista,
+           e.especialidad AS estilista_especialidad,
            s.nombre AS servicio,
            COALESCE(c.duracion_min, s.duracion_min) AS duracion_min,
            c.precio,
            c.producto_adicional,
            c.precio_producto,
+           COALESCE(c.metodo_pago, 'Efectivo en Salón') AS metodo_pago,
+           COALESCE(c.estado_pago, 'Pendiente en salón') AS estado_pago,
+           c.referencia_pago,
            DATE_FORMAT(c.fecha, '%Y-%m-%d') AS fecha,
            TIME_FORMAT(c.hora, '%H:%i') AS hora,
            c.estado,
@@ -82,11 +87,11 @@ async function ocupadasClientaDelDia(idClienta, fecha, excluirId = 0) {
     return filas;
 }
 
-// Crea una cita guardando duración exacta, precio total y producto adicional (si aplica)
-async function crear({ idClienta, idEstilista, idServicio, fecha, hora, duracionMin, precio, productoAdicional, precioProducto, observaciones }) {
+// Crea una cita guardando duración exacta, precio total, producto adicional y datos de la pasarela de pago
+async function crear({ idClienta, idEstilista, idServicio, fecha, hora, duracionMin, precio, productoAdicional, precioProducto, metodoPago, estadoPago, referenciaPago, observaciones }) {
     const [resultado] = await db.query(
-        `INSERT INTO citas (id_cliente, id_estilista, id_servicio, fecha, hora, duracion_min, precio, producto_adicional, precio_producto, observaciones, estado)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pendiente')`,
+        `INSERT INTO citas (id_cliente, id_estilista, id_servicio, fecha, hora, duracion_min, precio, producto_adicional, precio_producto, metodo_pago, estado_pago, referencia_pago, observaciones, estado)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pendiente')`,
         [
             idClienta,
             idEstilista,
@@ -97,10 +102,21 @@ async function crear({ idClienta, idEstilista, idServicio, fecha, hora, duracion
             precio,
             productoAdicional || null,
             precioProducto || 0,
+            metodoPago || 'Efectivo en Salón',
+            estadoPago || 'Pendiente en salón',
+            referenciaPago || null,
             observaciones || null
         ]
     );
     return resultado.insertId;
+}
+
+async function registrarPago(idCita, { metodoPago, estadoPago, referenciaPago }) {
+    const [resultado] = await db.query(
+        'UPDATE citas SET metodo_pago = ?, estado_pago = ?, referencia_pago = ? WHERE id_cita = ?',
+        [metodoPago, estadoPago, referenciaPago || null, idCita]
+    );
+    return resultado.affectedRows > 0;
 }
 
 async function cambiarEstado(idCita, estado) {
@@ -141,6 +157,6 @@ async function agregarMensajeCita(idCita, autor, rolAutor, texto) {
 
 module.exports = {
     listarTodas, listarPorEstilista, listarPorClienta, buscarPorId,
-    ocupadasDelDia, ocupadasClientaDelDia, crear, cambiarEstado, calificar, reprogramar,
+    ocupadasDelDia, ocupadasClientaDelDia, crear, registrarPago, cambiarEstado, calificar, reprogramar,
     listarMensajesCita, agregarMensajeCita
 };

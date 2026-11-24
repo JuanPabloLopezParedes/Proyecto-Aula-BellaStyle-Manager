@@ -25,6 +25,12 @@ async function asegurarColumnasFotos() {
             await db.query('ALTER TABLE servicios ADD COLUMN subtitulo VARCHAR(255) DEFAULT NULL');
             await db.query('ALTER TABLE servicios ADD COLUMN ejemplos MEDIUMTEXT DEFAULT NULL');
         }
+        const [colCitaPago] = await db.query("SHOW COLUMNS FROM citas LIKE 'metodo_pago'");
+        if (colCitaPago.length === 0) {
+            await db.query("ALTER TABLE citas ADD COLUMN metodo_pago VARCHAR(50) NOT NULL DEFAULT 'Efectivo en Salón'");
+            await db.query("ALTER TABLE citas ADD COLUMN estado_pago VARCHAR(40) NOT NULL DEFAULT 'Pendiente en salón'");
+            await db.query('ALTER TABLE citas ADD COLUMN referencia_pago VARCHAR(60) DEFAULT NULL');
+        }
     } catch (_) {}
 }
 

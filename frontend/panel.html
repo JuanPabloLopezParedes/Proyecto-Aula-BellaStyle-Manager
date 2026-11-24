@@ -116,6 +116,62 @@
             <input id="codigoPromocional" type="text" class="campo-pastel uppercase" placeholder="Ej: BELLA15 (15% de descuento)">
           </div>
 
+          <!-- 8. Pasarela de Pago Interactiva (Nequi / PSE-Tarjeta / Efectivo en Salón) -->
+          <div class="rounded-2xl border-2 border-bella-400/70 bg-pastel-perla p-3.5">
+            <div class="flex items-center justify-between gap-2">
+              <label class="text-xs font-extrabold uppercase tracking-wider text-bella-900">8. Método de pago</label>
+              <span class="rounded-full bg-emerald-600/15 px-2.5 py-0.5 text-[10px] font-bold text-emerald-950">🔒 Pasarela segura</span>
+            </div>
+            <input type="hidden" id="metodoPagoCita" value="Efectivo en Salón">
+            <div class="mt-2 grid grid-cols-3 gap-1.5">
+              <button type="button" data-btn-metodo="Efectivo en Salón" class="rounded-xl border-2 border-bella-600 bg-pastel-rosa px-2 py-2 text-center text-[11px] font-extrabold text-bella-900 shadow-sm transition">
+                💵 En Salón
+              </button>
+              <button type="button" data-btn-metodo="Nequi / Daviplata" class="rounded-xl border border-bella-300 bg-white px-2 py-2 text-center text-[11px] font-bold text-pastel-tinta transition hover:bg-pastel-rosa/50">
+                📲 Nequi / QR
+              </button>
+              <button type="button" data-btn-metodo="Tarjeta / PSE" class="rounded-xl border border-bella-300 bg-white px-2 py-2 text-center text-[11px] font-bold text-pastel-tinta transition hover:bg-pastel-rosa/50">
+                💳 PSE / Tarjeta
+              </button>
+            </div>
+
+            <!-- Panel dinámico de Nequi / Daviplata -->
+            <div id="cajaPagoNequi" class="mt-2.5 hidden rounded-xl border border-bella-300 bg-white p-3 text-xs text-pastel-tinta">
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <p class="font-extrabold text-bella-900">📲 Pago rápido Nequi / Daviplata</p>
+                  <p class="mt-0.5 text-[11px] text-pastel-subtinta">Línea oficial BellaStyle: <strong>300 655 0192</strong> (A nombre de BellaStyle Studio)</p>
+                </div>
+                <span class="rounded-lg bg-bella-600 px-2 py-1 font-mono text-[10px] font-bold text-white">QR ACTIVO</span>
+              </div>
+              <div class="mt-2">
+                <label for="celularNequiCita" class="block text-[11px] font-bold text-pastel-tinta">Celular Nequi desde el que realizas el pago</label>
+                <input id="celularNequiCita" type="tel" class="campo-pastel mt-1 py-1.5 text-xs" placeholder="Ej: 300 123 4567">
+              </div>
+            </div>
+
+            <!-- Panel dinámico de Tarjeta / PSE -->
+            <div id="cajaPagoTarjeta" class="mt-2.5 hidden rounded-xl border border-bella-300 bg-white p-3 text-xs text-pastel-tinta">
+              <p class="font-extrabold text-bella-900">💳 Pasarela PSE / Tarjeta Débito o Crédito</p>
+              <div class="mt-2 grid gap-2 sm:grid-cols-2">
+                <div>
+                  <label for="bancoPseCita" class="block text-[11px] font-bold text-pastel-tinta">Banco o Franquicia</label>
+                  <select id="bancoPseCita" class="campo-pastel mt-1 py-1.5 text-xs">
+                    <option value="Bancolombia">Bancolombia (PSE / Tarjeta)</option>
+                    <option value="Nu Colombia">Nu Colombia</option>
+                    <option value="Davivienda">Davivienda</option>
+                    <option value="BBVA Colombia">BBVA Colombia</option>
+                    <option value="Visa / Mastercard">Tarjeta Visa / Mastercard</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="ultimos4Cita" class="block text-[11px] font-bold text-pastel-tinta">Últimos 4 dígitos / Doc.</label>
+                  <input id="ultimos4Cita" type="text" maxlength="10" class="campo-pastel mt-1 py-1.5 text-xs" placeholder="Ej: 4829">
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div id="resumenTotalCita" class="rounded-2xl border border-bella-400/60 bg-pastel-rosa/80 px-4 py-3 text-xs text-pastel-tinta"></div>
 
           <button type="submit" class="btn-primario w-full py-3 text-base shadow-md">Confirmar y Agendar Cita</button>
@@ -215,6 +271,7 @@
 
       <nav id="pestanas" class="mt-6 flex gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-noche-900/90 p-1.5">
         <button class="pestana pestana-activa" data-pestana="citas">Citas</button>
+        <button class="pestana" data-pestana="nomina">💰 Nómina y Comisiones</button>
         <button class="pestana" data-pestana="estilistas">Estilistas</button>
         <button class="pestana" data-pestana="clientas">Clientas</button>
         <button class="pestana" data-pestana="servicios">Servicios</button>
@@ -271,6 +328,47 @@
             <table class="tabla">
               <thead><tr><th>Código</th><th>Clienta</th><th>Servicio y detalle</th><th>Estilista</th><th>Fecha y hora</th><th>Estado</th><th>Acciones</th></tr></thead>
               <tbody id="tablaCitasAdmin"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Nómina y Liquidación de Comisiones (40% Estilista / 60% Salón) -->
+        <div data-panel="nomina" class="hidden">
+          <div class="flex flex-wrap items-center justify-between gap-3 p-5 pb-3 sm:p-6 sm:pb-3">
+            <div>
+              <h2 class="text-2xl font-bold text-bella-50">Nómina y Liquidación de Comisiones (40% Estilista · 60% Salón)</h2>
+              <p class="text-xs text-bella-200/70">Cálculo automático sobre citas finalizadas, desglose por profesional y generación de comprobante de pago de nómina en PDF.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <select id="filtroMesNomina" class="campo w-auto py-2 text-xs">
+                <option value="todos">Todo el historial acumulado</option>
+                <option value="2026-11">Noviembre 2026</option>
+                <option value="2026-10">Octubre 2026</option>
+                <option value="2026-06">Junio 2026</option>
+                <option value="2026-05">Mayo 2026</option>
+              </select>
+              <button type="button" id="btnExportarNominaCSV" class="btn-secundario px-3 py-2 text-xs">
+                &#8681; Exportar Nómina CSV
+              </button>
+            </div>
+          </div>
+
+          <div id="metricasNominaAdmin" class="mx-5 mb-5 grid grid-cols-2 gap-3 sm:mx-6 lg:grid-cols-4"></div>
+
+          <div class="overflow-x-auto">
+            <table class="tabla">
+              <thead>
+                <tr>
+                  <th>Estilista</th>
+                  <th>Especialización</th>
+                  <th>Servicios finalizados</th>
+                  <th>Total producido (100%)</th>
+                  <th>Comisión Estilista (40%)</th>
+                  <th>Utilidad Neta Salón (60%)</th>
+                  <th class="text-right">Colilla de pago</th>
+                </tr>
+              </thead>
+              <tbody id="tablaNominaEstilistas"></tbody>
             </table>
           </div>
         </div>

@@ -73,6 +73,17 @@ function renderizarEstrellas(calificacion, comentario = '') {
         </div>`;
 }
 
+function renderizarEtiquetaPago(c) {
+    const metodo = c.metodo_pago || 'Efectivo en Salón';
+    const estadoPago = c.estado_pago || (c.estado === 'Finalizada' ? 'Pagado en salón' : 'Pendiente en salón');
+    const pagado = estadoPago.toLowerCase().includes('pagado');
+    const ref = c.referencia_pago ? ` · Ref: ${c.referencia_pago}` : '';
+    if (pagado) {
+        return `<span class="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300">✓ ${escapar(estadoPago)} (${escapar(metodo)}${escapar(ref)})</span>`;
+    }
+    return `<span class="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[10px] font-semibold text-amber-200">⏳ ${escapar(estadoPago)} (${escapar(metodo)})</span>`;
+}
+
 const COLORES = {
     azul: 'bg-sky-500/15 text-sky-300 hover:bg-sky-500/25',
     verde: 'bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25',
@@ -260,13 +271,16 @@ function verComprobanteCita(idCita) {
     const precioProd = Number(c.precio_producto || 0);
     const precioTotal = Number(c.precio || 0);
     const precioServicio = Math.max(0, precioTotal - precioProd);
+    const metodoPago = c.metodo_pago || 'Efectivo en Salón';
+    const estadoPago = c.estado_pago || (c.estado === 'Finalizada' ? 'Pagado en salón' : 'Pendiente en salón');
+    const refPago = c.referencia_pago || '—';
 
     const htmlTicket = `
         <div id="areaTicketImprimible" class="rounded-2xl border-2 border-dashed border-bella-400 bg-white p-5 text-pastel-tinta shadow-inner">
             <div class="border-b border-bella-200 pb-3 text-center">
                 <p class="text-[11px] font-bold uppercase tracking-widest text-bella-700">BellaStyle Studio · Cartagena, Colombia</p>
                 <h4 class="mt-0.5 font-titulo text-2xl font-bold text-pastel-tinta">Comprobante de Cita #BS-${c.id}</h4>
-                <p class="mt-1 text-xs font-semibold text-pastel-subtinta">Estado actual: <strong>${escapar(c.estado)}</strong></p>
+                <p class="mt-1 text-xs font-semibold text-pastel-subtinta">Estado actual: <strong>${escapar(c.estado)}</strong> · Pago: <strong>${escapar(estadoPago)}</strong></p>
             </div>
             <dl class="mt-3 space-y-2 text-xs">
                 <div class="flex justify-between gap-2 border-b border-bella-100 pb-1.5">
@@ -295,8 +309,12 @@ function verComprobanteCita(idCita) {
                     <dt class="font-bold text-pastel-subtinta">Producto adicional incluido:</dt>
                     <dd class="font-bold text-emerald-900 text-right">${escapar(c.producto_adicional)} (+${pesos(precioProd)})</dd>
                 </div>` : ''}
+                <div class="flex justify-between gap-2 border-b border-bella-100 pb-1.5">
+                    <dt class="font-bold text-pastel-subtinta">Método y estado de pago:</dt>
+                    <dd class="font-bold text-pastel-tinta text-right">${escapar(metodoPago)} · ${escapar(estadoPago)}${c.referencia_pago ? ` (Ref: ${escapar(refPago)})` : ''}</dd>
+                </div>
                 <div class="flex items-center justify-between pt-2 text-sm">
-                    <dt class="font-bold uppercase tracking-wider text-pastel-tinta">Total a pagar en salón:</dt>
+                    <dt class="font-bold uppercase tracking-wider text-pastel-tinta">${estadoPago.toLowerCase().includes('pagado') ? 'Total pagado:' : 'Total a pagar en salón:'}</dt>
                     <dd class="font-titulo text-2xl font-bold text-bella-800">${pesos(precioTotal)}</dd>
                 </div>
             </dl>
@@ -333,13 +351,15 @@ function verComprobanteCita(idCita) {
                 <div class="box">
                     <p style="text-align:center;font-size:11px;font-weight:bold;letter-spacing:2px;color:#9c2f5b;margin:0;">BELLASTYLE STUDIO · CARTAGENA</p>
                     <h2 style="text-align:center;">Comprobante #BS-${c.id}</h2>
-                    <p style="text-align:center;font-size:12px;color:#624653;">Estado: ${escapar(c.estado)}</p>
+                    <p style="text-align:center;font-size:12px;color:#624653;">Estado: ${escapar(c.estado)} · ${escapar(estadoPago)}</p>
                     <div class="row"><strong>Clienta:</strong> <span>${escapar(c.cliente)}</span></div>
                     <div class="row"><strong>Fecha y hora:</strong> <span>${escapar(c.fecha)} · ${escapar(c.hora)} (${duracion} min)</span></div>
                     <div class="row"><strong>Estilista:</strong> <span>${escapar(c.estilista)}</span></div>
                     <div class="row"><strong>Servicio:</strong> <span>${escapar(c.servicio)} (${pesos(precioServicio)})</span></div>
                     ${c.observaciones ? `<div class="row"><strong>Detalle:</strong> <span>${escapar(c.observaciones)}</span></div>` : ''}
                     ${c.producto_adicional ? `<div class="row"><strong>Producto adicional:</strong> <span>${escapar(c.producto_adicional)} (+${pesos(precioProd)})</span></div>` : ''}
+                    <div class="row"><strong>Método de pago:</strong> <span>${escapar(metodoPago)} (${escapar(estadoPago)})</span></div>
+                    ${c.referencia_pago ? `<div class="row"><strong>Referencia de pago:</strong> <span>${escapar(refPago)}</span></div>` : ''}
                     <div class="total"><span>Total:</span> <span>${pesos(precioTotal)}</span></div>
                 </div>
                 <script>window.onload = function(){ window.print(); };<\/script>
@@ -347,6 +367,60 @@ function verComprobanteCita(idCita) {
             </html>`);
         ventanaImp.document.close();
     });
+}
+
+// Modal de Pasarela de Pago interactiva para pagar una cita pendiente en línea (Clienta) o registrar su cobro (Administradora)
+function pagarCitaModal(idCita) {
+    const c = buscarCitaEnMemoria(idCita);
+    if (!c) return avisar('No se encontró la cita');
+
+    const htmlPago = `
+        <div class="rounded-2xl border border-bella-300 bg-pastel-rosa/70 p-3.5 text-xs text-pastel-tinta">
+            <div class="flex items-center justify-between">
+                <span class="font-extrabold text-bella-900">Cita #BS-${c.id} · ${escapar(c.servicio)}</span>
+                <span class="font-titulo text-2xl font-bold text-bella-800">${pesos(c.precio)}</span>
+            </div>
+            <p class="mt-1 text-pastel-subtinta">Clienta: <strong>${escapar(c.cliente)}</strong> · Estilista: <strong>${escapar(c.estilista)}</strong></p>
+        </div>
+
+        <div>
+            <label for="vMetodoPagoModal" class="etiqueta-oscura">Selecciona el medio de pago</label>
+            <select id="vMetodoPagoModal" class="campo-pastel">
+                <option value="Nequi / Daviplata">📲 Nequi / Daviplata (Aprobación inmediata QR)</option>
+                <option value="Tarjeta / PSE">💳 Tarjeta Débito/Crédito o PSE Bancario</option>
+                <option value="Efectivo en Salón">💵 Efectivo en Recepción del Salón</option>
+            </select>
+        </div>
+
+        <div id="vInfoPasarelaModal" class="rounded-2xl border border-bella-300 bg-white p-3.5 text-xs text-pastel-tinta shadow-inner">
+            <p class="font-extrabold text-bella-900">📲 Cuenta oficial Nequi / Daviplata BellaStyle: 300 655 0192</p>
+            <p class="mt-0.5 text-[11px] text-pastel-subtinta">Ingresa el número celular o comprobante para generar tu referencia aprobada en línea.</p>
+        </div>
+
+        <div>
+            <label for="vReferenciaPagoModal" class="etiqueta-oscura">Número de referencia / Celular o últimos 4 dígitos (opcional)</label>
+            <input id="vReferenciaPagoModal" type="text" class="campo-pastel" placeholder="Si lo dejas vacío se genera código de autorización automático">
+        </div>`;
+
+    abrirVentana(`💳 Pasarela de Pago · Cita BS-${c.id}`, htmlPago, async () => {
+        const metodoPago = valor('vMetodoPagoModal');
+        const refInput = valor('vReferenciaPagoModal');
+        const prefijo = metodoPago === 'Nequi / Daviplata' ? 'NEQ' : (metodoPago === 'Tarjeta / PSE' ? 'PSE' : 'CAJA');
+        const referenciaPago = refInput
+            ? `${prefijo}-${refInput.replace(/\s+/g, '')}`
+            : `${prefijo}-${Math.floor(100000 + Math.random() * 900000)}`;
+
+        const res = await pedir(`/citas/${c.id}/pago`, 'PUT', {
+            metodoPago,
+            referenciaPago
+        });
+        if (res.success) {
+            if (usuario.rol === 'Clienta') await cargarCitasClienta();
+            if (usuario.rol === 'Estilista') await cargarCitasEstilista();
+            if (usuario.rol === 'Administradora') await cargarCitasAdmin();
+        }
+        return res;
+    }, 'Confirmar y aprobar pago');
 }
 
 function mostrarModalCorreo(correo) {
@@ -843,6 +917,25 @@ async function iniciarClienta() {
     document.getElementById('estilista').addEventListener('change', actualizarDisponibilidadHoras);
     inputFecha.addEventListener('change', actualizarDisponibilidadHoras);
 
+    // Selector interactivo de Método de Pago en el formulario de la Clienta
+    const inputMetodoPago = document.getElementById('metodoPagoCita');
+    const cajaNequi = document.getElementById('cajaPagoNequi');
+    const cajaTarjeta = document.getElementById('cajaPagoTarjeta');
+    document.querySelectorAll('[data-btn-metodo]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const elegido = btn.dataset.btnMetodo;
+            if (inputMetodoPago) inputMetodoPago.value = elegido;
+            document.querySelectorAll('[data-btn-metodo]').forEach((b) => {
+                const activo = b.dataset.btnMetodo === elegido;
+                b.className = activo
+                    ? 'rounded-xl border-2 border-bella-600 bg-pastel-rosa px-2 py-2 text-center text-[11px] font-extrabold text-bella-900 shadow-sm transition'
+                    : 'rounded-xl border border-bella-300 bg-white px-2 py-2 text-center text-[11px] font-bold text-pastel-tinta transition hover:bg-pastel-rosa/50';
+            });
+            cajaNequi?.classList.toggle('hidden', elegido !== 'Nequi / Daviplata');
+            cajaTarjeta?.classList.toggle('hidden', elegido !== 'Tarjeta / PSE');
+        });
+    });
+
     filtrarEstilistas();
 
     // Botón "Ver tipos y estilos"
@@ -949,6 +1042,17 @@ async function agendarCita(e) {
     const idProducto = document.getElementById('productoAdicional')?.value || null;
     const codigoPromo = document.getElementById('codigoPromocional')?.value.trim() || '';
     const finalizadasCount = citasClienta.filter((c) => c.estado === 'Finalizada').length;
+    const metodoPago = document.getElementById('metodoPagoCita')?.value || 'Efectivo en Salón';
+
+    let referenciaPago = null;
+    if (metodoPago === 'Nequi / Daviplata') {
+        const cel = document.getElementById('celularNequiCita')?.value.trim() || '';
+        referenciaPago = cel ? `NEQ-${cel.replace(/\s+/g, '').slice(-6)}` : `NEQ-${Math.floor(100000 + Math.random() * 900000)}`;
+    } else if (metodoPago === 'Tarjeta / PSE') {
+        const banco = document.getElementById('bancoPseCita')?.value || 'PSE';
+        const ult4 = document.getElementById('ultimos4Cita')?.value.trim() || String(Math.floor(1000 + Math.random() * 9000));
+        referenciaPago = `${banco.slice(0, 3).toUpperCase()}-${ult4}`;
+    }
 
     const respuesta = await pedir('/citas', 'POST', {
         idUsuario: usuario.id,
@@ -961,7 +1065,9 @@ async function agendarCita(e) {
         precioEspecialidad: precioEspecialidadSeleccionada,
         duracionEspecialidad: duracionEspecialidadSeleccionada,
         codigoPromo,
-        aplicarVip: finalizadasCount >= 3
+        aplicarVip: finalizadasCount >= 3,
+        metodoPago,
+        referenciaPago
     });
 
     if (respuesta.success) {
@@ -1148,10 +1254,14 @@ async function cargarCitasClienta() {
 
     tabla.innerHTML = citasClienta.length === 0 ? filaVacia(5, 'Todavía no tienes citas agendadas') : citasClienta.map((c) => {
         const activa = c.estado === 'Pendiente' || c.estado === 'Confirmada';
+        const yaPagada = String(c.estado_pago || '').toLowerCase().includes('pagado');
         let acciones =
             botonEditar('💬 Chat', 'abrirChatCita', c.id) + ' ' +
             botonEditar('🧾 Comprobante', 'verComprobanteCita', c.id) + ' ' +
             botonEditar('✉️ Correo', 'verCorreoCita', c.id) + ' ';
+        if (activa && !yaPagada) {
+            acciones += `<button class="btn-mini bg-emerald-500/20 font-bold text-emerald-300 hover:bg-emerald-500/30" data-editar="pagarCitaModal" data-id="${c.id}">💳 Pagar ahora</button> `;
+        }
         if (activa) {
             acciones +=
                 botonEditar('Reprogramar', 'reprogramarCita', c.id) + ' ' +
@@ -1167,6 +1277,7 @@ async function cargarCitasClienta() {
                     ${c.duracion_min ? `<span class="ml-1 text-[11px] text-white/50">(${c.duracion_min} min)</span>` : ''}
                     ${c.observaciones ? `<span class="mt-0.5 block text-xs text-bella-200">${escapar(c.observaciones)}</span>` : ''}
                     ${c.producto_adicional ? `<span class="mt-0.5 block text-xs font-semibold text-emerald-300">🧴 Incluye: ${escapar(c.producto_adicional)} (+${pesos(c.precio_producto)})</span>` : ''}
+                    ${renderizarEtiquetaPago(c)}
                     ${renderizarEstrellas(c.calificacion, c.comentario_calificacion)}
                 </td>
                 <td class="whitespace-nowrap">${c.fecha} · ${c.hora}</td>
@@ -1321,6 +1432,7 @@ function dibujarCitasEstilista() {
                     <span>${escapar(c.servicio)}</span>
                     ${c.observaciones ? `<span class="block text-xs text-bella-200">${escapar(c.observaciones)}</span>` : ''}
                     ${c.producto_adicional ? `<span class="block text-xs font-semibold text-emerald-300">🧴 ${escapar(c.producto_adicional)}</span>` : ''}
+                    ${renderizarEtiquetaPago(c)}
                     ${renderizarEstrellas(c.calificacion, c.comentario_calificacion)}
                 </td>
                 <td class="whitespace-nowrap">${c.fecha} · ${c.hora}</td>
@@ -1391,9 +1503,246 @@ async function cargarCitasAdmin() {
         tarjetaMetrica('Ingresos', pesos(ingresos), 'bg-pastel-menta');
 
     dibujarGraficasAdmin();
+    dibujarNominaAdmin();
     const fechaTl = document.getElementById('fechaTimelineAdmin')?.value || fechaDeHoy();
     dibujarTimelineDia(fechaTl, citasAdmin, 'contenedorTimelineAdmin');
     dibujarCitasAdmin();
+}
+
+// --- Nómina y Liquidación de Comisiones (40% Estilista / 60% Salón) ---
+
+function obtenerResumenNomina(filtroMes = 'todos') {
+    const finalizadas = citasAdmin.filter((c) => {
+        if (c.estado !== 'Finalizada') return false;
+        if (filtroMes && filtroMes !== 'todos' && !String(c.fecha).startsWith(filtroMes)) return false;
+        return true;
+    });
+
+    const listaBase = estilistasAdmin.length > 0
+        ? estilistasAdmin
+        : [
+            { id_estilista: 1, nombres: 'Laura', apellidos: 'Estilista', especialidad: 'Colorimetría y Balayage' },
+            { id_estilista: 2, nombres: 'Diana', apellidos: 'Martínez', especialidad: 'Corte y Peinados' },
+            { id_estilista: 3, nombres: 'Paula', apellidos: 'Ríos', especialidad: 'Manicure y PediSpa' },
+            { id_estilista: 4, nombres: 'Camila', apellidos: 'Torres', especialidad: 'Terapia Capilar y Botox' },
+            { id_estilista: 5, nombres: 'Valentina', apellidos: 'Herrera', especialidad: 'Peinados de Gala y Novias' },
+            { id_estilista: 6, nombres: 'Natalia', apellidos: 'Mendoza', especialidad: 'Nail Art y Gel' }
+        ];
+
+    const filas = listaBase.map((est) => {
+        const nombreCompleto = `${est.nombres} ${est.apellidos}`.trim();
+        const citasDeEstilista = finalizadas.filter(
+            (c) => String(c.id_estilista) === String(est.id_estilista) || c.estilista === nombreCompleto
+        );
+        const totalProducido = citasDeEstilista.reduce((acc, c) => acc + Number(c.precio || 0), 0);
+        const comisionEstilista = Math.round(totalProducido * 0.40);
+        const utilidadSalon = totalProducido - comisionEstilista;
+
+        return {
+            id_estilista: est.id_estilista,
+            nombre: nombreCompleto,
+            especialidad: est.especialidad || 'Estilista profesional',
+            estado: est.estado || 'Activo',
+            cantidadCitas: citasDeEstilista.length,
+            totalProducido,
+            comisionEstilista,
+            utilidadSalon,
+            citasDetalle: citasDeEstilista
+        };
+    }).sort((a, b) => b.totalProducido - a.totalProducido);
+
+    const totalGeneral = filas.reduce((acc, f) => acc + f.totalProducido, 0);
+    const totalComisiones = filas.reduce((acc, f) => acc + f.comisionEstilista, 0);
+    const totalUtilidadSalon = totalGeneral - totalComisiones;
+
+    return {
+        filtroMes,
+        totalCitasFinalizadas: finalizadas.length,
+        totalGeneral,
+        totalComisiones,
+        totalUtilidadSalon,
+        filas
+    };
+}
+
+function dibujarNominaAdmin() {
+    const tabla = document.getElementById('tablaNominaEstilistas');
+    const contMetricas = document.getElementById('metricasNominaAdmin');
+    if (!tabla) return;
+
+    const filtroMes = document.getElementById('filtroMesNomina')?.value || 'todos';
+    const resumen = obtenerResumenNomina(filtroMes);
+
+    if (contMetricas) {
+        contMetricas.innerHTML =
+            tarjetaMetrica('Servicios liquidados', resumen.totalCitasFinalizadas, 'bg-pastel-lavanda') +
+            tarjetaMetrica('Facturación bruta (100%)', pesos(resumen.totalGeneral), 'bg-pastel-rosa') +
+            tarjetaMetrica('Nómina Estilistas (40%)', pesos(resumen.totalComisiones), 'bg-pastel-durazno') +
+            tarjetaMetrica('Ganancia Neta Salón (60%)', pesos(resumen.totalUtilidadSalon), 'bg-pastel-menta');
+    }
+
+    tabla.innerHTML = resumen.filas.length === 0
+        ? filaVacia(7, 'No hay registros de nómina para este periodo')
+        : resumen.filas.map((f) => `
+            <tr>
+                <td class="font-semibold text-white">${escapar(f.nombre)}</td>
+                <td>
+                    <span class="inline-block rounded-lg bg-bella-500/15 px-2.5 py-1 text-xs font-semibold text-bella-200">
+                        ${escapar(f.especialidad)}
+                    </span>
+                </td>
+                <td class="font-bold text-white">${f.cantidadCitas} servicio(s)</td>
+                <td class="font-semibold text-bella-100">${pesos(f.totalProducido)}</td>
+                <td>
+                    <span class="inline-block rounded-xl bg-emerald-500/20 px-3 py-1 font-bold text-emerald-300">
+                        ${pesos(f.comisionEstilista)}
+                    </span>
+                </td>
+                <td class="font-bold text-oro">${pesos(f.utilidadSalon)}</td>
+                <td class="whitespace-nowrap text-right">
+                    <button type="button" class="btn-mini bg-pastel-rosa font-bold text-bella-900 hover:bg-bella-200" data-editar="verColillaNominaEstilista" data-id="${f.id_estilista}">
+                        🧾 Liquidar / PDF
+                    </button>
+                </td>
+            </tr>`).join('');
+
+    activarBotones(tabla, cargarCitasAdmin);
+}
+
+function verColillaNominaEstilista(idEstilista) {
+    const filtroMes = document.getElementById('filtroMesNomina')?.value || 'todos';
+    const resumen = obtenerResumenNomina(filtroMes);
+    const fila = resumen.filas.find((f) => String(f.id_estilista) === String(idEstilista));
+    if (!fila) return avisar('No se encontró información de la estilista');
+
+    const etiquetaPeriodo = filtroMes === 'todos' ? 'Acumulado General' : `Periodo ${filtroMes}`;
+
+    const htmlColilla = `
+        <div class="rounded-2xl border-2 border-dashed border-bella-400 bg-white p-5 text-pastel-tinta shadow-inner">
+            <div class="border-b border-bella-200 pb-3 text-center">
+                <p class="text-[11px] font-bold uppercase tracking-widest text-bella-700">BellaStyle Studio · Comprobante de Nómina y Comisiones</p>
+                <h4 class="mt-0.5 font-titulo text-2xl font-bold text-pastel-tinta">${escapar(fila.nombre)}</h4>
+                <p class="mt-0.5 text-xs font-semibold text-pastel-subtinta">${escapar(fila.especialidad)} · ${escapar(etiquetaPeriodo)}</p>
+            </div>
+
+            <div class="mt-3 grid grid-cols-3 gap-2 rounded-xl bg-pastel-perla p-3 text-center text-xs">
+                <div>
+                    <p class="text-[10px] font-bold uppercase text-pastel-subtinta">Producido (100%)</p>
+                    <p class="mt-0.5 font-titulo text-lg font-bold text-pastel-tinta">${pesos(fila.totalProducido)}</p>
+                </div>
+                <div class="border-x border-bella-300/60">
+                    <p class="text-[10px] font-bold uppercase text-emerald-900">Pago Estilista (40%)</p>
+                    <p class="mt-0.5 font-titulo text-lg font-bold text-emerald-800">${pesos(fila.comisionEstilista)}</p>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold uppercase text-bella-900">Retención Salón (60%)</p>
+                    <p class="mt-0.5 font-titulo text-lg font-bold text-bella-800">${pesos(fila.utilidadSalon)}</p>
+                </div>
+            </div>
+
+            <p class="mt-3 text-xs font-extrabold uppercase tracking-wider text-pastel-tinta">Detalle de servicios finalizados (${fila.cantidadCitas}):</p>
+            <div class="mt-1.5 max-h-48 overflow-y-auto rounded-xl border border-bella-200">
+                ${fila.citasDetalle.length === 0
+                    ? '<p class="p-3 text-center text-xs text-pastel-subtinta">Sin servicios finalizados en este periodo.</p>'
+                    : `<table class="w-full text-left text-xs">
+                        <thead class="bg-pastel-rosa/60 text-[11px] font-bold text-bella-900">
+                            <tr><th class="p-2">Cita / Fecha</th><th class="p-2">Clienta / Servicio</th><th class="p-2 text-right">Valor</th><th class="p-2 text-right">40% Estilista</th></tr>
+                        </thead>
+                        <tbody>
+                            ${fila.citasDetalle.map((c) => `
+                                <tr class="border-t border-bella-100">
+                                    <td class="p-2 font-mono text-[11px]">BS-${c.id}<br><span class="text-pastel-subtinta">${escapar(c.fecha)}</span></td>
+                                    <td class="p-2"><strong>${escapar(c.cliente)}</strong><br><span class="text-[11px] text-pastel-subtinta">${escapar(c.servicio)}</span></td>
+                                    <td class="p-2 text-right font-semibold">${pesos(c.precio)}</td>
+                                    <td class="p-2 text-right font-bold text-emerald-800">${pesos(Math.round(Number(c.precio) * 0.4))}</td>
+                                </tr>`).join('')}
+                        </tbody>
+                    </table>`
+                }
+            </div>
+        </div>
+        <div class="flex flex-wrap justify-end gap-2 pt-2">
+            <button type="button" id="btnImprimirColillaNomina" class="btn-primario py-2 text-xs">
+                🖨️ Imprimir Colilla de Pago (PDF)
+            </button>
+        </div>`;
+
+    abrirVentana(`💰 Liquidación de Comisiones · ${fila.nombre}`, htmlColilla, null);
+
+    document.getElementById('btnImprimirColillaNomina')?.addEventListener('click', () => {
+        const ventanaImp = window.open('', '_blank', 'width=760,height=700');
+        if (!ventanaImp) return window.print();
+        ventanaImp.document.write(`
+            <!DOCTYPE html>
+            <html lang="es">
+            <head>
+                <meta charset="UTF-8">
+                <title>Colilla de Nómina · ${escapar(fila.nombre)} · BellaStyle</title>
+                <style>
+                    body { font-family: 'Segoe UI', Arial, sans-serif; padding: 32px; color: #24131c; background: #fff9fb; }
+                    .box { max-width: 620px; margin: 0 auto; border: 2px dashed #c94b7c; border-radius: 18px; padding: 24px; background: #fff; }
+                    h2 { margin: 4px 0; color: #541d37; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13px; }
+                    th, td { border-bottom: 1px solid #f4dce6; padding: 8px; text-align: left; }
+                    th { background: #fceef5; color: #541d37; }
+                    .totales { margin-top: 16px; padding: 12px; background: #f3faf7; border-radius: 12px; display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; color: #065f46; }
+                </style>
+            </head>
+            <body>
+                <div class="box">
+                    <p style="text-align:center;font-size:11px;font-weight:bold;letter-spacing:2px;color:#9c2f5b;margin:0;">BELLASTYLE STUDIO · LIQUIDACIÓN DE NÓMINA Y COMISIONES</p>
+                    <h2 style="text-align:center;">${escapar(fila.nombre)}</h2>
+                    <p style="text-align:center;font-size:12px;color:#624653;">${escapar(fila.especialidad)} · ${escapar(etiquetaPeriodo)} · Fecha de emisión: ${fechaDeHoy()}</p>
+                    <table>
+                        <thead>
+                            <tr><th>Código</th><th>Fecha</th><th>Clienta</th><th>Servicio</th><th>Total Cita</th><th>Comisión (40%)</th></tr>
+                        </thead>
+                        <tbody>
+                            ${fila.citasDetalle.map((c) => `
+                                <tr>
+                                    <td>BS-${c.id}</td>
+                                    <td>${escapar(c.fecha)}</td>
+                                    <td>${escapar(c.cliente)}</td>
+                                    <td>${escapar(c.servicio)}</td>
+                                    <td>${pesos(c.precio)}</td>
+                                    <td><strong>${pesos(Math.round(Number(c.precio) * 0.4))}</strong></td>
+                                </tr>`).join('')}
+                        </tbody>
+                    </table>
+                    <div class="totales">
+                        <span>Total producido: ${pesos(fila.totalProducido)}</span>
+                        <span>Neto a pagar a Estilista (40%): ${pesos(fila.comisionEstilista)}</span>
+                    </div>
+                </div>
+                <script>window.onload = function(){ window.print(); };<\/script>
+            </body>
+            </html>`);
+        ventanaImp.document.close();
+    });
+}
+
+function exportarNominaCSV() {
+    const filtroMes = document.getElementById('filtroMesNomina')?.value || 'todos';
+    const resumen = obtenerResumenNomina(filtroMes);
+    const encabezados = ['Estilista', 'Especializacion', 'Servicios_Finalizados', 'Total_Producido_100', 'Comision_Estilista_40', 'Utilidad_Salon_60'];
+    const filas = resumen.filas.map((f) => [
+        f.nombre,
+        f.especialidad,
+        f.cantidadCitas,
+        f.totalProducido,
+        f.comisionEstilista,
+        f.utilidadSalon
+    ].map((val) => `"${String(val).replace(/"/g, '""')}"`).join(','));
+
+    const csv = '\uFEFF' + [encabezados.join(','), ...filas].join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nomina_comisiones_bellastyle_${fechaDeHoy()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    avisar('Reporte de Nómina y Comisiones descargado en CSV');
 }
 
 function dibujarGraficasAdmin() {
@@ -1513,10 +1862,14 @@ function dibujarCitasAdmin() {
     const tabla = document.getElementById('tablaCitasAdmin');
 
     tabla.innerHTML = citas.length === 0 ? filaVacia(7, 'No se encontraron citas con ese filtro') : citas.map((c) => {
+        const yaPagada = String(c.estado_pago || '').toLowerCase().includes('pagado');
         let acciones =
             botonEditar('💬 Chat', 'abrirChatCita', c.id) + ' ' +
             botonEditar('🧾 Comprobante', 'verComprobanteCita', c.id) + ' ' +
             botonEditar('✉️ Correo', 'verCorreoCita', c.id) + ' ';
+        if (c.estado !== 'Cancelada' && !yaPagada) {
+            acciones += `<button class="btn-mini bg-emerald-500/20 font-bold text-emerald-300 hover:bg-emerald-500/30" data-editar="pagarCitaModal" data-id="${c.id}">💳 Registrar pago</button> `;
+        }
         if (c.estado === 'Pendiente') {
             acciones += botonAccion('Confirmar', 'azul', `/citas/${c.id}/estado`, { estado: 'Confirmada' }) + ' ';
         }
@@ -1536,6 +1889,7 @@ function dibujarCitasAdmin() {
                     <span class="ml-1 text-xs font-bold text-oro">${pesos(c.precio)}</span>
                     ${c.observaciones ? `<span class="block text-xs text-bella-200">${escapar(c.observaciones)}</span>` : ''}
                     ${c.producto_adicional ? `<span class="block text-xs font-semibold text-emerald-300">🧴 ${escapar(c.producto_adicional)} (+${pesos(c.precio_producto)})</span>` : ''}
+                    ${renderizarEtiquetaPago(c)}
                     ${renderizarEstrellas(c.calificacion, c.comentario_calificacion)}
                 </td>
                 <td>${escapar(c.estilista)}</td>
@@ -1785,6 +2139,7 @@ async function cargarEstilistasAdmin() {
 
     activarBotones(tabla, cargarEstilistasAdmin);
     dibujarCalendarioDisponibilidadAdmin();
+    dibujarNominaAdmin();
 }
 
 function opcionesHoraTurno(seleccionada = '08:00') {
@@ -2709,6 +3064,8 @@ function iniciarAdmin() {
     document.getElementById('filtroEstado').addEventListener('change', dibujarCitasAdmin);
     document.getElementById('buscarCitaAdmin')?.addEventListener('input', dibujarCitasAdmin);
     document.getElementById('btnExportarCitas')?.addEventListener('click', exportarCitasCSV);
+    document.getElementById('filtroMesNomina')?.addEventListener('change', dibujarNominaAdmin);
+    document.getElementById('btnExportarNominaCSV')?.addEventListener('click', exportarNominaCSV);
     document.getElementById('btnNuevaCitaAdmin')?.addEventListener('click', abrirModalNuevaCitaAdmin);
     document.getElementById('btnNuevoServicio').addEventListener('click', () => editarServicio(''));
     document.getElementById('btnNuevoProducto').addEventListener('click', () => editarProducto(''));
@@ -2756,6 +3113,8 @@ const EDITORES = {
     verFichaClientaDesdeCita,
     abrirChatCita,
     verComprobanteCita,
+    pagarCitaModal,
+    verColillaNominaEstilista,
     verCorreoCita,
     calificarCita,
     editarServicio,

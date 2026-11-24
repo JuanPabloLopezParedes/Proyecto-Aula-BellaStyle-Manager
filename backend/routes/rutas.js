@@ -25,6 +25,7 @@ router.get('/citas/:id/correo', protegerRuta(), citas.verCorreoCita);
 router.get('/citas/:id/mensajes', protegerRuta(), citas.mensajesDeCita);
 router.post('/citas/:id/mensajes', protegerRuta(), citas.enviarMensajeCita);
 router.post('/citas', protegerRuta(), citas.crear);
+router.put('/citas/:id/pago', protegerRuta(), citas.registrarPagoCita);
 router.put('/citas/:id/estado', protegerRuta(), citas.cambiarEstado);
 router.put('/citas/:id/reprogramar', protegerRuta(), citas.reprogramar);
 router.put('/citas/:id/calificar', protegerRuta(['Clienta', 'Administradora']), citas.calificar);
