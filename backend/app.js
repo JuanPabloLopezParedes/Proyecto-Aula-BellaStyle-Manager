@@ -36,6 +36,10 @@ async function asegurarColumnasFotos() {
             await db.query('ALTER TABLE citas ADD COLUMN foto_resultado MEDIUMTEXT DEFAULT NULL');
             await db.query('ALTER TABLE citas ADD COLUMN nota_resultado VARCHAR(300) DEFAULT NULL');
         }
+        const [colFechaCal] = await db.query("SHOW COLUMNS FROM citas LIKE 'fecha_calificacion'");
+        if (colFechaCal.length === 0) {
+            await db.query('ALTER TABLE citas ADD COLUMN fecha_calificacion TIMESTAMP NULL DEFAULT NULL');
+        }
     } catch (_) {}
 }
 

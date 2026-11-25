@@ -33,8 +33,12 @@ async function actualizar(idProducto, { nombre, precio, stock, imagen, categoria
     return resultado.affectedRows > 0;
 }
 
-async function descontarStock(idProducto) {
-    const [resultado] = await db.query('UPDATE productos SET stock = stock - 1 WHERE id_producto = ?', [idProducto]);
+async function descontarStock(idProducto, cantidad = 1) {
+    const cant = Math.max(1, Number(cantidad) || 1);
+    const [resultado] = await db.query(
+        'UPDATE productos SET stock = GREATEST(0, stock - ?) WHERE id_producto = ? AND stock >= ?',
+        [cant, idProducto, cant]
+    );
     return resultado.affectedRows > 0;
 }
 

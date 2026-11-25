@@ -134,10 +134,10 @@ async function cambiarEstado(idCita, estado) {
     return resultado.affectedRows > 0;
 }
 
-// Guarda la calificación (1 a 5 estrellas) y reseña de una cita finalizada
+// Guarda la calificación (1 a 5 estrellas) y reseña de una cita
 async function calificar(idCita, calificacion, comentario) {
     const [resultado] = await db.query(
-        'UPDATE citas SET calificacion = ?, comentario_calificacion = ? WHERE id_cita = ?',
+        'UPDATE citas SET calificacion = ?, comentario_calificacion = ?, fecha_calificacion = NOW() WHERE id_cita = ?',
         [calificacion, comentario || null, idCita]
     );
     return resultado.affectedRows > 0;

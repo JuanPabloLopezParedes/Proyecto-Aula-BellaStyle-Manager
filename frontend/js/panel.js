@@ -558,11 +558,13 @@ function calificarCita(idCita) {
     const calActual = Number(c.calificacion) || 5;
 
     const htmlCalificar = `
-        <p class="text-xs font-semibold text-pastel-subtinta">
-            Cuéntanos cómo fue tu experiencia en <strong>${escapar(c.servicio)}</strong> con <strong>${escapar(c.estilista)}</strong>:
-        </p>
+        <div class="rounded-2xl border border-bella-300 bg-pastel-rosa/75 p-3 text-xs text-pastel-tinta">
+            <p class="font-bold text-bella-900">✂ Servicio: ${escapar(c.servicio)} · Atendió: ${escapar(c.estilista)}</p>
+            ${c.producto_adicional ? `<p class="mt-0.5 font-semibold text-emerald-950">🧴 Producto incluido: ${escapar(c.producto_adicional)}</p>` : ''}
+            <p class="mt-0.5 text-[11px] text-pastel-subtinta">✨ Tu evaluación y calificación aparecerán inmediatamente en tiempo real en la sección "Experiencias reales de nuestras clientas" de la página de inicio.</p>
+        </div>
         <div>
-            <label class="etiqueta-oscura">Calificación (1 a 5 estrellas)</label>
+            <label class="etiqueta-oscura">Calificación (1 a 5 estrellas) *</label>
             <div id="selectorEstrellasModal" class="flex gap-2 pt-1">
                 ${[1, 2, 3, 4, 5].map((n) => `
                     <button type="button" data-estrella-val="${n}"
@@ -577,20 +579,21 @@ function calificarCita(idCita) {
             <input type="hidden" id="vCalificacion" value="${calActual}">
         </div>
         <div>
-            <label for="vComentarioCal" class="etiqueta-oscura">Reseña o comentario (opcional)</label>
-            <textarea id="vComentarioCal" rows="3" class="campo-pastel" placeholder="Ej. Me encantó el resultado y la puntualidad...">${escapar(c.comentario_calificacion || '')}</textarea>
+            <label for="vComentarioCal" class="etiqueta-oscura">Escribe tu evaluación sobre el servicio ${c.producto_adicional ? 'y el producto' : ''} *</label>
+            <textarea id="vComentarioCal" rows="3" class="campo-pastel" placeholder="Ej. Me encantó el corte de cabello y la atención de la estilista, 100% recomendado..." required>${escapar(c.comentario_calificacion || '')}</textarea>
         </div>`;
 
-    abrirVentana(`★ Calificar servicio · BS-${c.id}`, htmlCalificar, async () => {
+    abrirVentana(`★ Calificar y Evaluar · Cita BS-${c.id}`, htmlCalificar, async () => {
         const respuesta = await pedir(`/citas/${c.id}/calificar`, 'PUT', {
             calificacion: Number(valor('vCalificacion')),
             comentario: valor('vComentarioCal')
         });
         if (respuesta.success) {
             await cargarCitasClienta();
+            if (usuario.rol === 'Administradora') await cargarCitasAdmin();
         }
         return respuesta;
-    }, 'Enviar calificación');
+    }, 'Publicar calificación en tiempo real');
 
     document.querySelectorAll('#selectorEstrellasModal button[data-estrella-val]').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -606,6 +609,159 @@ function calificarCita(idCita) {
             });
         });
     });
+}
+
+// Modal de Compra Directa de Producto con descuento de stock en tiempo real (sincronizado entre PC y celular)
+function comprarProductoModal(idProducto) {
+    const p = productosDisponibles.find((x) => String(x.id_producto) === String(idProducto))
+        || productosAdmin.find((x) => String(x.id_producto) === String(idProducto));
+    if (!p) return avisar('No se encontró el producto');
+
+    const stockActual = Number(p.stock) || 0;
+    if (stockActual <= 0) {
+        return avisar(`El producto "${p.nombre}" está agotado en este momento.`);
+    }
+
+    const info = typeof obtenerFichaProducto === 'function'
+        ? obtenerFichaProducto(p)
+        : { imagen: p.imagen || 'img/productos/shampoo-argan.jpg', categoria: 'Tienda BellaStyle', descripcion: '' };
+
+    const htmlCompra = `
+        <div class="flex items-center gap-3.5 rounded-2xl border border-bella-300 bg-white p-3 shadow-sm">
+            <img src="${escapar(info.imagen)}" alt="${escapar(p.nombre)}" class="h-16 w-16 shrink-0 rounded-xl object-cover ring-1 ring-bella-300">
+            <div class="min-w-0 flex-1">
+                <span class="inline-block rounded-full bg-pastel-menta px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-950">${escapar(info.categoria)}</span>
+                <h4 class="mt-0.5 truncate text-base font-bold text-pastel-tinta">${escapar(p.nombre)}</h4>
+                <p class="text-xs font-bold text-bella-800">${pesos(p.precio)} c/u · <span class="text-emerald-800">${stockActual} disponibles en tiempo real</span></p>
+            </div>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2">
+            <div>
+                <label for="vCantidadCompraProd" class="etiqueta-oscura">Cantidad a comprar (Máx. ${stockActual})</label>
+                <input id="vCantidadCompraProd" type="number" min="1" max="${stockActual}" value="1" class="campo-pastel" required>
+            </div>
+            <div>
+                <label for="vMetodoCompraProd" class="etiqueta-oscura">Método de pago</label>
+                <select id="vMetodoCompraProd" class="campo-pastel">
+                    <option value="Nequi / Daviplata">📲 Nequi / Daviplata</option>
+                    <option value="Tarjeta / PSE">💳 Tarjeta / PSE</option>
+                    <option value="Efectivo en Salón">💵 Pagar al recoger en Salón</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="vResumenTotalCompraProd" class="rounded-2xl border border-emerald-500/50 bg-pastel-menta p-3 text-xs font-bold text-emerald-950">
+            Total a pagar: ${pesos(p.precio)} (Se descontará 1 unidad del inventario en tiempo real en PC y celular)
+        </div>`;
+
+    abrirVentana(`🛒 Comprar producto · ${p.nombre}`, htmlCompra, async () => {
+        const cantidad = Math.max(1, Number(valor('vCantidadCompraProd')) || 1);
+        const metodoPago = valor('vMetodoCompraProd');
+        const res = await pedir(`/productos/${p.id_producto}/comprar`, 'POST', {
+            cantidad,
+            metodoPago
+        });
+        if (res.success) {
+            await refrescarProductosTiempoReal();
+        }
+        return res;
+    }, 'Confirmar compra y descontar stock');
+
+    const inputCant = document.getElementById('vCantidadCompraProd');
+    const cajaRes = document.getElementById('vResumenTotalCompraProd');
+    if (inputCant && cajaRes) {
+        inputCant.addEventListener('input', () => {
+            const cant = Math.max(1, Math.min(stockActual, Number(inputCant.value) || 1));
+            const total = cant * Number(p.precio);
+            cajaRes.textContent = `Total a pagar: ${pesos(total)} (Se descontarán ${cant} unidad(es) del inventario en tiempo real en PC y celular)`;
+        });
+    }
+}
+
+function dibujarTiendaDirectaClienta() {
+    const cont = document.getElementById('tiendaDirectaClienta');
+    if (!cont) return;
+
+    if (!productosDisponibles || productosDisponibles.length === 0) {
+        cont.innerHTML = '<p class="text-xs text-pastel-subtinta">No hay productos disponibles en este momento.</p>';
+        return;
+    }
+
+    cont.innerHTML = productosDisponibles.map((p) => {
+        const info = typeof obtenerFichaProducto === 'function'
+            ? obtenerFichaProducto(p)
+            : { imagen: p.imagen || 'img/productos/shampoo-argan.jpg', categoria: 'Tienda BellaStyle', descripcion: 'Producto profesional de salón.' };
+        const disponible = Number(p.stock) > 0;
+
+        return `
+            <div class="flex flex-col justify-between rounded-2xl border border-bella-300/80 bg-white p-3.5 shadow-sm transition hover:border-bella-500">
+                <div class="flex items-start gap-3">
+                    <img src="${escapar(info.imagen)}" alt="${escapar(p.nombre)}" class="h-16 w-16 shrink-0 rounded-xl object-cover ring-1 ring-bella-300/70">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center justify-between gap-1">
+                            <span class="truncate text-[10px] font-extrabold uppercase tracking-wider text-bella-800">${escapar(info.categoria)}</span>
+                            <span class="shrink-0 rounded-full ${disponible ? 'bg-emerald-700 text-white' : 'bg-stone-500 text-white'} px-2 py-0.5 text-[10px] font-bold">
+                                ${disponible ? `${p.stock} disp.` : 'Agotado'}
+                            </span>
+                        </div>
+                        <h4 class="mt-0.5 truncate text-sm font-bold text-pastel-tinta">${escapar(p.nombre)}</h4>
+                        <p class="mt-0.5 font-titulo text-xl font-bold text-bella-800">${pesos(p.precio)}</p>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center justify-between gap-2 border-t border-bella-200/70 pt-2.5">
+                    <button type="button"
+                            data-sumar-cita-prod="${p.id_producto}"
+                            ${disponible ? '' : 'disabled'}
+                            class="rounded-xl border border-bella-400/70 bg-pastel-perla px-2.5 py-1.5 text-[11px] font-bold text-pastel-tinta transition hover:bg-pastel-rosa disabled:opacity-40">
+                        + Sumar a mi cita
+                    </button>
+                    <button type="button"
+                            data-comprar-directo-prod="${p.id_producto}"
+                            ${disponible ? '' : 'disabled'}
+                            class="rounded-xl bg-bella-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-bella-700 disabled:opacity-40">
+                        🛒 Comprar ahora
+                    </button>
+                </div>
+            </div>`;
+    }).join('');
+
+    cont.querySelectorAll('button[data-sumar-cita-prod]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const selectProd = document.getElementById('productoAdicional');
+            if (selectProd) {
+                selectProd.value = String(btn.dataset.sumarCitaProd);
+                actualizarResumenTotalCita();
+                avisar('Producto agregado al formulario de tu cita.');
+                document.getElementById('formCita')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    });
+
+    cont.querySelectorAll('button[data-comprar-directo-prod]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            comprarProductoModal(btn.dataset.comprarDirectoProd);
+        });
+    });
+}
+
+async function refrescarProductosTiempoReal() {
+    const res = await pedir('/productos');
+    if (!res || !res.success) return;
+    productosDisponibles = res.data || [];
+    if (usuario.rol === 'Clienta') {
+        const valorPrevio = document.getElementById('productoAdicional')?.value || '';
+        poblarSelectProductosClienta();
+        const selectProd = document.getElementById('productoAdicional');
+        if (selectProd && valorPrevio) {
+            selectProd.value = valorPrevio;
+        }
+        dibujarTiendaDirectaClienta();
+        actualizarResumenTotalCita();
+    }
+    if (usuario.rol === 'Administradora') {
+        await cargarProductosAdmin();
+    }
 }
 
 function editarFichaTecnica(idClienta) {
@@ -1112,8 +1268,9 @@ async function iniciarClienta() {
         } catch (_) {}
     }
 
-    // Recuperar producto preferido si hizo clic en "Incluir en mi cita" desde la Tienda
+    // Recuperar producto preferido si hizo clic en "Quiero este producto" desde la Tienda
     const prodPrefTexto = sessionStorage.getItem('bellaProductoPreferida') || sessionStorage.getItem('bellaProductoPreferido');
+    let idProductoAbrirCompra = null;
     if (prodPrefTexto) {
         try {
             const prodPref = JSON.parse(prodPrefTexto);
@@ -1121,12 +1278,21 @@ async function iniciarClienta() {
             const selectProd = document.getElementById('productoAdicional');
             if (selectProd && prodPref.id_producto) {
                 selectProd.value = String(prodPref.id_producto);
+                idProductoAbrirCompra = prodPref.id_producto;
             }
         } catch (_) {}
     }
 
+    dibujarTiendaDirectaClienta();
     actualizarResumenTotalCita();
     await actualizarDisponibilidadHoras();
+
+    if (idProductoAbrirCompra) {
+        setTimeout(() => comprarProductoModal(idProductoAbrirCompra), 300);
+    }
+
+    // Sincronización automática de stock en tiempo real entre computador y celular (cada 4 segundos)
+    setInterval(refrescarProductosTiempoReal, 4000);
 
     document.getElementById('formCita').addEventListener('submit', agendarCita);
     document.getElementById('btnEditarMisDatos').addEventListener('click', editarMisDatos);
@@ -1373,19 +1539,22 @@ async function cargarCitasClienta() {
         if (activa) {
             acciones +=
                 botonEditar('Reprogramar', 'reprogramarCita', c.id) + ' ' +
-                botonAccion('Cancelar', 'rojo', `/citas/${c.id}/estado`, { estado: 'Cancelada' });
-        } else if (c.estado === 'Finalizada') {
-            if (c.foto_resultado) {
-                acciones += `<button class="btn-mini bg-pastel-rosa font-bold text-bella-900 hover:bg-bella-200" data-editar="gestionarResultadoCita" data-id="${c.id}">📸 Ver resultado</button> `;
-            }
-            acciones += `<button class="btn-mini bg-amber-400/20 font-bold text-amber-300 hover:bg-amber-400/30" data-editar="calificarCita" data-id="${c.id}">★ ${c.calificacion ? 'Editar reseña' : 'Calificar'}</button>`;
+                botonAccion('Cancelar', 'rojo', `/citas/${c.id}/estado`, { estado: 'Cancelada' }) + ' ';
+        } else if (c.estado === 'Finalizada' && c.foto_resultado) {
+            acciones += `<button class="btn-mini bg-pastel-rosa font-bold text-bella-900 hover:bg-bella-200" data-editar="gestionarResultadoCita" data-id="${c.id}">📸 Ver resultado</button> `;
+        }
+        if (c.estado !== 'Cancelada') {
+            acciones += `<button class="btn-mini bg-amber-400/25 font-extrabold text-amber-200 ring-1 ring-amber-400/50 hover:bg-amber-400/40" data-editar="calificarCita" data-id="${c.id}">★ ${c.calificacion ? 'Editar evaluación' : 'Calificar / Evaluar'}</button>`;
         }
         return `
             <tr>
                 <td>
-                    <span class="font-semibold text-white">${escapar(c.servicio)}</span>
-                    <span class="ml-1 text-xs font-bold text-oro">${pesos(c.precio)}</span>
-                    ${c.duracion_min ? `<span class="ml-1 text-[11px] text-white/50">(${c.duracion_min} min)</span>` : ''}
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="font-semibold text-white">${escapar(c.servicio)}</span>
+                        <span class="text-xs font-bold text-oro">${pesos(c.precio)}</span>
+                        ${c.duracion_min ? `<span class="text-[11px] text-white/50">(${c.duracion_min} min)</span>` : ''}
+                        ${c.estado !== 'Cancelada' ? `<button type="button" data-editar="calificarCita" data-id="${c.id}" class="rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-300 ring-1 ring-amber-400/40 transition hover:bg-amber-400/35">★ ${c.calificacion ? `Evaluado (${c.calificacion}/5) · Editar` : 'Calificar / Evaluar'}</button>` : ''}
+                    </div>
                     ${c.observaciones ? `<span class="mt-0.5 block text-xs text-bella-200">${escapar(c.observaciones)}</span>` : ''}
                     ${c.producto_adicional ? `<span class="mt-0.5 block text-xs font-semibold text-emerald-300">🧴 Incluye: ${escapar(c.producto_adicional)} (+${pesos(c.precio_producto)})</span>` : ''}
                     ${renderizarEtiquetaPago(c)}
@@ -3238,6 +3407,7 @@ const EDITORES = {
     verColillaNominaEstilista,
     verCorreoCita,
     calificarCita,
+    comprarProductoModal,
     editarServicio,
     editarProducto
 };

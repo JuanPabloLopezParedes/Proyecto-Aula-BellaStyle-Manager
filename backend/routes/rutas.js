@@ -41,6 +41,7 @@ router.put('/servicios/:id/estado', protegerRuta(['Administradora']), gestion.es
 // Productos
 router.get('/productos', catalogo.productos);
 router.post('/productos', protegerRuta(['Administradora']), gestion.crearProducto);
+router.post('/productos/:id/comprar', protegerRuta(), gestion.comprarProductoDirecto);
 router.put('/productos/:id', protegerRuta(['Administradora']), gestion.editarProducto);
 router.put('/productos/:id/estado', protegerRuta(['Administradora']), gestion.estadoProducto);
 

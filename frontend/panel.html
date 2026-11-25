@@ -196,10 +196,27 @@
         </div>
         <div class="overflow-x-auto">
           <table class="tabla">
-            <thead><tr><th>Servicio y especialidad</th><th>Fecha y hora</th><th>Estilista</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Servicio y especialidad</th><th>Fecha y hora</th><th>Estilista</th><th>Estado</th><th>Acciones y Evaluación</th></tr></thead>
             <tbody id="tablaCitasClienta"></tbody>
           </table>
         </div>
+      </div>
+
+      <!-- Tienda oficial dentro del panel de la clienta con compra directa y descuento de stock en tiempo real -->
+      <div class="tarjeta-pastel p-5 sm:p-6 lg:col-span-12">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="inline-flex items-center gap-1 rounded-full bg-pastel-menta px-3 py-0.5 text-[11px] font-extrabold uppercase tracking-wider text-emerald-950">
+              🧴 Tienda Oficial en Línea · Stock sincronizado en tiempo real
+            </span>
+            <h2 class="mt-1 text-2xl font-bold text-pastel-tinta">Comprar productos profesionales del salón</h2>
+            <p class="text-xs font-medium text-pastel-subtinta">Si compras desde tu celular o desde tu computador, las unidades disponibles se descuentan en tiempo real en todos los dispositivos.</p>
+          </div>
+          <a href="tienda.html" class="rounded-xl border border-bella-400/60 bg-white px-3.5 py-2 text-xs font-bold text-bella-900 shadow-sm transition hover:bg-pastel-rosa">
+            Ver vitrina completa &rarr;
+          </a>
+        </div>
+        <div id="tiendaDirectaClienta" class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
       </div>
     </section>
 

@@ -490,11 +490,14 @@ async function calificar(req, res) {
         if (!cita) {
             return res.status(404).json({ success: false, message: 'La cita no existe.' });
         }
-        if (cita.estado !== 'Finalizada') {
-            return res.status(400).json({ success: false, message: 'Solo puedes calificar citas que ya hayan finalizado.' });
+        if (cita.estado === 'Cancelada') {
+            return res.status(400).json({ success: false, message: 'No se puede calificar una cita cancelada.' });
         }
         await citaModel.calificar(cita.id_cita, estrellas, comentario);
-        res.json({ success: true, message: '¡Gracias por tu calificación! Tu reseña ha sido registrada.' });
+        res.json({
+            success: true,
+            message: '¡Gracias por calificar y evaluar tu servicio! Tu experiencia ya es visible en tiempo real en la página de inicio.'
+        });
     } catch (err) {
         console.error('Error al calificar cita:', err.message);
         res.status(500).json({ success: false, message: 'No se pudo guardar la calificación.' });
@@ -561,13 +564,21 @@ async function reprogramar(req, res) {
     }
 }
 
-// GET /api/resenas  (Reseñas verificadas para mostrar en la Landing Page)
+// GET /api/resenas  (Reseñas verificadas en tiempo real para mostrar en la Landing Page)
 async function resenasPublicas(_req, res) {
     try {
         const todas = await citaModel.listarTodas();
-        const resenas = todas
-            .filter((c) => Number(c.calificacion) >= 4)
-            .slice(0, 6)
+        const calificadas = todas
+            .filter((c) => Number(c.calificacion) >= 1)
+            .sort((a, b) => {
+                const fa = Number(a.fecha_calificacion || 0);
+                const fb = Number(b.fecha_calificacion || 0);
+                if (fb !== fa) return fb - fa;
+                return Number(b.id) - Number(a.id);
+            });
+
+        const resenas = calificadas
+            .slice(0, 8)
             .map((c) => ({
                 id: c.id,
                 cliente: c.cliente,
@@ -576,7 +587,8 @@ async function resenasPublicas(_req, res) {
                 fecha: c.fecha,
                 calificacion: Number(c.calificacion),
                 comentario: c.comentario_calificacion || 'Excelente atención y resultados profesionales.',
-                especialidad: c.observaciones || ''
+                especialidad: c.observaciones || '',
+                reciente: Boolean(c.fecha_calificacion)
             }));
         res.json({ success: true, data: resenas });
     } catch (err) {

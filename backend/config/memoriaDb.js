@@ -258,6 +258,7 @@ function armarCitas(filtroFn = () => true) {
                 observaciones: c.observaciones,
                 calificacion: c.calificacion ?? null,
                 comentario_calificacion: c.comentario_calificacion ?? null,
+                fecha_calificacion: c.fecha_calificacion ?? 0,
                 foto_resultado: c.foto_resultado ?? null,
                 nota_resultado: c.nota_resultado ?? null
             };
@@ -395,10 +396,16 @@ async function ejecutarConsulta(sql, params = []) {
         }
         return [{ affectedRows: pr ? 1 : 0 }];
     }
-    if (s.startsWith('UPDATE productos SET stock = stock - 1 WHERE id_producto = ?')) {
-        const pr = datos.productos.find((x) => String(x.id_producto) === String(params[0]));
-        if (pr && pr.stock > 0) pr.stock -= 1;
-        return [{ affectedRows: pr ? 1 : 0 }];
+    if (s.startsWith('UPDATE productos SET stock =')) {
+        const tieneCantidad = params.length >= 2;
+        const cant = tieneCantidad ? Math.max(1, Number(params[0]) || 1) : 1;
+        const idProd = tieneCantidad ? params[1] : params[0];
+        const pr = datos.productos.find((x) => String(x.id_producto) === String(idProd));
+        if (pr && Number(pr.stock) >= cant) {
+            pr.stock = Number(pr.stock) - cant;
+            return [{ affectedRows: 1 }];
+        }
+        return [{ affectedRows: 0 }];
     }
     if (s.startsWith('UPDATE productos SET estado = ?')) {
         const pr = datos.productos.find((x) => String(x.id_producto) === String(params[1]));
@@ -622,11 +629,12 @@ async function ejecutarConsulta(sql, params = []) {
         }
         return [{ affectedRows: c ? 1 : 0 }];
     }
-    if (s.startsWith('UPDATE citas SET calificacion = ?, comentario_calificacion = ? WHERE id_cita = ?')) {
+    if (s.startsWith('UPDATE citas SET calificacion = ?, comentario_calificacion = ?')) {
         const c = datos.citas.find((x) => String(x.id_cita) === String(params[2]));
         if (c) {
             c.calificacion = Number(params[0]);
             c.comentario_calificacion = params[1] || null;
+            c.fecha_calificacion = Date.now();
         }
         return [{ affectedRows: c ? 1 : 0 }];
     }

@@ -180,7 +180,7 @@ function dibujarCarruselTiendaLanding(productos = []) {
                         <span class="absolute left-3 top-3 rounded-full bg-pastel-menta px-3 py-0.5 text-[11px] font-extrabold text-emerald-950 shadow-sm">
                             ${escapar(info.categoria)}
                         </span>
-                        <span class="absolute right-3 top-3 rounded-full ${disponible ? 'bg-emerald-700 text-white' : 'bg-stone-500 text-white'} px-2.5 py-0.5 text-[11px] font-bold shadow-sm">
+                        <span data-stock-badge="${p.id_producto}" class="absolute right-3 top-3 rounded-full ${disponible ? 'bg-emerald-700 text-white' : 'bg-stone-500 text-white'} px-2.5 py-0.5 text-[11px] font-bold shadow-sm">
                             ${disponible ? `${p.stock} disp.` : 'Agotado'}
                         </span>
                     </div>
@@ -511,8 +511,109 @@ function prepararFiltrosGaleria12() {
     dibujarGaleria12(filtroGaleriaActual);
 }
 
-// 3. Página dedicada tienda.html: muestra todos los productos con buscador y botón "Quiero este producto" que abre el popup
+// 3. Página dedicada tienda.html: muestra todos los productos con buscador, compra directa en tiempo real y popup de login
+let productosTiendaCache = [];
+
+function abrirModalCompraDirectaEnTienda(idProducto) {
+    const p = productosTiendaCache.find((x) => String(x.id_producto) === String(idProducto));
+    if (!p) return;
+
+    const stockActual = Number(p.stock) || 0;
+    if (stockActual <= 0) {
+        alert(`El producto "${p.nombre}" está agotado.`);
+        return;
+    }
+
+    let dialog = document.getElementById('modalCompraTiendaDirecta');
+    if (!dialog) {
+        document.body.insertAdjacentHTML('beforeend', `
+            <dialog id="modalCompraTiendaDirecta" class="w-[calc(100%-1.5rem)] max-w-md rounded-3xl border border-bella-300/70 bg-pastel-crema p-0 text-pastel-tinta shadow-2xl backdrop:bg-black/80 backdrop:backdrop-blur-md">
+                <form id="formCompraTiendaDirecta" class="p-6">
+                    <div class="flex items-start justify-between gap-2">
+                        <h3 id="tituloCompraTienda" class="font-titulo text-2xl font-bold text-pastel-tinta">Comprar producto</h3>
+                        <button type="button" id="cerrarCompraTienda" class="rounded-xl border border-bella-300 bg-pastel-perla px-2.5 py-1 text-lg font-bold text-pastel-tinta hover:bg-bella-200">&times;</button>
+                    </div>
+                    <div id="alertaCompraTienda" data-tema="pastel" class="alerta mt-3"></div>
+                    <div id="cuerpoCompraTienda" class="mt-4 space-y-3.5"></div>
+                    <div class="mt-5 flex justify-end gap-2">
+                        <button type="button" id="cancelarCompraTienda" class="rounded-xl border border-bella-400/60 bg-pastel-perla px-4 py-2 text-xs font-bold text-pastel-tinta">Cancelar</button>
+                        <button type="submit" id="btnConfirmarCompraTienda" class="btn-primario px-5 py-2 text-xs">Confirmar compra</button>
+                    </div>
+                </form>
+            </dialog>
+        `);
+        dialog = document.getElementById('modalCompraTiendaDirecta');
+        document.getElementById('cerrarCompraTienda').addEventListener('click', () => dialog.close());
+        document.getElementById('cancelarCompraTienda').addEventListener('click', () => dialog.close());
+        dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+    }
+
+    const info = typeof obtenerFichaProducto === 'function'
+        ? obtenerFichaProducto(p)
+        : { imagen: p.imagen || 'img/productos/shampoo-argan.jpg', categoria: 'Tienda BellaStyle' };
+
+    document.getElementById('tituloCompraTienda').textContent = `🛒 Comprar · ${p.nombre}`;
+    ocultarAlerta(document.getElementById('alertaCompraTienda'));
+    document.getElementById('cuerpoCompraTienda').innerHTML = `
+        <div class="flex items-center gap-3 rounded-2xl border border-bella-300 bg-white p-3">
+            <img src="${escapar(info.imagen)}" alt="${escapar(p.nombre)}" class="h-16 w-16 shrink-0 rounded-xl object-cover">
+            <div>
+                <span class="rounded-full bg-pastel-menta px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-950">${escapar(info.categoria)}</span>
+                <p class="mt-1 font-bold text-pastel-tinta">${escapar(p.nombre)}</p>
+                <p class="text-xs font-extrabold text-bella-800">${pesos(p.precio)} c/u · <span class="text-emerald-800">${stockActual} disponibles</span></p>
+            </div>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+            <div>
+                <label class="etiqueta-oscura">Cantidad (Máx. ${stockActual})</label>
+                <input id="cantCompraTienda" type="number" min="1" max="${stockActual}" value="1" class="campo-pastel" required>
+            </div>
+            <div>
+                <label class="etiqueta-oscura">Método de pago</label>
+                <select id="metodoCompraTienda" class="campo-pastel">
+                    <option value="Nequi / Daviplata">📲 Nequi / Daviplata</option>
+                    <option value="Tarjeta / PSE">💳 Tarjeta / PSE</option>
+                    <option value="Efectivo en Salón">💵 Efectivo en Salón</option>
+                </select>
+            </div>
+        </div>
+        <div id="totalCompraTienda" class="rounded-2xl border border-emerald-500/50 bg-pastel-menta p-3 text-xs font-bold text-emerald-950">
+            Total a pagar: ${pesos(p.precio)} · Descuento de stock en tiempo real
+        </div>`;
+
+    const inputCant = document.getElementById('cantCompraTienda');
+    const divTotal = document.getElementById('totalCompraTienda');
+    inputCant?.addEventListener('input', () => {
+        const c = Math.max(1, Math.min(stockActual, Number(inputCant.value) || 1));
+        divTotal.textContent = `Total a pagar: ${pesos(c * Number(p.precio))} · Se descontarán ${c} unidad(es) en tiempo real`;
+    });
+
+    const form = document.getElementById('formCompraTiendaDirecta');
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const cantidad = Math.max(1, Number(inputCant.value) || 1);
+        const metodoPago = document.getElementById('metodoCompraTienda').value;
+        const btn = document.getElementById('btnConfirmarCompraTienda');
+        btn.disabled = true;
+        btn.textContent = 'Procesando...';
+        const res = await pedir(`/productos/${p.id_producto}/comprar`, 'POST', { cantidad, metodoPago });
+        btn.disabled = false;
+        btn.textContent = 'Confirmar compra';
+
+        if (res.success) {
+            mostrarAlerta(document.getElementById('alertaCompraTienda'), res.message, 'ok');
+            await sincronizarTiempoRealLandingYTienda();
+            setTimeout(() => dialog.close(), 1400);
+        } else {
+            mostrarAlerta(document.getElementById('alertaCompraTienda'), res.message);
+        }
+    };
+
+    dialog.showModal();
+}
+
 function dibujarTiendaProductos(productos = []) {
+    productosTiendaCache = productos;
     const cont = document.getElementById('listaTiendaProductos');
     if (!cont) return;
 
@@ -546,7 +647,7 @@ function dibujarTiendaProductos(productos = []) {
                             <span class="absolute left-3 top-3 rounded-full bg-pastel-menta px-3 py-0.5 text-[11px] font-extrabold text-emerald-950 shadow-sm">
                                 ${escapar(info.categoria)}
                             </span>
-                            <span class="absolute right-3 top-3 rounded-full ${disponible ? 'bg-emerald-700 text-white' : 'bg-stone-500 text-white'} px-2.5 py-0.5 text-[11px] font-bold shadow-sm">
+                            <span data-stock-badge="${p.id_producto}" data-stock-largo="1" class="absolute right-3 top-3 rounded-full ${disponible ? 'bg-emerald-700 text-white' : 'bg-stone-500 text-white'} px-2.5 py-0.5 text-[11px] font-bold shadow-sm">
                                 ${disponible ? `${p.stock} disponibles` : 'Agotado'}
                             </span>
                         </div>
@@ -559,12 +660,14 @@ function dibujarTiendaProductos(productos = []) {
                         </div>
                     </div>
                     <div class="mt-2 flex items-center justify-between border-t border-bella-300/60 bg-pastel-perla/60 px-5 py-3">
-                        <span class="text-[11px] font-bold text-pastel-subtinta">🧴 Garantía oficial BellaStyle</span>
+                        <span class="text-[11px] font-bold text-pastel-subtinta">🧴 Stock en tiempo real</span>
                         <button type="button"
+                                data-btn-comprar-prod="${p.id_producto}"
                                 data-comprar-prod-id="${p.id_producto}"
                                 data-comprar-prod-nombre="${escapar(p.nombre)}"
-                                class="rounded-xl bg-bella-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700">
-                            Quiero este producto &rarr;
+                                ${disponible ? '' : 'disabled'}
+                                class="rounded-xl bg-bella-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700 disabled:opacity-40">
+                            ${disponible ? '🛒 Comprar / Quiero este &rarr;' : 'Agotado'}
                         </button>
                     </div>
                 </article>`;
@@ -572,19 +675,22 @@ function dibujarTiendaProductos(productos = []) {
 
         cont.querySelectorAll('button[data-comprar-prod-id]').forEach((btn) => {
             btn.addEventListener('click', () => {
+                const idProd = btn.dataset.comprarProdId;
                 const nombreProd = btn.dataset.comprarProdNombre;
-                sessionStorage.setItem('bellaProductoPreferido', JSON.stringify({
-                    id_producto: btn.dataset.comprarProdId,
-                    nombre: nombreProd
-                }));
                 const sesion = typeof obtenerSesion === 'function' ? obtenerSesion() : null;
                 if (sesion) {
-                    window.location.href = 'panel.html';
-                } else if (typeof window.abrirModalAuth === 'function') {
-                    window.abrirModalAuth('login', {
-                        rol: 'cliente',
-                        mensaje: `✓ Producto elegido: ${nombreProd}. Inicia sesión o regístrate para incluirlo en tu cita.`
-                    });
+                    abrirModalCompraDirectaEnTienda(idProd);
+                } else {
+                    sessionStorage.setItem('bellaProductoPreferido', JSON.stringify({
+                        id_producto: idProd,
+                        nombre: nombreProd
+                    }));
+                    if (typeof window.abrirModalAuth === 'function') {
+                        window.abrirModalAuth('login', {
+                            rol: 'cliente',
+                            mensaje: `✓ Producto elegido: ${nombreProd}. Inicia sesión o regístrate para comprarlo y descontar el stock en tiempo real.`
+                        });
+                    }
                 }
             });
         });
@@ -594,7 +700,64 @@ function dibujarTiendaProductos(productos = []) {
 
     const buscadorTienda = document.getElementById('buscadorProductosTienda');
     if (buscadorTienda) {
-        buscadorTienda.addEventListener('input', () => renderizarLista(buscadorTienda.value));
+        buscadorTienda.oninput = () => renderizarLista(buscadorTienda.value);
+    }
+}
+
+// Dibuja las tarjetas de Experiencias Reales de Clientas en la Landing Page
+function dibujarResenasEnLanding(listaResenas = []) {
+    const contResenas = document.getElementById('listaResenasLanding');
+    if (!contResenas || !Array.isArray(listaResenas)) return;
+
+    const colores = ['bg-pastel-rosa', 'bg-pastel-lavanda', 'bg-pastel-menta', 'bg-pastel-durazno'];
+    contResenas.innerHTML = listaResenas.slice(0, 6).map((r, idx) => {
+        const estrellas = '★'.repeat(Number(r.calificacion) || 5) + '☆'.repeat(Math.max(0, 5 - (Number(r.calificacion) || 5)));
+        const bg = colores[idx % colores.length];
+        return `
+            <article class="tarjeta-pastel flex flex-col justify-between p-4 transition duration-300">
+                <div>
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <span class="rounded-full ${bg} px-2.5 py-0.5 text-xs font-extrabold text-bella-900 shadow-sm">${estrellas} (${r.calificacion}.0)</span>
+                        <div class="flex items-center gap-1.5">
+                            ${r.reciente ? `<span class="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white">✨ En tiempo real</span>` : ''}
+                            <span class="text-[11px] font-semibold text-pastel-subtinta">${escapar(r.fecha)}</span>
+                        </div>
+                    </div>
+                    <p class="mt-2.5 text-xs font-medium italic leading-relaxed text-pastel-tinta sm:text-sm">"${escapar(r.comentario)}"</p>
+                </div>
+                <div class="mt-3 border-t border-bella-300/60 pt-2.5 text-xs">
+                    <p class="font-bold text-pastel-tinta">${escapar(r.cliente)}</p>
+                    <p class="font-semibold text-bella-800">${escapar(r.servicio)} · Atendió: ${escapar(r.estilista)}</p>
+                </div>
+            </article>`;
+    }).join('');
+}
+
+// Sincroniza en tiempo real (cada 4s) las reseñas calificadas y el stock de productos entre PC y celular
+async function sincronizarTiempoRealLandingYTienda() {
+    const [resenas, productos] = await Promise.all([
+        document.getElementById('listaResenasLanding') ? pedir('/resenas') : Promise.resolve(null),
+        (document.getElementById('carruselTiendaLanding') || document.getElementById('listaTiendaProductos')) ? pedir('/productos') : Promise.resolve(null)
+    ]);
+
+    if (resenas && resenas.success && Array.isArray(resenas.data)) {
+        dibujarResenasEnLanding(resenas.data);
+    }
+
+    if (productos && productos.success && Array.isArray(productos.data)) {
+        productosTiendaCache = productos.data;
+        productos.data.forEach((p) => {
+            const disponible = Number(p.stock) > 0;
+            document.querySelectorAll(`[data-stock-badge="${p.id_producto}"]`).forEach((badge) => {
+                const largo = badge.dataset.stockLargo === '1';
+                badge.textContent = disponible ? `${p.stock} ${largo ? 'disponibles' : 'disp.'}` : 'Agotado';
+                badge.className = `absolute right-3 top-3 rounded-full ${disponible ? 'bg-emerald-700 text-white' : 'bg-stone-500 text-white'} px-2.5 py-0.5 text-[11px] font-bold shadow-sm`;
+            });
+            document.querySelectorAll(`button[data-btn-comprar-prod="${p.id_producto}"]`).forEach((btn) => {
+                btn.disabled = !disponible;
+                btn.innerHTML = disponible ? '🛒 Comprar / Quiero este &rarr;' : 'Agotado';
+            });
+        });
     }
 }
 
@@ -633,28 +796,15 @@ async function cargarDatos() {
         dibujarTiendaProductos(productos.data);
     }
 
-    const contResenas = document.getElementById('listaResenasLanding');
-    if (contResenas && resenas && resenas.success && Array.isArray(resenas.data)) {
-        const colores = ['bg-pastel-rosa', 'bg-pastel-lavanda', 'bg-pastel-menta', 'bg-pastel-durazno'];
-        contResenas.innerHTML = resenas.data.slice(0, 4).map((r, idx) => {
-            const estrellas = '★'.repeat(Number(r.calificacion) || 5);
-            const bg = colores[idx % colores.length];
-            return `
-                <article class="tarjeta-pastel flex flex-col justify-between p-4">
-                    <div>
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="rounded-full ${bg} px-2.5 py-0.5 text-xs font-extrabold text-bella-900 shadow-sm">${estrellas} (${r.calificacion}.0)</span>
-                            <span class="text-[11px] font-semibold text-pastel-subtinta">${escapar(r.fecha)}</span>
-                        </div>
-                        <p class="mt-2.5 text-xs font-medium italic leading-relaxed text-pastel-tinta sm:text-sm">"${escapar(r.comentario)}"</p>
-                    </div>
-                    <div class="mt-3 border-t border-bella-300/60 pt-2.5 text-xs">
-                        <p class="font-bold text-pastel-tinta">${escapar(r.cliente)}</p>
-                        <p class="font-semibold text-bella-800">${escapar(r.servicio)} · Atendió: ${escapar(r.estilista)}</p>
-                    </div>
-                </article>`;
-        }).join('');
+    if (resenas && resenas.success && Array.isArray(resenas.data)) {
+        dibujarResenasEnLanding(resenas.data);
     }
+
+    // Activar actualización en tiempo real cada 4 segundos para reseñas y stock de productos entre dispositivos
+    setInterval(sincronizarTiempoRealLandingYTienda, 4000);
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) sincronizarTiempoRealLandingYTienda();
+    });
 
     const totales = {
         servicios: servicios.success ? servicios.data.length : 7,

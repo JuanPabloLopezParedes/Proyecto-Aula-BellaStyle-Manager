@@ -194,6 +194,56 @@ async function estadoProducto(req, res) {
     } catch (err) { errorServidor(res, err); }
 }
 
+// POST /api/productos/:id/comprar   Recibe: { cantidad, metodoPago, referenciaPago }
+// Descuenta el stock de manera real en la base de datos del servidor (sincronizado entre PC y celular)
+async function comprarProductoDirecto(req, res) {
+    const cantidad = Math.max(1, Math.min(20, Number(req.body.cantidad) || 1));
+    const metodoPago = ['Nequi / Daviplata', 'Tarjeta / PSE', 'Efectivo en Salón'].includes(req.body.metodoPago)
+        ? req.body.metodoPago
+        : 'Nequi / Daviplata';
+
+    try {
+        const producto = await productoModel.buscarPorId(req.params.id);
+        if (!producto || producto.estado !== 'Activo') {
+            return res.status(404).json({ success: false, message: 'El producto no está disponible.' });
+        }
+        if (Number(producto.stock) < cantidad) {
+            return res.status(409).json({
+                success: false,
+                message: Number(producto.stock) <= 0
+                    ? `El producto "${producto.nombre}" ya está agotado.`
+                    : `Solo quedan ${producto.stock} unidad(es) disponibles de "${producto.nombre}".`
+            });
+        }
+
+        const ok = await productoModel.descontarStock(producto.id_producto, cantidad);
+        if (!ok) {
+            return res.status(409).json({ success: false, message: 'No hay suficiente stock disponible.' });
+        }
+
+        const actualizado = await productoModel.buscarPorId(producto.id_producto);
+        const totalPagado = Number(producto.precio) * cantidad;
+        const prefijo = metodoPago === 'Nequi / Daviplata' ? 'NEQ' : (metodoPago === 'Tarjeta / PSE' ? 'PSE' : 'TIENDA');
+        const referencia = req.body.referenciaPago || `${prefijo}-${Math.floor(100000 + Math.random() * 900000)}`;
+
+        res.status(200).json({
+            success: true,
+            message: `¡Compra exitosa de ${cantidad}x ${producto.nombre} por $${totalPagado.toLocaleString('es-CO')}! Stock actualizado en tiempo real: quedan ${actualizado.stock} disponibles.`,
+            data: {
+                id_producto: producto.id_producto,
+                nombre: producto.nombre,
+                cantidad,
+                total: totalPagado,
+                metodo_pago: metodoPago,
+                referencia,
+                stock_restante: actualizado.stock
+            }
+        });
+    } catch (err) {
+        errorServidor(res, err);
+    }
+}
+
 // ---------------------------------------------------------------
 // ESTILISTAS Y HORARIOS SEMANALES
 // ---------------------------------------------------------------
@@ -334,7 +384,7 @@ async function fichaTecnicaClienta(req, res) {
 
 module.exports = {
     crearServicio, editarServicio, estadoServicio,
-    crearProducto, editarProducto, estadoProducto,
+    crearProducto, editarProducto, estadoProducto, comprarProductoDirecto,
     estadoEstilista, serviciosEstilista, horarioEstilista,
     editarClienta, fichaTecnicaClienta
 };
