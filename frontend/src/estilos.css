@@ -381,8 +381,30 @@ html.tema-claro .text-emerald-300 {
   color: #065f46 !important;
 }
 
-html.tema-claro .text-amber-300 {
-  color: #92400e !important;
+html.tema-claro .text-amber-300,
+html.tema-claro .text-amber-200,
+html.tema-claro .text-amber-100 {
+  color: #78350f !important;
+}
+
+.btn-calificar-estrella {
+  background-color: #fcd34d !important;
+  border: 1.5px solid #d97706 !important;
+  color: #451a03 !important;
+  font-weight: 800 !important;
+}
+
+.btn-calificar-estrella:hover {
+  background-color: #fbbf24 !important;
+  color: #290f02 !important;
+}
+
+html.tema-claro .bg-amber-400\/25,
+html.tema-claro .bg-amber-400\/20,
+html.tema-claro .bg-amber-400\/15 {
+  background-color: #fde68a !important;
+  border-color: #d97706 !important;
+  color: #451a03 !important;
 }
 
 html.tema-claro .text-sky-300 {

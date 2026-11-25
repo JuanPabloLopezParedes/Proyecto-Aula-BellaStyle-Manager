@@ -1065,7 +1065,7 @@ async function cargarComprasClienta() {
                             <div>
                                 <div class="flex flex-wrap items-center gap-2">
                                     <span class="font-semibold text-white">${escapar(cp.producto_nombre)}</span>
-                                    <button type="button" data-editar="calificarCompraProductoModal" data-id="${cp.id_compra}" class="rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-300 ring-1 ring-amber-400/40 transition hover:bg-amber-400/35">
+                                    <button type="button" data-editar="calificarCompraProductoModal" data-id="${cp.id_compra}" class="btn-calificar-estrella rounded-full border border-amber-500/80 bg-amber-300 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-950 shadow-sm transition hover:bg-amber-400">
                                         ★ ${cp.calificacion ? `Evaluado (${cp.calificacion}/5) · Editar` : 'Calificar producto'}
                                     </button>
                                 </div>
@@ -1086,7 +1086,7 @@ async function cargarComprasClienta() {
                     <td class="whitespace-nowrap text-xs">${escapar(cp.fecha)} · ${escapar(cp.hora || '')}</td>
                     <td class="whitespace-nowrap text-right">
                         ${botonEditar('🧾 Comprobante', 'verComprobanteCompraProducto', cp.id_compra)}
-                        <button class="btn-mini bg-amber-400/25 font-extrabold text-amber-200 ring-1 ring-amber-400/50 hover:bg-amber-400/40" data-editar="calificarCompraProductoModal" data-id="${cp.id_compra}">
+                        <button class="btn-mini btn-calificar-estrella border border-amber-500/80 bg-amber-300 font-extrabold text-amber-950 shadow-sm hover:bg-amber-400" data-editar="calificarCompraProductoModal" data-id="${cp.id_compra}">
                             ★ ${cp.calificacion ? 'Editar evaluación' : 'Calificar / Evaluar'}
                         </button>
                     </td>
@@ -2014,7 +2014,7 @@ async function cargarCitasClienta() {
             acciones += `<button class="btn-mini bg-pastel-rosa font-bold text-bella-900 hover:bg-bella-200" data-editar="gestionarResultadoCita" data-id="${c.id}">📸 Ver resultado</button> `;
         }
         if (c.estado !== 'Cancelada') {
-            acciones += `<button class="btn-mini bg-amber-400/25 font-extrabold text-amber-200 ring-1 ring-amber-400/50 hover:bg-amber-400/40" data-editar="calificarCita" data-id="${c.id}">★ ${c.calificacion ? 'Editar evaluación' : 'Calificar / Evaluar'}</button>`;
+            acciones += `<button class="btn-mini btn-calificar-estrella border border-amber-500/80 bg-amber-300 font-extrabold text-amber-950 shadow-sm hover:bg-amber-400" data-editar="calificarCita" data-id="${c.id}">★ ${c.calificacion ? 'Editar evaluación' : 'Calificar / Evaluar'}</button>`;
         }
         return `
             <tr>
@@ -2023,7 +2023,7 @@ async function cargarCitasClienta() {
                         <span class="font-semibold text-white">${escapar(c.servicio)}</span>
                         <span class="text-xs font-bold text-oro">${pesos(c.precio)}</span>
                         ${c.duracion_min ? `<span class="text-[11px] text-white/50">(${c.duracion_min} min)</span>` : ''}
-                        ${c.estado !== 'Cancelada' ? `<button type="button" data-editar="calificarCita" data-id="${c.id}" class="rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-300 ring-1 ring-amber-400/40 transition hover:bg-amber-400/35">★ ${c.calificacion ? `Evaluado (${c.calificacion}/5) · Editar` : 'Calificar / Evaluar'}</button>` : ''}
+                        ${c.estado !== 'Cancelada' ? `<button type="button" data-editar="calificarCita" data-id="${c.id}" class="btn-calificar-estrella rounded-full border border-amber-500/80 bg-amber-300 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-950 shadow-sm transition hover:bg-amber-400">★ ${c.calificacion ? `Evaluado (${c.calificacion}/5) · Editar` : 'Calificar / Evaluar'}</button>` : ''}
                     </div>
                     ${c.observaciones ? `<span class="mt-0.5 block text-xs text-bella-200">${escapar(c.observaciones)}</span>` : ''}
                     ${c.producto_adicional ? `<span class="mt-0.5 block text-xs font-semibold text-emerald-300">🧴 Incluye: ${escapar(c.producto_adicional)} (+${pesos(c.precio_producto)})</span>` : ''}
