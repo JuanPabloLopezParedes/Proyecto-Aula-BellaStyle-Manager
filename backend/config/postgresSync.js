@@ -16,8 +16,16 @@ let poolPg = null;
 let pgInicializado = false;
 let ultimaSincronizacionLectura = 0;
 
+// URL externa oficial de PostgreSQL en Render (configurada por defecto si no se pasa otra variable de entorno)
+const DEFAULT_RENDER_POSTGRES_URL =
+    'postgresql://bellastyle_postgres_db_user:c1bnRxB8fjlSF2vo47gSqgpyqRlytvYu@dpg-dc3lk3m1egvs73e0nvv0-a.oregon-postgres.render.com/bellastyle_postgres_db';
+
+function obtenerUrlPostgres() {
+    return process.env.DATABASE_URL || process.env.POSTGRES_URL || DEFAULT_RENDER_POSTGRES_URL;
+}
+
 function obtenerPoolPg() {
-    const url = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+    const url = obtenerUrlPostgres();
     if (!url || !PoolPg) return null;
     if (!poolPg) {
         const esLocal = url.includes('localhost') || url.includes('127.0.0.1');
@@ -90,6 +98,7 @@ async function asegurarEsquemaPostgres(pool, datosMemoria) {
     const { rows } = await pool.query('SELECT payload FROM bellastyle_estado_cloud WHERE id = 1');
     if (rows.length > 0 && rows[0].payload) {
         aplicarPayloadEnMemoria(rows[0].payload, datosMemoria);
+        await sincronizarTablasRelacionalesPg(pool, datosMemoria);
         console.log('✓ Conectado a PostgreSQL en Render: datos cargados desde la nube.');
     } else {
         await guardarEnPostgres(datosMemoria, true);
@@ -145,8 +154,12 @@ async function guardarEnPostgres(datosMemoria, OmitirInit = false) {
         );
         ultimaSincronizacionLectura = Date.now();
 
-        // Sincronizar también las tablas relacionales de PostgreSQL en segundo plano para consultas SQL directas en DBeaver/pgAdmin
-        sincronizarTablasRelacionalesPg(pool, datosMemoria).catch(() => {});
+        // Sincronizar también las tablas relacionales de PostgreSQL para consultas SQL directas en DBeaver/pgAdmin/Render
+        if (OmitirInit) {
+            await sincronizarTablasRelacionalesPg(pool, datosMemoria);
+        } else {
+            sincronizarTablasRelacionalesPg(pool, datosMemoria).catch(() => {});
+        }
         return true;
     } catch (err) {
         console.warn('Aviso PostgreSQL (escritura):', err.message);
@@ -198,7 +211,7 @@ async function sincronizarTablasRelacionalesPg(pool, datos) {
 }
 
 module.exports = {
-    tienePostgresConfigurado: () => Boolean(process.env.DATABASE_URL || process.env.POSTGRES_URL),
+    tienePostgresConfigurado: () => Boolean(obtenerUrlPostgres() && PoolPg),
     sincronizarDesdePostgres,
     guardarEnPostgres,
 };
