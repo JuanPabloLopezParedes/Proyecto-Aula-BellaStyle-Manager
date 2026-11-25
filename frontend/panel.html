@@ -47,19 +47,19 @@
       <!-- Tarjeta de Fidelización VIP BellaClub -->
       <div id="tarjetaBellaClub" class="tarjeta-pastel p-4 sm:p-5 lg:col-span-12"></div>
 
-      <!-- Barra principal de navegación de la Clienta: Apartar Cita | Comprar Producto (Carrito) | Mis Compras (Historial) -->
+      <!-- Barra principal de navegación de la Clienta: Apartar Cita | Comprar Producto + Carrito | Mis Compras -->
       <div class="lg:col-span-12">
         <div class="grid grid-cols-1 gap-2.5 rounded-3xl border border-bella-300/70 bg-pastel-crema/95 p-2 shadow-xl sm:grid-cols-3">
-          <button type="button" data-pestana-clienta="citas" class="flex items-center justify-center gap-2 rounded-2xl bg-bella-600 px-4 py-3.5 text-xs font-extrabold text-white shadow-md transition sm:text-sm">
+          <button type="button" data-pestana-clienta="citas" class="flex items-center justify-center gap-2 rounded-2xl bg-bella-600 px-4 py-3.5 text-sm font-extrabold text-white shadow-md transition">
             <span>📅 Apartar Cita y Mis Citas</span>
           </button>
-          <button type="button" data-pestana-clienta="tienda" class="flex items-center justify-center gap-2 rounded-2xl border border-bella-300/80 bg-white px-4 py-3.5 text-xs font-extrabold text-pastel-tinta shadow-sm transition hover:bg-pastel-rosa sm:text-sm">
-            <span>🛒 Comprar Producto</span>
-            <span id="badgeCarritoClienta" class="rounded-full bg-bella-600 px-2.5 py-0.5 text-xs font-extrabold text-white">0 en carrito</span>
+          <button type="button" data-pestana-clienta="tienda" class="flex items-center justify-center gap-2 rounded-2xl border border-bella-300/80 bg-white px-4 py-3.5 text-sm font-extrabold text-pastel-tinta shadow-sm transition hover:bg-pastel-rosa">
+            <span>🛍️ Comprar Producto</span>
+            <span id="badgeCarritoClienta" class="rounded-full bg-bella-600 px-2.5 py-0.5 text-xs font-extrabold text-white">🛒 0</span>
           </button>
-          <button type="button" data-pestana-clienta="compras" class="flex items-center justify-center gap-2 rounded-2xl border border-bella-300/80 bg-white px-4 py-3.5 text-xs font-extrabold text-pastel-tinta shadow-sm transition hover:bg-pastel-rosa sm:text-sm">
+          <button type="button" data-pestana-clienta="compras" class="flex items-center justify-center gap-2 rounded-2xl border border-bella-300/80 bg-white px-4 py-3.5 text-sm font-extrabold text-pastel-tinta shadow-sm transition hover:bg-pastel-rosa">
             <span>🧾 Mis Compras</span>
-            <span id="badgeHistorialComprasClienta" class="rounded-full bg-pastel-menta px-2.5 py-0.5 text-xs font-extrabold text-emerald-950">Historial</span>
+            <span id="badgeHistorialComprasClienta" class="rounded-full bg-pastel-menta px-2.5 py-0.5 text-xs font-extrabold text-emerald-950">0</span>
           </button>
         </div>
       </div>
@@ -225,23 +225,24 @@
       <!-- SUB-SECCIÓN 2 DE CLIENTA: COMPRAR PRODUCTOS Y CARRITO DE COMPRAS -->
       <div id="vistaClientaTienda" class="hidden space-y-6 lg:col-span-12">
         <!-- Panel del Carrito de Compras Multi-Producto -->
-        <div id="contenedorCarritoClienta" class="tarjeta-pastel border-2 border-bella-500/70 p-5 sm:p-6">
-          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-bella-300/70 pb-3.5">
+        <div id="bloqueCarritoClienta" class="tarjeta-pastel border-2 border-bella-500/80 p-5 sm:p-6">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-bella-300/60 pb-3.5">
             <div class="flex items-center gap-3">
               <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-bella-600 text-xl text-white shadow-md">🛒</span>
               <div>
-                <span class="inline-block rounded-full bg-pastel-rosa px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-bella-900">
-                  Carrito de compras activo
-                </span>
-                <h2 class="text-xl font-bold text-pastel-tinta sm:text-2xl">Mi Carrito de Productos</h2>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-xl font-bold text-pastel-tinta sm:text-2xl">Mi Carrito de Compras</h2>
+                  <span id="resumenUnidadesCarrito" class="rounded-full bg-pastel-rosa px-3 py-0.5 text-xs font-extrabold text-bella-900">0 productos</span>
+                </div>
+                <p class="text-xs font-medium text-pastel-subtinta">Presiona "Comprar producto" en cualquiera de los artículos de abajo para ir sumando varios productos a tu carrito.</p>
               </div>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-              <button type="button" id="btnIrAMisComprasDesdeTienda" class="rounded-xl border border-bella-400/70 bg-white px-3.5 py-2 text-xs font-extrabold text-bella-900 shadow-sm transition hover:bg-pastel-rosa">
-                🧾 Ver Mis Compras (Historial) &rarr;
+              <button type="button" id="btnVaciarCarritoClienta" class="hidden rounded-xl border border-red-400/60 bg-red-100/80 px-3 py-1.5 text-xs font-bold text-red-900 transition hover:bg-red-200">
+                🗑️ Vaciar carrito
               </button>
-              <button type="button" id="btnVaciarCarritoClienta" class="hidden rounded-xl border border-red-400/60 bg-red-50 px-3 py-2 text-xs font-bold text-red-900 transition hover:bg-red-100">
-                Vaciar carrito
+              <button type="button" id="btnIrAMisComprasDesdeTienda" class="rounded-xl border border-bella-400/70 bg-white px-3.5 py-2 text-xs font-extrabold text-bella-900 shadow-sm transition hover:bg-pastel-rosa">
+                🧾 Ver historial en Mis Compras &rarr;
               </button>
             </div>
           </div>
@@ -249,37 +250,35 @@
           <!-- Lista de productos agregados al carrito -->
           <div id="listaItemsCarritoClienta" class="mt-4"></div>
 
-          <!-- Barra de pago del carrito (oculta cuando el carrito está vacío) -->
+          <!-- Barra de pago del carrito (visible cuando hay al menos 1 producto en el carrito) -->
           <div id="barraCheckoutCarritoClienta" class="mt-4 hidden rounded-2xl border-2 border-emerald-500/50 bg-pastel-menta/80 p-4">
             <div class="grid items-center gap-4 lg:grid-cols-12">
-              <div class="sm:grid sm:grid-cols-2 sm:gap-3 lg:col-span-7">
-                <div>
-                  <label for="metodoPagoCarritoClienta" class="block text-[11px] font-extrabold uppercase tracking-wider text-emerald-950">Método de pago del pedido</label>
-                  <select id="metodoPagoCarritoClienta" class="campo-pastel mt-1 bg-white py-2 text-xs">
-                    <option value="Nequi / Daviplata">📲 Nequi / Daviplata (Línea 300 655 0192)</option>
-                    <option value="Tarjeta / PSE">💳 Tarjeta Débito/Crédito o PSE</option>
-                    <option value="Efectivo en Salón">💵 Efectivo al recoger en el Salón</option>
-                  </select>
-                </div>
-                <div class="mt-2 sm:mt-0">
-                  <label for="referenciaPagoCarritoClienta" class="block text-[11px] font-extrabold uppercase tracking-wider text-emerald-950">Celular Nequi / Ref. (opcional)</label>
-                  <input id="referenciaPagoCarritoClienta" type="text" class="campo-pastel mt-1 bg-white py-2 text-xs" placeholder="Ej: 300 123 4567 o automático">
-                </div>
+              <div class="lg:col-span-5">
+                <label for="metodoPagoCarritoClienta" class="block text-xs font-extrabold uppercase tracking-wider text-emerald-950">Método de pago del pedido</label>
+                <select id="metodoPagoCarritoClienta" class="campo-pastel mt-1 bg-white py-2 text-xs">
+                  <option value="Nequi / Daviplata">📲 Nequi / Daviplata (Línea 300 655 0192 · Aprobación inmediata)</option>
+                  <option value="Tarjeta / PSE">💳 Tarjeta Débito / Crédito o PSE Bancario</option>
+                  <option value="Efectivo en Salón">💵 Pagar en efectivo al recoger en el Salón</option>
+                </select>
               </div>
-              <div class="flex flex-col items-stretch justify-between gap-3 border-t border-emerald-600/20 pt-3 sm:flex-row sm:items-center lg:col-span-5 lg:justify-end lg:border-t-0 lg:pt-0">
-                <div class="text-left lg:text-right">
-                  <p id="resumenUnidadesCarritoClienta" class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-950">Total del carrito</p>
-                  <p id="resumenTotalCarritoClienta" class="font-titulo text-3xl font-bold text-bella-900">$0</p>
+              <div class="lg:col-span-3">
+                <label for="referenciaCarritoClienta" class="block text-xs font-extrabold uppercase tracking-wider text-emerald-950">Celular / Ref. (Opcional)</label>
+                <input id="referenciaCarritoClienta" type="text" class="campo-pastel mt-1 bg-white py-2 text-xs" placeholder="Ej: 300 123 4567">
+              </div>
+              <div class="flex flex-col items-stretch justify-between gap-2 sm:flex-row sm:items-center lg:col-span-4 lg:justify-end">
+                <div class="text-left sm:text-right">
+                  <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-950">Total del Carrito</p>
+                  <p id="granTotalCarritoClienta" class="font-titulo text-3xl font-bold text-bella-900">$0</p>
                 </div>
-                <button type="button" id="btnPagarCarritoClienta" class="btn-primario px-6 py-3 text-sm shadow-lg">
-                  ✅ Finalizar compra del carrito
+                <button type="button" id="btnPagarCarritoClienta" class="btn-primario px-5 py-3 text-xs font-extrabold shadow-lg sm:text-sm">
+                  ✓ Confirmar y Pagar Carrito
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Catálogo de productos para añadir al carrito -->
+        <!-- Catálogo de productos con botón para añadir al carrito -->
         <div class="tarjeta-pastel p-5 sm:p-6">
           <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div>
@@ -287,7 +286,7 @@
                 🧴 Tienda Oficial en Línea · Stock sincronizado en tiempo real (PC y Celular)
               </span>
               <h2 class="mt-1 text-2xl font-bold text-pastel-tinta sm:text-3xl">Catálogo de productos profesionales</h2>
-              <p class="text-xs font-medium text-pastel-subtinta">Presiona <strong>"🛒 Comprar producto"</strong> en todos los productos que desees para irlos sumando a tu carrito de compras.</p>
+              <p class="text-xs font-medium text-pastel-subtinta">Presiona <strong>"🛒 Añadir al carrito"</strong> en todos los productos que quieras llevar para comprarlos juntos.</p>
             </div>
             <div class="w-full sm:w-72">
               <input id="buscadorTiendaPanelClienta" type="search" class="campo-pastel py-2 text-xs" placeholder="🔎 Buscar producto (Shampoo, Argán, Mascarilla...)">
@@ -297,7 +296,7 @@
         </div>
       </div>
 
-      <!-- SUB-SECCIÓN 3 DE CLIENTA: MIS COMPRAS (HISTORIAL DE PRODUCTOS COMPRADOS) -->
+      <!-- SUB-SECCIÓN 3 DE CLIENTA: MIS COMPRAS (HISTORIAL DE COMPRAS DEL USUARIO) -->
       <div id="vistaClientaCompras" class="hidden space-y-6 lg:col-span-12">
         <div id="metricasComprasClienta" class="grid grid-cols-1 gap-3 sm:grid-cols-3"></div>
 
@@ -305,13 +304,13 @@
           <div class="flex flex-wrap items-center justify-between gap-3 p-5 pb-3 sm:p-6 sm:pb-3">
             <div>
               <span class="inline-block rounded-full bg-pastel-menta px-3 py-0.5 text-[11px] font-extrabold uppercase tracking-wider text-emerald-950">
-                🧾 Historial Oficial de Tienda
+                🧾 Historial Oficial de Pedidos
               </span>
               <h2 class="mt-1 text-2xl font-bold text-bella-50">Mis compras realizadas</h2>
-              <p class="text-xs text-bella-200/70">Consulta todas las compras que has realizado, descarga tus comprobantes en PDF y califica tus productos para que se vean en tiempo real en la página de inicio.</p>
+              <p class="text-xs text-bella-200/70">Consulta todas tus órdenes de compra, descarga tu comprobante en PDF o califica tus productos para que tu evaluación se vea en tiempo real en la portada.</p>
             </div>
             <button type="button" id="btnVolverATiendaDesdeCompras" class="btn-primario px-4 py-2 text-xs">
-              + Seguir comprando productos &rarr;
+              + Seguir comprando productos
             </button>
           </div>
           <div class="overflow-x-auto">

@@ -535,9 +535,14 @@ function abrirModalCompraDirectaEnTienda(idProducto) {
                     </div>
                     <div id="alertaCompraTienda" data-tema="pastel" class="alerta mt-3"></div>
                     <div id="cuerpoCompraTienda" class="mt-4 space-y-3.5"></div>
-                    <div class="mt-5 flex justify-end gap-2">
-                        <button type="button" id="cancelarCompraTienda" class="rounded-xl border border-bella-400/60 bg-pastel-perla px-4 py-2 text-xs font-bold text-pastel-tinta">Cancelar</button>
-                        <button type="submit" id="btnConfirmarCompraTienda" class="btn-primario px-5 py-2 text-xs">Confirmar compra</button>
+                    <div class="mt-5 flex flex-wrap items-center justify-between gap-2">
+                        <button type="button" id="btnAgregarCarritoDesdeTienda" class="rounded-xl border border-emerald-500/80 bg-pastel-menta px-3.5 py-2 text-xs font-extrabold text-emerald-950 shadow-sm transition hover:bg-emerald-200">
+                            🛒 Añadir al carrito y ver más
+                        </button>
+                        <div class="flex gap-2">
+                            <button type="button" id="cancelarCompraTienda" class="rounded-xl border border-bella-400/60 bg-pastel-perla px-4 py-2 text-xs font-bold text-pastel-tinta">Cancelar</button>
+                            <button type="submit" id="btnConfirmarCompraTienda" class="btn-primario px-5 py-2 text-xs">Confirmar compra ya</button>
+                        </div>
                     </div>
                 </form>
             </dialog>
@@ -587,6 +592,29 @@ function abrirModalCompraDirectaEnTienda(idProducto) {
         const c = Math.max(1, Math.min(stockActual, Number(inputCant.value) || 1));
         divTotal.textContent = `Total a pagar: ${pesos(c * Number(p.precio))} · Se descontarán ${c} unidad(es) en tiempo real`;
     });
+
+    const btnAgregarCarrito = document.getElementById('btnAgregarCarritoDesdeTienda');
+    if (btnAgregarCarrito) {
+        btnAgregarCarrito.onclick = () => {
+            const cantidad = Math.max(1, Math.min(stockActual, Number(inputCant.value) || 1));
+            let carrito = [];
+            try {
+                carrito = JSON.parse(localStorage.getItem('bellaCarritoClienta') || '[]');
+                if (!Array.isArray(carrito)) carrito = [];
+            } catch {
+                carrito = [];
+            }
+            const existente = carrito.find((item) => Number(item.id_producto) === Number(p.id_producto));
+            if (existente) {
+                existente.cantidad = Math.min(stockActual, Number(existente.cantidad) + cantidad);
+            } else {
+                carrito.push({ id_producto: Number(p.id_producto), cantidad });
+            }
+            localStorage.setItem('bellaCarritoClienta', JSON.stringify(carrito));
+            mostrarAlerta(document.getElementById('alertaCompraTienda'), `🛒 ¡Se añadieron ${cantidad} unidad(es) de "${p.nombre}" a tu carrito! Puedes seguir eligiendo más productos o ir a tu Panel para pagar todo junto.`, 'ok');
+            setTimeout(() => dialog.close(), 1300);
+        };
+    }
 
     const form = document.getElementById('formCompraTiendaDirecta');
     form.onsubmit = async (e) => {
@@ -677,18 +705,20 @@ function dibujarTiendaProductos(productos = []) {
             btn.addEventListener('click', () => {
                 const idProd = btn.dataset.comprarProdId;
                 const nombreProd = btn.dataset.comprarProdNombre;
-                sessionStorage.setItem('bellaProductoPreferido', JSON.stringify({
-                    id_producto: idProd,
-                    nombre: nombreProd
-                }));
                 const sesion = typeof obtenerSesion === 'function' ? obtenerSesion() : null;
                 if (sesion) {
-                    window.location.href = 'panel.html';
-                } else if (typeof window.abrirModalAuth === 'function') {
-                    window.abrirModalAuth('login', {
-                        rol: 'cliente',
-                        mensaje: `✓ Producto elegido: ${nombreProd}. Inicia sesión o regístrate para añadirlo a tu carrito de compras.`
-                    });
+                    abrirModalCompraDirectaEnTienda(idProd);
+                } else {
+                    sessionStorage.setItem('bellaProductoPreferido', JSON.stringify({
+                        id_producto: idProd,
+                        nombre: nombreProd
+                    }));
+                    if (typeof window.abrirModalAuth === 'function') {
+                        window.abrirModalAuth('login', {
+                            rol: 'cliente',
+                            mensaje: `✓ Producto elegido: ${nombreProd}. Inicia sesión o regístrate para comprarlo y descontar el stock en tiempo real.`
+                        });
+                    }
                 }
             });
         });
