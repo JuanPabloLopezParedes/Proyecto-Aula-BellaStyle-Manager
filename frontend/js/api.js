@@ -112,7 +112,7 @@ function obtenerSesion() {
 
 function cerrarSesion() {
     sessionStorage.removeItem('usuario');
-    window.location.href = 'index.html';
+    window.location.href = 'welcome.html';
 }
 
 // Hace una petición a la API enviando automáticamente el Token de seguridad en la cabecera Authorization

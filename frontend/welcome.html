@@ -24,8 +24,8 @@
         <button type="button" data-toggle-tema class="inline-flex items-center gap-1 rounded-xl border border-bella-400/70 bg-pastel-crema px-2.5 py-1.5 text-[11px] font-bold text-pastel-tinta shadow-sm transition hover:bg-pastel-rosa sm:px-3 sm:text-xs">
           &#9728;&#65039; Claro
         </button>
-        <a href="register.html?rol=cliente" class="btn-secundario hidden px-3 py-1.5 text-xs md:inline-flex">Crear cuenta</a>
-        <a href="index.html" class="btn-primario px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm">Entrar &rarr;</a>
+        <button type="button" data-abrir-auth="registro" class="btn-secundario hidden px-3 py-1.5 text-xs md:inline-flex">Registrarse</button>
+        <button type="button" data-abrir-auth="login" class="btn-primario px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm">Iniciar sesión &rarr;</button>
       </div>
     </nav>
     <!-- Barra de navegación rápida táctil para celulares y tablets -->
@@ -35,7 +35,7 @@
       <a href="#tienda" class="shrink-0 rounded-lg bg-white/10 px-2.5 py-1 text-[11px] font-bold text-bella-50 hover:bg-bella-600">🧴 Tienda</a>
       <a href="#asesoria" class="shrink-0 rounded-lg bg-white/10 px-2.5 py-1 text-[11px] font-bold text-bella-50 hover:bg-bella-600">💬 Asesoría</a>
       <a href="#quienes-somos" class="shrink-0 rounded-lg bg-white/10 px-2.5 py-1 text-[11px] font-bold text-bella-50 hover:bg-bella-600">★ Reseñas</a>
-      <a href="register.html?rol=cliente" class="shrink-0 rounded-lg bg-pastel-rosa px-2.5 py-1 text-[11px] font-extrabold text-bella-900">Crear cuenta</a>
+      <button type="button" data-abrir-auth="registro" class="shrink-0 rounded-lg bg-pastel-rosa px-2.5 py-1 text-[11px] font-extrabold text-bella-900">Registrarse</button>
     </div>
   </header>
 
@@ -54,7 +54,8 @@
           Explora todos nuestros servicios de <strong>corte, manicure, mechas, pedicure, peinados, decoloración y tratamientos</strong> con imágenes reales de ejemplo, conoce nuestra galería de trabajos realizados y nuestra tienda oficial de productos.
         </p>
         <div class="mt-6 flex animate-aparecer flex-col gap-2.5 [animation-delay:.3s] sm:flex-row sm:flex-wrap sm:gap-3">
-          <a href="#servicios" class="btn-primario w-full px-5 py-3 text-center text-xs sm:w-auto sm:px-6 sm:text-base">Explorar servicios con fotos &darr;</a>
+          <button type="button" data-abrir-auth="login" class="btn-primario w-full px-5 py-3 text-center text-xs sm:w-auto sm:px-6 sm:text-base">Agendar cita ahora &rarr;</button>
+          <a href="#servicios" class="btn-secundario w-full px-4 py-2.5 text-center text-xs sm:w-auto sm:px-5 sm:py-3 sm:text-base">Explorar servicios con fotos &darr;</a>
           <a href="#galeria" class="btn-secundario w-full px-4 py-2.5 text-center text-xs sm:w-auto sm:px-5 sm:py-3 sm:text-base">Ver galería de trabajos</a>
           <a href="#tienda" class="btn-secundario w-full px-4 py-2.5 text-center text-xs sm:w-auto sm:px-5 sm:py-3 sm:text-base">Ir a la tienda</a>
         </div>
@@ -263,13 +264,14 @@
         <a href="#servicios" class="hover:text-bella-300">Servicios</a>
         <a href="#galeria" class="hover:text-bella-300">Galería (12)</a>
         <a href="#tienda" class="hover:text-bella-300">Tienda</a>
-        <a href="index.html" class="hover:text-bella-300">Iniciar sesión</a>
-        <a href="register.html?rol=cliente" class="hover:text-bella-300">Crear cuenta de clienta</a>
+        <button type="button" data-abrir-auth="login" class="hover:text-bella-300">Iniciar sesión</button>
+        <button type="button" data-abrir-auth="registro" class="hover:text-bella-300">Registrarse como clienta</button>
       </div>
     </div>
   </footer>
 
   <script src="js/api.js"></script>
+  <script src="js/auth-modal.js"></script>
   <script src="js/catalogo-modal.js"></script>
   <script src="js/inicio.js"></script>
   <script src="js/chat.js"></script>

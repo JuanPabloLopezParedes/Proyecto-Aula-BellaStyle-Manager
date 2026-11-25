@@ -945,8 +945,19 @@ function abrirModalServicio(nombreServicio, opciones = {}) {
     } else {
         btnAgendar.classList.remove('hidden');
         const sesion = typeof obtenerSesion === 'function' ? obtenerSesion() : null;
-        btnAgendar.href = sesion ? 'panel.html' : 'index.html?rol=cliente';
-        btnAgendar.textContent = sesion ? 'Ir a mi panel para agendar →' : 'Iniciar sesión para agendar →';
+        btnAgendar.href = sesion ? 'panel.html' : '#';
+        btnAgendar.textContent = sesion ? 'Ir a mi panel para agendar →' : 'Agendar esta cita →';
+        btnAgendar.onclick = (e) => {
+            const sesionActual = typeof obtenerSesion === 'function' ? obtenerSesion() : null;
+            if (!sesionActual && typeof window.abrirModalAuth === 'function') {
+                e.preventDefault();
+                dialog.close();
+                window.abrirModalAuth('login', {
+                    rol: 'cliente',
+                    mensaje: `✓ Servicio elegido: ${detalle.titulo}. Inicia sesión o regístrate para agendar tu cita.`
+                });
+            }
+        };
     }
 
     const cuerpo = document.getElementById('modalCatCuerpo');
@@ -1116,7 +1127,17 @@ function abrirModalServicio(nombreServicio, opciones = {}) {
                     detalle: detalleTexto
                 }));
                 dialog.close();
-                window.location.href = 'index.html?rol=cliente';
+                const sesion = typeof obtenerSesion === 'function' ? obtenerSesion() : null;
+                if (sesion) {
+                    window.location.href = 'panel.html';
+                } else if (typeof window.abrirModalAuth === 'function') {
+                    window.abrirModalAuth('login', {
+                        rol: 'cliente',
+                        mensaje: `✓ Elegiste: ${variedad} (${detalle.titulo}). Inicia sesión o regístrate para agendar tu cita.`
+                    });
+                } else {
+                    window.location.href = 'welcome.html?auth=login&rol=cliente';
+                }
             }
         });
     });

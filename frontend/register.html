@@ -2,77 +2,10 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crear cuenta | BellaStyle</title>
-  <link rel="stylesheet" href="css/estilos.css">
+  <title>BellaStyle | Registrarse</title>
+  <script>
+    window.location.replace('welcome.html?auth=registro&rol=cliente');
+  </script>
 </head>
-<body class="min-h-screen bg-noche-950">
-
-  <!-- Fondo ligeramente oscurecido con destellos suaves -->
-  <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-    <div class="absolute inset-0 bg-gradient-to-b from-noche-950 via-noche-900/95 to-noche-950"></div>
-    <div class="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-bella-700/15 blur-3xl"></div>
-    <div class="absolute -bottom-40 -left-20 h-[28rem] w-[28rem] rounded-full bg-bella-900/25 blur-3xl"></div>
-  </div>
-
-  <header class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 sm:px-5 sm:py-5">
-    <a href="welcome.html" class="font-titulo text-2xl font-bold text-bella-50">Bella<span class="text-bella-400">Style</span></a>
-    <div class="flex items-center gap-2">
-      <button type="button" data-toggle-tema class="rounded-lg border border-bella-300/35 bg-noche-900/70 px-2.5 py-1.5 text-xs font-bold text-bella-100 transition hover:border-bella-300/60 hover:text-white"></button>
-      <a href="index.html" class="rounded-lg border border-bella-300/25 bg-noche-900/70 px-3 py-1.5 text-xs font-medium text-bella-100 transition hover:border-bella-300/50 hover:text-white sm:text-sm">Ya tengo cuenta &rarr;</a>
-    </div>
-  </header>
-
-  <main class="mx-auto max-w-xl px-5 pb-12 pt-2">
-    <section class="tarjeta-pastel animate-aparecer p-6 sm:p-8">
-<div class="mt-6 flex items-center gap-4">
-        <img id="imagenRol" src="img/login_cliente.webp" alt="" class="h-14 w-14 rounded-2xl object-cover ring-2 ring-bella-500/50 shadow-md">
-        <div>
-          <p class="text-xs font-bold uppercase tracking-wider text-pastel-subtinta">Registro exclusivo para</p>
-          <h1 id="tituloRol" class="text-3xl font-bold text-pastel-tinta">Clienta</h1>
-        </div>
-      </div>
-
-      <div id="alerta" data-tema="pastel" class="alerta mt-6"></div>
-
-      <p class="mt-4 rounded-xl border border-bella-300/70 bg-pastel-lavanda/70 px-3 py-2 text-xs font-semibold text-pastel-tinta">Aquí solo se crean cuentas de <strong>Clienta</strong>. Las cuentas de estilista y administradora las crea una administradora del salón.</p>
-
-      <form id="formRegistro" class="mt-6 space-y-5">
-        <div>
-          <label for="nombre" class="etiqueta-oscura">Nombre completo</label>
-          <input id="nombre" class="campo-pastel" type="text" placeholder="Ej: Ana María López" required>
-        </div>
-
-        <div class="grid gap-5 sm:grid-cols-2">
-          <div>
-            <label for="usuario" class="etiqueta-oscura">Usuario</label>
-            <input id="usuario" class="campo-pastel" type="text" placeholder="Ej: anamaria" required>
-          </div>
-          <div>
-            <label for="password" class="etiqueta-oscura">Contraseña</label>
-            <input id="password" class="campo-pastel" type="password" minlength="6" placeholder="Mínimo 6 caracteres" required>
-          </div>
-        </div>
-
-        <!-- Solo para clienta -->
-        <div class="grid gap-5 sm:grid-cols-2">
-          <div>
-            <label for="telefono" class="etiqueta-oscura">Teléfono</label>
-            <input id="telefono" class="campo-pastel" type="tel" placeholder="300 000 0000">
-          </div>
-          <div>
-            <label for="email" class="etiqueta-oscura">Correo</label>
-            <input id="email" class="campo-pastel" type="email" placeholder="tu@correo.com">
-          </div>
-        </div>
-
-
-        <button id="btnRegistrar" type="submit" class="btn-primario w-full py-3 text-base shadow-md">Crear cuenta</button>
-      </form>
-    </section>
-  </main>
-
-  <script src="js/api.js"></script>
-  <script src="js/registro.js"></script>
-</body>
+<body></body>
 </html>

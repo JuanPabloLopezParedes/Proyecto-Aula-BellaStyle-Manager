@@ -146,7 +146,7 @@ function dibujarTiendaProductos(productos = []) {
                             data-comprar-prod-id="${p.id_producto}"
                             data-comprar-prod-nombre="${escapar(p.nombre)}"
                             class="rounded-xl bg-bella-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700">
-                        Incluir en mi cita &rarr;
+                        Quiero este producto &rarr;
                     </button>
                 </div>
             </article>`;
@@ -154,12 +154,20 @@ function dibujarTiendaProductos(productos = []) {
 
     cont.querySelectorAll('button[data-comprar-prod-id]').forEach((btn) => {
         btn.addEventListener('click', () => {
+            const nombreProd = btn.dataset.comprarProdNombre;
             sessionStorage.setItem('bellaProductoPreferido', JSON.stringify({
                 id_producto: btn.dataset.comprarProdId,
-                nombre: btn.dataset.comprarProdNombre
+                nombre: nombreProd
             }));
             const sesion = typeof obtenerSesion === 'function' ? obtenerSesion() : null;
-            window.location.href = sesion ? 'panel.html' : 'index.html?rol=cliente';
+            if (sesion) {
+                window.location.href = 'panel.html';
+            } else if (typeof window.abrirModalAuth === 'function') {
+                window.abrirModalAuth('login', {
+                    rol: 'cliente',
+                    mensaje: `✓ Producto elegido: ${nombreProd}. Inicia sesión o regístrate para incluirlo en tu cita.`
+                });
+            }
         });
     });
 }

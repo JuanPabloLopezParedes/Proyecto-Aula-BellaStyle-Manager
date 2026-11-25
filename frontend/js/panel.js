@@ -1,7 +1,7 @@
 // Panel principal (panel.html). Muestra una sección distinta según el rol.
 
 const usuario = obtenerSesion();
-if (!usuario) window.location.href = 'index.html';
+if (!usuario) window.location.href = 'welcome.html?auth=login';
 
 let servicios = [];            // servicios disponibles (para agendar y registrar)
 let estilistas = [];           // estilistas activas (para agendar)
