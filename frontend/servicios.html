@@ -49,21 +49,42 @@
         </a>
       </div>
 
-      <h1 class="mt-4 text-3xl font-bold text-bella-50 sm:text-5xl">Nuestros Servicios y Especialidades</h1>
-      <p class="mt-3 max-w-4xl text-sm leading-relaxed text-bella-100 sm:text-base">
-        En <strong>BellaStyle Salón de Belleza</strong> contamos con especialistas certificadas en cada área de cuidado personal. Todos nuestros procedimientos incluyen diagnóstico previo sin costo, aplicación con productos cosméticos de grado profesional y asesoría personalizada. Explora a continuación cada categoría, revisa sus ejemplos reales con fotografía, duración estimada y precios transparentes, y presiona <strong>"Quiero este"</strong> para agendar tu cita al instante.
-      </p>
+      <div class="mt-4 grid gap-4 lg:grid-cols-12 lg:items-end">
+        <div class="lg:col-span-8">
+          <h1 class="text-3xl font-bold text-bella-50 sm:text-5xl">Nuestros Servicios y Especialidades</h1>
+          <p class="mt-2.5 max-w-3xl text-sm leading-relaxed text-bella-100 sm:text-base">
+            Especialistas certificadas, diagnóstico capilar sin costo y productos de grado profesional. Elige cualquier servicio para explorar su catálogo visual de estilos o agendar tu cita en segundos.
+          </p>
+        </div>
+        <div class="grid grid-cols-3 gap-2.5 rounded-2xl border border-white/15 bg-white/5 p-3 text-center lg:col-span-4">
+          <div>
+            <p class="font-titulo text-xl font-bold text-bella-300 sm:text-2xl">7 áreas</p>
+            <p class="text-[11px] text-bella-100">Especializadas</p>
+          </div>
+          <div class="border-x border-white/15 px-2">
+            <p class="font-titulo text-xl font-bold text-bella-300 sm:text-2xl">35+ estilos</p>
+            <p class="text-[11px] text-bella-100">Con foto real</p>
+          </div>
+          <div>
+            <p class="font-titulo text-xl font-bold text-bella-300 sm:text-2xl">100%</p>
+            <p class="text-[11px] text-bella-100">Garantizado</p>
+          </div>
+        </div>
+      </div>
 
       <!-- Barra de filtros rápidos por servicio -->
       <div class="mt-6 border-t border-white/15 pt-5">
-        <p class="mb-2.5 text-xs font-bold uppercase tracking-wider text-bella-200">Filtrar por categoría de servicio:</p>
+        <div class="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+          <p class="text-xs font-bold uppercase tracking-wider text-bella-200">Filtrar por especialidad:</p>
+          <span class="text-[11px] font-semibold text-bella-200/80">💡 Haz clic en cualquier tarjeta para ver todos sus estilos y precios</span>
+        </div>
         <div id="filtrosRapidosServicios" class="flex flex-wrap gap-2"></div>
       </div>
     </section>
 
-    <!-- Cuadrícula completa de servicios y sus ejemplos -->
+    <!-- Cuadrícula uniforme y simétrica de servicios -->
     <section class="mt-8">
-      <div id="listaServicios" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div id="listaServicios" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <p class="text-bella-100">Cargando catálogo de servicios...</p>
       </div>
     </section>

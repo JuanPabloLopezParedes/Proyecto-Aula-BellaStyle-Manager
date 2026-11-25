@@ -269,98 +269,179 @@ function dibujarPaginaServiciosCompleta(servicios = []) {
             ? servicios
             : servicios.filter((s) => s.nombre.toLowerCase() === filtroNombre.toLowerCase());
 
+        const esVistaIndividual = filtroNombre !== 'todos' && filtrados.length === 1;
+
         lista.innerHTML = filtrados.map((s) => {
             const ficha = typeof buscarDetalleServicio === 'function'
                 ? buscarDetalleServicio(s, s.precio, s.duracion_min)
                 : null;
 
-            const bloquesOpciones = ficha
-                ? ficha.grupos.map((g) => `
-                    <div class="mt-3">
-                      <p class="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-bella-800">
-                        <span>${g.icono}</span> ${escapar(g.categoria)}
-                      </p>
-                      <ul class="mt-1.5 space-y-1.5">
-                        ${g.opciones.map((op) => `
-                          <li>
+            const todasLasOpciones = ficha && Array.isArray(ficha.grupos)
+                ? ficha.grupos.flatMap((g) => (g.opciones || []).map((op) => ({ ...op, categoriaGrupo: g.categoria, iconoGrupo: g.icono })))
+                : [];
+
+            const totalVariedades = todasLasOpciones.length || 2;
+            const imgCategoria = s.imagen || (ficha && ficha.imagen) || 'img/servicios/cat-corte.jpg';
+            const subtituloLimpio = (s.subtitulo || (ficha && ficha.subtitulo) || 'Procedimiento profesional personalizado con diagnóstico incluido.');
+
+            // Tomamos máximo 3 estilos destacados para mostrar como vista previa limpia y uniforme sin saturar la tarjeta
+            const previewOpciones = todasLasOpciones.slice(0, 3);
+            const restantes = Math.max(0, totalVariedades - previewOpciones.length);
+
+            const htmlPreviewCompacta = previewOpciones.length > 0
+                ? `
+                    <div class="mt-4 rounded-2xl border border-bella-300/60 bg-white/85 p-3 shadow-inner">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-bella-900">✨ Estilos destacados</span>
                             <button type="button"
-                                    data-ver-subservicio="${escapar(s.nombre)}"
-                                    data-ver-variedad="${escapar(op.nombre)}"
-                                    data-ver-precio="${s.precio}"
-                                    data-ver-duracion="${s.duracion_min}"
-                                    class="flex w-full items-center justify-between gap-2 rounded-xl border border-bella-200/80 bg-white/95 p-1.5 pr-2.5 text-left text-xs font-medium text-pastel-tinta shadow-sm transition hover:border-bella-500 hover:bg-pastel-rosa/60">
-                              <div class="flex min-w-0 items-center gap-2.5">
-                                <img src="${escapar(op.imagen || ficha.imagen || 'img/servicios/cat-corte.jpg')}"
-                                     alt="${escapar(op.nombre)}"
-                                     loading="lazy"
-                                     class="h-11 w-11 shrink-0 rounded-lg object-cover ring-1 ring-bella-300/80">
-                                <div class="min-w-0">
-                                  <span class="block truncate font-bold text-pastel-tinta">${escapar(op.nombre)}</span>
-                                  <span class="block text-[10px] font-semibold text-bella-800">🔍 Ver ejemplo y agendar · ${op.duracion} min</span>
-                                </div>
-                              </div>
-                              <span class="shrink-0 font-extrabold text-bella-900">${pesos(op.precio)}</span>
+                                    data-abrir-principal="${escapar(s.nombre)}"
+                                    data-abrir-precio="${s.precio}"
+                                    data-abrir-duracion="${s.duracion_min}"
+                                    class="text-[11px] font-extrabold text-bella-700 underline-offset-2 hover:underline">
+                                Ver los ${totalVariedades} ejemplos &rarr;
                             </button>
-                          </li>
-                        `).join('')}
-                      </ul>
-                    </div>
-                  `).join('')
+                        </div>
+                        <div class="mt-2.5 grid grid-cols-3 gap-2">
+                            ${previewOpciones.map((op) => `
+                                <button type="button"
+                                        data-ver-subservicio="${escapar(s.nombre)}"
+                                        data-ver-variedad="${escapar(op.nombre)}"
+                                        data-ver-precio="${s.precio}"
+                                        data-ver-duracion="${s.duracion_min}"
+                                        class="group/item flex flex-col items-center rounded-xl border border-bella-200/80 bg-pastel-crema/60 p-1.5 text-center transition hover:border-bella-500 hover:bg-pastel-rosa/70">
+                                    <div class="h-14 w-full overflow-hidden rounded-lg bg-white">
+                                        <img src="${escapar(op.imagen || imgCategoria)}"
+                                             alt="${escapar(op.nombre)}"
+                                             loading="lazy"
+                                             class="h-full w-full object-cover transition duration-300 group-hover/item:scale-110">
+                                    </div>
+                                    <span class="mt-1.5 line-clamp-1 w-full text-[11px] font-bold text-pastel-tinta">${escapar(op.nombre)}</span>
+                                    <span class="text-[10px] font-extrabold text-bella-800">${pesos(op.precio)}</span>
+                                </button>
+                            `).join('')}
+                        </div>
+                        ${restantes > 0 ? `
+                            <button type="button"
+                                    data-abrir-principal="${escapar(s.nombre)}"
+                                    data-abrir-precio="${s.precio}"
+                                    data-abrir-duracion="${s.duracion_min}"
+                                    class="mt-2 w-full rounded-xl bg-pastel-lavanda/75 py-1.5 text-center text-[11px] font-extrabold text-bella-900 transition hover:bg-pastel-rosa">
+                                + ${restantes} estilos adicionales disponibles en este servicio
+                            </button>
+                        ` : ''}
+                    </div>`
                 : '';
 
-            const totalVariedades = ficha
-                ? ficha.grupos.reduce((acc, g) => acc + g.opciones.length, 0)
-                : 2;
-
-            const imgCategoria = s.imagen || (ficha && ficha.imagen) || 'img/servicios/cat-corte.jpg';
-
             return `
-                <article class="tarjeta-pastel group flex flex-col justify-between p-5 transition duration-300 hover:-translate-y-1 hover:border-bella-500">
+                <article class="tarjeta-pastel group flex h-full flex-col justify-between overflow-hidden p-0 transition duration-300 hover:-translate-y-1.5 hover:border-bella-500 ${esVistaIndividual ? 'sm:col-span-2 lg:col-span-3' : ''}">
                     <div>
+                        <!-- Cabecera fotográfica uniforme (misma altura en todas las tarjetas) -->
                         <div data-abrir-principal="${escapar(s.nombre)}"
                              data-abrir-precio="${s.precio}"
                              data-abrir-duracion="${s.duracion_min}"
-                             class="relative mb-3.5 h-48 w-full cursor-pointer overflow-hidden rounded-2xl border border-bella-300/70 shadow-sm">
+                             class="relative h-56 w-full cursor-pointer overflow-hidden bg-pastel-perla">
                             <img src="${escapar(imgCategoria)}" alt="${escapar(s.nombre)}" loading="lazy"
                                  class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
-                            <span class="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-0.5 text-[11px] font-extrabold text-bella-900 shadow-md">
-                                ${totalVariedades} ejemplos con foto
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent"></div>
+                            <span class="absolute left-3.5 top-3.5 rounded-full bg-white/95 px-3 py-1 text-[11px] font-extrabold text-bella-900 shadow-md">
+                                &#10022; ${totalVariedades} estilos con foto
                             </span>
-                            <span class="absolute bottom-2.5 right-2.5 rounded-lg bg-black/75 px-2.5 py-1 text-[11px] font-bold text-white">
-                                🔍 Explorar ejemplos
+                            <span class="absolute right-3.5 top-3.5 rounded-full bg-noche-950/80 px-2.5 py-1 text-[11px] font-bold text-bella-100 backdrop-blur-sm">
+                                &#9719; ${s.duracion_min} min
                             </span>
-                        </div>
-                        <div class="flex items-start justify-between gap-2">
-                            <div>
-                                <h3 class="text-2xl font-bold text-pastel-tinta">${escapar(s.nombre)}</h3>
+                            <div class="absolute bottom-3 left-3.5 right-3.5 flex items-end justify-between gap-2 text-white">
+                                <div>
+                                    <p class="text-[10px] font-bold uppercase tracking-widest text-bella-200">Especialidad BellaStyle</p>
+                                    <h3 class="font-titulo text-2xl font-bold leading-tight text-white drop-shadow sm:text-3xl">${escapar(s.nombre)}</h3>
+                                </div>
+                                <div class="shrink-0 rounded-xl bg-white/95 px-3 py-1 text-right text-pastel-tinta shadow-md">
+                                    <span class="block text-[9px] font-extrabold uppercase tracking-wider text-pastel-subtinta">Desde</span>
+                                    <span class="font-titulo text-xl font-bold leading-none text-bella-800">${pesos(s.precio)}</span>
+                                </div>
                             </div>
-                            <div class="text-right">
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-pastel-subtinta">Desde</p>
-                                <p class="font-titulo text-2xl font-bold text-bella-800">${pesos(s.precio)}</p>
-                            </div>
                         </div>
-                        <p class="mt-1 text-xs font-medium text-pastel-subtinta">
-                            ${ficha ? escapar(ficha.subtitulo) : 'Servicio profesional personalizado.'}
-                        </p>
 
-                        <!-- Lista clicable de todas las especialidades de este servicio con su foto -->
-                        <div class="mt-2.5 border-t border-bella-300/60 pt-1">
-                            ${bloquesOpciones}
+                        <!-- Cuerpo limpio y simétrico -->
+                        <div class="p-5 pb-4">
+                            <p class="line-clamp-2 min-h-[2.5rem] text-xs font-medium leading-relaxed text-pastel-subtinta">
+                                ${escapar(subtituloLimpio)}
+                            </p>
+                            ${htmlPreviewCompacta}
                         </div>
                     </div>
 
-                    <div class="mt-4 flex items-center justify-between border-t border-bella-300/60 pt-3.5">
-                        <span class="text-xs font-bold text-pastel-subtinta">&#9719; Base: ${s.duracion_min} min</span>
+                    <!-- Pie de tarjeta alineado al fondo con 2 acciones claras -->
+                    <div class="mt-auto flex items-center justify-between gap-2 border-t border-bella-300/60 bg-pastel-perla/55 px-5 py-3.5">
                         <button type="button"
                                 data-abrir-principal="${escapar(s.nombre)}"
                                 data-abrir-precio="${s.precio}"
                                 data-abrir-duracion="${s.duracion_min}"
-                                class="inline-flex items-center gap-1 rounded-xl bg-bella-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700">
-                            Ver todos los ejemplos &rarr;
+                                class="rounded-xl border border-bella-400/80 bg-white px-3.5 py-2 text-xs font-bold text-pastel-tinta shadow-sm transition hover:bg-pastel-rosa">
+                            🔍 Ver catálogo (${totalVariedades})
+                        </button>
+                        <button type="button"
+                                data-agendar-directo-srv="${escapar(s.nombre)}"
+                                data-agendar-directo-precio="${s.precio}"
+                                data-agendar-directo-duracion="${s.duracion_min}"
+                                class="inline-flex items-center gap-1 rounded-xl bg-bella-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700">
+                            📅 Quiero este servicio &rarr;
                         </button>
                     </div>
-                </article>`;
+                </article>
+                ${esVistaIndividual && todasLasOpciones.length > 0 ? `
+                    <div class="sm:col-span-2 lg:col-span-3 mt-2">
+                        <div class="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/15 bg-noche-900/75 px-5 py-3.5 backdrop-blur-md">
+                            <div>
+                                <h4 class="text-lg font-bold text-bella-50">Catálogo completo de estilos · ${escapar(s.nombre)}</h4>
+                                <p class="text-xs text-bella-100">Selecciona cualquiera de los ${todasLasOpciones.length} estilos disponibles para ver su ficha o apartar tu cita.</p>
+                            </div>
+                            <button type="button" id="btnVolverTodosServicios" class="rounded-xl bg-pastel-crema px-3.5 py-1.5 text-xs font-bold text-pastel-tinta shadow-sm hover:bg-pastel-rosa">
+                                Ver todas las categorías
+                            </button>
+                        </div>
+                        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                            ${todasLasOpciones.map((op) => `
+                                <div class="tarjeta-pastel flex flex-col justify-between overflow-hidden p-0 transition duration-300 hover:-translate-y-1 hover:border-bella-500">
+                                    <div>
+                                        <div class="relative h-48 w-full overflow-hidden bg-pastel-perla">
+                                            <img src="${escapar(op.imagen || imgCategoria)}" alt="${escapar(op.nombre)}" class="h-full w-full object-cover">
+                                            <span class="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-0.5 text-[10px] font-extrabold text-bella-900 shadow-sm">
+                                                ${op.iconoGrupo || '✦'} ${escapar(op.categoriaGrupo || s.nombre)}
+                                            </span>
+                                            <span class="absolute right-3 top-3 rounded-full bg-noche-950/80 px-2.5 py-0.5 text-[11px] font-bold text-white">
+                                                ${op.duracion || s.duracion_min} min
+                                            </span>
+                                        </div>
+                                        <div class="p-4">
+                                            <div class="flex items-start justify-between gap-2">
+                                                <h5 class="font-sans text-base font-bold text-pastel-tinta">${escapar(op.nombre)}</h5>
+                                                <span class="font-titulo text-2xl font-bold text-bella-800">${pesos(op.precio)}</span>
+                                            </div>
+                                            <p class="mt-1 line-clamp-2 text-xs text-pastel-subtinta">${escapar(op.descripcion || subtituloLimpio)}</p>
+                                        </div>
+                                    </div>
+                                    <div class="border-t border-bella-300/60 bg-pastel-perla/50 px-4 py-3 text-right">
+                                        <button type="button"
+                                                data-ver-subservicio="${escapar(s.nombre)}"
+                                                data-ver-variedad="${escapar(op.nombre)}"
+                                                data-ver-precio="${s.precio}"
+                                                data-ver-duracion="${s.duracion_min}"
+                                                class="w-full rounded-xl bg-bella-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700">
+                                            📅 Elegir este estilo &rarr;
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}`;
         }).join('');
+
+        document.getElementById('btnVolverTodosServicios')?.addEventListener('click', () => {
+            const btnTodos = barraRapida?.querySelector('button[data-filtrar-srv="todos"]');
+            if (btnTodos) btnTodos.click();
+            else renderizarTarjetasServicios('todos');
+        });
 
         lista.querySelectorAll('[data-abrir-principal]').forEach((el) => {
             el.addEventListener('click', () => {
@@ -368,6 +449,25 @@ function dibujarPaginaServiciosCompleta(servicios = []) {
                     precio: Number(el.dataset.abrirPrecio),
                     duracion: Number(el.dataset.abrirDuracion)
                 });
+            });
+        });
+
+        lista.querySelectorAll('button[data-agendar-directo-srv]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (typeof window.seleccionarYAgendarServicio === 'function') {
+                    window.seleccionarYAgendarServicio({
+                        servicioPrincipal: btn.dataset.agendarDirectoSrv,
+                        variedad: 'Servicio estándar',
+                        precio: Number(btn.dataset.agendarDirectoPrecio),
+                        duracion: Number(btn.dataset.agendarDirectoDuracion)
+                    });
+                } else {
+                    abrirModalServicio(btn.dataset.agendarDirectoSrv, {
+                        precio: Number(btn.dataset.agendarDirectoPrecio),
+                        duracion: Number(btn.dataset.agendarDirectoDuracion)
+                    });
+                }
             });
         });
 
