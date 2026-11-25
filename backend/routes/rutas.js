@@ -13,6 +13,7 @@ const { protegerRuta } = require('../utils/token');
 // Autenticación y gestión de jerarquía de Administradoras
 router.post('/login', auth.login);
 router.post('/register', auth.registrar);
+router.post('/recuperar-password/solicitar-codigo', auth.solicitarCodigoRecuperacion);
 router.post('/recuperar-password', auth.recuperarPassword);
 router.get('/administradoras', protegerRuta(['Administradora']), auth.listarAdministradoras);
 router.put('/administradoras/:id/permiso', protegerRuta(['Administradora']), auth.cambiarPermisoAdministradora);

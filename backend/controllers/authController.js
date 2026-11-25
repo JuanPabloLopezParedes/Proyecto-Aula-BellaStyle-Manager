@@ -179,21 +179,176 @@ async function registrar(req, res) {
     }
 }
 
+// Almacén en memoria de códigos temporales OTP de 6 dígitos para recuperación segura (expiran en 5 min, máx 3 intentos)
+const codigosRecuperacionOTP = new Map();
+
+function limpiarTelefono(tel) {
+    return String(tel || '').replace(/\D+/g, '');
+}
+
+// POST /api/recuperar-password/solicitar-codigo
+// Paso 1: Verifica que coincidan EXACTAMENTE los 3 datos (Usuario + Correo electrónico + Teléfono)
+// y solo permite auto-recuperación para cuentas de Clienta (Administradoras y Estilistas están protegidas).
+async function solicitarCodigoRecuperacion(req, res) {
+    const { username, email, telefono } = req.body;
+
+    if (!usuarioValido(username) || !email || !telefono) {
+        return res.status(400).json({
+            success: false,
+            message: 'Debes ingresar tu usuario, correo electrónico registrado y teléfono registrado.'
+        });
+    }
+
+    const userKey = username.trim().toLowerCase();
+    const emailLimpio = String(email).trim().toLowerCase();
+    const telLimpio = limpiarTelefono(telefono);
+
+    // Verificar si está bloqueado temporalmente por exceso de intentos fallidos
+    const registroPrevio = codigosRecuperacionOTP.get(userKey);
+    if (registroPrevio && registroPrevio.bloqueadoHasta && Date.now() < registroPrevio.bloqueadoHasta) {
+        const segRestantes = Math.ceil((registroPrevio.bloqueadoHasta - Date.now()) / 1000);
+        return res.status(429).json({
+            success: false,
+            message: `Cuenta protegida temporalmente por intentos fallidos. Intenta de nuevo en ${segRestantes} segundos.`
+        });
+    }
+
+    try {
+        const usuario = await usuarioModel.buscarPorUsername(userKey);
+        if (!usuario) {
+            return res.status(404).json({
+                success: false,
+                message: 'Los datos de verificación (usuario, correo o teléfono) no coinciden con ninguna cuenta registrada.'
+            });
+        }
+
+        // Protección de cuentas privilegiadas: Administradoras y Estilistas no pueden ser restablecidas desde el formulario público
+        if (usuario.rol !== 'Clienta') {
+            return res.status(403).json({
+                success: false,
+                message: `Por seguridad del salón, las cuentas de ${usuario.rol} están blindadas y solo pueden ser restablecidas por la Administradora Principal desde el panel interno.`
+            });
+        }
+
+        const fichaClienta = await clienteModel.buscarPorUsuario(usuario.id_usuario);
+        const emailRegistrado = fichaClienta && fichaClienta.email ? String(fichaClienta.email).trim().toLowerCase() : '';
+        const telRegistrado = fichaClienta && fichaClienta.telefono ? limpiarTelefono(fichaClienta.telefono) : '';
+
+        if (!fichaClienta || !emailRegistrado || !telRegistrado || emailRegistrado !== emailLimpio || telRegistrado !== telLimpio) {
+            const intentos = (registroPrevio ? registroPrevio.intentosIdentidad || 0 : 0) + 1;
+            const bloqueadoHasta = intentos >= 3 ? Date.now() + 2 * 60 * 1000 : null;
+            codigosRecuperacionOTP.set(userKey, {
+                ...(registroPrevio || {}),
+                intentosIdentidad: intentos >= 3 ? 0 : intentos,
+                bloqueadoHasta
+            });
+            return res.status(401).json({
+                success: false,
+                message: bloqueadoHasta
+                    ? 'Se superaron los 3 intentos de verificación. Por seguridad se bloqueó temporalmente la solicitud durante 2 minutos.'
+                    : `Los 3 datos (usuario, correo y teléfono) no coinciden exactamente con los registrados en la cuenta. Intento ${intentos} de 3.`
+            });
+        }
+
+        // Generar código OTP aleatorio de 6 dígitos con validez de 5 minutos
+        const codigoOTP = String(Math.floor(100000 + Math.random() * 900000));
+        const expiraEn = Date.now() + 5 * 60 * 1000;
+
+        codigosRecuperacionOTP.set(userKey, {
+            codigo: codigoOTP,
+            expiraEn,
+            intentosCodigo: 0,
+            intentosIdentidad: 0,
+            bloqueadoHasta: null
+        });
+
+        // Enmascarar correo para el mensaje informativo
+        const [parteLocal, dominio] = emailRegistrado.split('@');
+        const correoMascara = `${parteLocal.slice(0, 2)}***@${dominio || 'correo.com'}`;
+
+        return res.json({
+            success: true,
+            message: `✓ Triple verificación exitosa para ${correoMascara}. Ingresa el código de seguridad de 6 dígitos (válido por 5 minutos).`,
+            codigoSimulado: codigoOTP,
+            expiraSegundos: 300
+        });
+    } catch (err) {
+        console.error('Error al solicitar código OTP:', err.message);
+        return res.status(500).json({ success: false, message: 'Error interno al verificar la identidad.' });
+    }
+}
+
 // POST /api/recuperar-password
+// Paso 2: Valida el código OTP de 6 dígitos (máx 3 intentos, expira en 5 min) y actualiza la contraseña
 async function recuperarPassword(req, res) {
-    const { username, nuevaPassword } = req.body;
+    const { username, codigoOtp, nuevaPassword } = req.body;
 
     if (!usuarioValido(username) || !passwordValida(nuevaPassword)) {
         return res.status(400).json({ success: false, message: 'Revisa el usuario y que la contraseña tenga al menos 6 caracteres.' });
     }
 
+    if (!codigoOtp || !/^\d{6}$/.test(String(codigoOtp).trim())) {
+        return res.status(400).json({
+            success: false,
+            message: 'Debes ingresar el código de seguridad OTP de 6 dígitos generado en el Paso 1.'
+        });
+    }
+
+    const userKey = username.trim().toLowerCase();
+    const registroOTP = codigosRecuperacionOTP.get(userKey);
+
+    if (!registroOTP || !registroOTP.codigo) {
+        return res.status(400).json({
+            success: false,
+            message: 'Primero debes completar la triple verificación (Usuario + Correo + Teléfono) para generar tu código de 6 dígitos.'
+        });
+    }
+
+    if (registroOTP.bloqueadoHasta && Date.now() < registroOTP.bloqueadoHasta) {
+        const segRestantes = Math.ceil((registroOTP.bloqueadoHasta - Date.now()) / 1000);
+        return res.status(429).json({
+            success: false,
+            message: `Demasiados intentos fallidos. Espera ${segRestantes} segundos y solicita un nuevo código.`
+        });
+    }
+
+    if (Date.now() > registroOTP.expiraEn) {
+        codigosRecuperacionOTP.delete(userKey);
+        return res.status(410).json({
+            success: false,
+            message: 'El código de seguridad de 6 dígitos expiró (límite de 5 minutos). Solicita uno nuevo.'
+        });
+    }
+
+    if (String(codigoOtp).trim() !== registroOTP.codigo) {
+        registroOTP.intentosCodigo = (registroOTP.intentosCodigo || 0) + 1;
+        if (registroOTP.intentosCodigo >= 3) {
+            codigosRecuperacionOTP.set(userKey, {
+                codigo: null,
+                bloqueadoHasta: Date.now() + 2 * 60 * 1000
+            });
+            return res.status(401).json({
+                success: false,
+                message: 'Código incorrecto 3 veces seguidas. El código fue anulado por seguridad.'
+            });
+        }
+        return res.status(401).json({
+            success: false,
+            message: `Código de 6 dígitos incorrecto. Te quedan ${3 - registroOTP.intentosCodigo} intento(s).`
+        });
+    }
+
     try {
-        const usuario = await usuarioModel.buscarPorUsername(username.trim().toLowerCase());
-        if (!usuario) {
-            return res.status(404).json({ success: false, message: 'No existe una cuenta con ese usuario.' });
+        const usuario = await usuarioModel.buscarPorUsername(userKey);
+        if (!usuario || usuario.rol !== 'Clienta') {
+            return res.status(404).json({ success: false, message: 'No se pudo validar la cuenta.' });
         }
         await usuarioModel.actualizarPassword(usuario.username, bcrypt.hashSync(nuevaPassword, 10));
-        return res.json({ success: true, message: 'Contraseña actualizada. Ya puedes iniciar sesión.' });
+        codigosRecuperacionOTP.delete(userKey);
+        return res.json({
+            success: true,
+            message: '🔒 Contraseña actualizada con verificación de doble paso (OTP). Ya puedes iniciar sesión.'
+        });
     } catch (err) {
         console.error('Error al recuperar contraseña:', err.message);
         return res.status(500).json({ success: false, message: 'Error interno del servidor.' });
@@ -250,4 +405,4 @@ async function cambiarPermisoAdministradora(req, res) {
     }
 }
 
-module.exports = { login, registrar, recuperarPassword, listarAdministradoras, cambiarPermisoAdministradora };
+module.exports = { login, registrar, solicitarCodigoRecuperacion, recuperarPassword, listarAdministradoras, cambiarPermisoAdministradora };

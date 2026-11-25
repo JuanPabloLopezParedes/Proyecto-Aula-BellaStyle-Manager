@@ -118,12 +118,12 @@
                   </div>
                   <div class="grid gap-3 sm:grid-cols-2">
                     <div>
-                      <label for="regTelefono" class="etiqueta-oscura">Teléfono</label>
-                      <input id="regTelefono" class="campo-pastel" type="tel" placeholder="300 000 0000">
+                      <label for="regTelefono" class="etiqueta-oscura">Teléfono *</label>
+                      <input id="regTelefono" class="campo-pastel" type="tel" placeholder="300 000 0000" required>
                     </div>
                     <div>
-                      <label for="regEmail" class="etiqueta-oscura">Correo electrónico</label>
-                      <input id="regEmail" class="campo-pastel" type="email" placeholder="tu@correo.com">
+                      <label for="regEmail" class="etiqueta-oscura">Correo electrónico *</label>
+                      <input id="regEmail" class="campo-pastel" type="email" placeholder="tu@correo.com" required>
                     </div>
                   </div>
                   <button id="authBtnRegistrar" type="submit" class="btn-primario w-full py-3 text-base shadow-md">Crear cuenta</button>
@@ -136,30 +136,90 @@
                 </div>
               </div>
 
-              <!-- ================= VISTA 3: RECUPERAR CONTRASEÑA ================= -->
+              <!-- ================= VISTA 3: RECUPERAR CONTRASEÑA (DOBLE VERIFICACIÓN + OTP 6 DÍGITOS) ================= -->
               <div id="vistaAuthRecuperar" class="hidden">
                 <div class="pr-8">
-                  <p class="text-xs font-bold uppercase tracking-wider text-pastel-subtinta">Restablecer acceso</p>
-                  <h2 class="font-titulo text-3xl font-bold text-pastel-tinta">Recuperar contraseña</h2>
-                  <p class="mt-1 text-xs font-medium text-pastel-subtinta">Escribe tu usuario y asigna tu nueva contraseña.</p>
+                  <span class="inline-flex items-center gap-1 rounded-full bg-pastel-menta px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-950">
+                    🔒 Seguridad de Doble Paso (OTP)
+                  </span>
+                  <h2 class="mt-1 font-titulo text-3xl font-bold text-pastel-tinta">Recuperar contraseña</h2>
+                  <p class="mt-0.5 text-xs font-medium text-pastel-subtinta">
+                    Por seguridad, validamos tus <strong>3 datos registrados</strong> antes de emitir tu código temporal de 6 dígitos.
+                  </p>
+                </div>
+
+                <!-- Indicador visual de Paso 1 y Paso 2 -->
+                <div class="mt-3 grid grid-cols-2 gap-2 rounded-2xl border border-bella-300/70 bg-pastel-perla/80 p-1.5 text-center text-[11px] font-extrabold">
+                  <div id="badgePaso1Rec" class="rounded-xl bg-bella-600 py-1.5 text-white shadow-sm">
+                    1. Verificar identidad
+                  </div>
+                  <div id="badgePaso2Rec" class="rounded-xl py-1.5 text-pastel-subtinta">
+                    2. Código OTP (6 dígitos)
+                  </div>
                 </div>
 
                 <div id="authAlertaRecuperar" data-tema="pastel" class="alerta mt-3.5"></div>
 
-                <form id="authFormRecuperar" class="mt-4 space-y-3.5">
+                <!-- PASO 1: TRIPLE VALIDACIÓN (USUARIO + CORREO EXACTO + TELÉFONO EXACTO) -->
+                <form id="authFormSolicitarOTP" class="mt-3.5 space-y-3">
                   <div>
-                    <label for="recUsuario" class="etiqueta-oscura">Usuario</label>
-                    <input id="recUsuario" class="campo-pastel" type="text" placeholder="Tu nombre de usuario" required>
+                    <label for="recUsuario" class="etiqueta-oscura">1. Tu nombre de usuario *</label>
+                    <input id="recUsuario" class="campo-pastel" type="text" placeholder="Ej: cliente" required>
                   </div>
                   <div>
-                    <label for="recNueva" class="etiqueta-oscura">Nueva contraseña</label>
-                    <input id="recNueva" class="campo-pastel" type="password" minlength="6" placeholder="Mínimo 6 caracteres" required>
+                    <label for="recEmail" class="etiqueta-oscura">2. Correo electrónico registrado *</label>
+                    <input id="recEmail" class="campo-pastel" type="email" placeholder="Correo exacto de tu cuenta" required>
                   </div>
                   <div>
-                    <label for="recConfirmar" class="etiqueta-oscura">Confirmar contraseña</label>
-                    <input id="recConfirmar" class="campo-pastel" type="password" minlength="6" placeholder="Repite la contraseña" required>
+                    <label for="recTelefono" class="etiqueta-oscura">3. Teléfono registrado *</label>
+                    <input id="recTelefono" class="campo-pastel" type="tel" placeholder="Teléfono exacto de tu cuenta" required>
                   </div>
-                  <button type="submit" class="btn-primario w-full py-3 text-base shadow-md">Cambiar contraseña</button>
+                  <div class="rounded-xl border border-bella-300/60 bg-white/80 px-3 py-2 text-[11px] text-pastel-subtinta">
+                    🛡️ <strong>Protección activa:</strong> Máximo 3 intentos. Las cuentas de <em>Administradora</em> y <em>Estilista</em> están protegidas y solo las restablece el Super Admin.
+                  </div>
+                  <button type="submit" id="btnSolicitarCodigoOTP" class="btn-primario w-full py-3 text-sm shadow-md">
+                    Verificar identidad y generar código OTP &rarr;
+                  </button>
+                </form>
+
+                <!-- PASO 2: INGRESAR CÓDIGO OTP DE 6 DÍGITOS + NUEVA CONTRASEÑA -->
+                <form id="authFormRecuperar" class="mt-3.5 hidden space-y-3">
+                  <div id="cajaCodigoSimuladoOTP" class="rounded-2xl border-2 border-emerald-500/80 bg-pastel-menta p-3 text-xs text-emerald-950 shadow-sm">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="font-extrabold uppercase tracking-wider">📨 Código OTP de seguridad:</span>
+                      <span id="timerExpiracionOTP" class="rounded-full bg-emerald-700 px-2.5 py-0.5 font-mono text-[11px] font-bold text-white">05:00</span>
+                    </div>
+                    <p class="mt-1 text-[11px] text-pastel-subtinta">Ingresa este código temporal de 6 dígitos para autorizar el cambio:</p>
+                    <div class="mt-1.5 flex items-center justify-between rounded-xl bg-white px-3.5 py-2 shadow-inner">
+                      <span id="valorCodigoOTPGenerado" class="font-mono text-2xl font-extrabold tracking-[0.25em] text-bella-900">------</span>
+                      <button type="button" id="btnCopiarAutocompletarOTP" class="rounded-lg bg-bella-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-bella-700">
+                        Usar código
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label for="recCodigoOTP" class="etiqueta-oscura">Código de seguridad (6 dígitos) *</label>
+                    <input id="recCodigoOTP" class="campo-pastel text-center font-mono text-lg font-extrabold tracking-[0.3em]" type="text" inputmode="numeric" pattern="\\d{6}" maxlength="6" placeholder="000000" required>
+                  </div>
+                  <div class="grid gap-2.5 sm:grid-cols-2">
+                    <div>
+                      <label for="recNueva" class="etiqueta-oscura">Nueva contraseña *</label>
+                      <input id="recNueva" class="campo-pastel" type="password" minlength="6" placeholder="Mínimo 6 caracteres" required>
+                    </div>
+                    <div>
+                      <label for="recConfirmar" class="etiqueta-oscura">Confirmar *</label>
+                      <input id="recConfirmar" class="campo-pastel" type="password" minlength="6" placeholder="Repite la clave" required>
+                    </div>
+                  </div>
+                  <div class="flex gap-2">
+                    <button type="button" id="btnVolverPaso1OTP" class="rounded-xl border border-bella-400/70 bg-pastel-perla px-3.5 py-2.5 text-xs font-bold text-pastel-tinta">
+                      &larr; Atrás
+                    </button>
+                    <button type="submit" id="btnConfirmarCambioOTP" class="btn-primario flex-1 py-2.5 text-sm shadow-md">
+                      🔒 Confirmar y cambiar contraseña
+                    </button>
+                  </div>
                 </form>
 
                 <div class="mt-4 border-t border-bella-300/50 pt-3.5 text-center text-xs font-bold">
@@ -275,21 +335,126 @@
             }
         });
 
-        // Envío de Recuperar Contraseña
+        let intervaloOTP = null;
+
+        function iniciarContadorOTP(segundosTotales = 300) {
+            if (intervaloOTP) clearInterval(intervaloOTP);
+            let restantes = segundosTotales;
+            const elTimer = document.getElementById('timerExpiracionOTP');
+            const actualizarTexto = () => {
+                if (!elTimer) return;
+                const min = String(Math.floor(restantes / 60)).padStart(2, '0');
+                const seg = String(restantes % 60).padStart(2, '0');
+                elTimer.textContent = `${min}:${seg}`;
+            };
+            actualizarTexto();
+            intervaloOTP = setInterval(() => {
+                restantes -= 1;
+                if (restantes <= 0) {
+                    clearInterval(intervaloOTP);
+                    if (elTimer) elTimer.textContent = 'Expirado';
+                    return;
+                }
+                actualizarTexto();
+            }, 1000);
+        }
+
+        function mostrarPasoRecuperacion(paso = 1) {
+            const formPaso1 = document.getElementById('authFormSolicitarOTP');
+            const formPaso2 = document.getElementById('authFormRecuperar');
+            const badge1 = document.getElementById('badgePaso1Rec');
+            const badge2 = document.getElementById('badgePaso2Rec');
+
+            if (paso === 1) {
+                formPaso1?.classList.remove('hidden');
+                formPaso2?.classList.add('hidden');
+                if (badge1) badge1.className = 'rounded-xl bg-bella-600 py-1.5 text-white shadow-sm';
+                if (badge2) badge2.className = 'rounded-xl py-1.5 text-pastel-subtinta';
+            } else {
+                formPaso1?.classList.add('hidden');
+                formPaso2?.classList.remove('hidden');
+                if (badge1) badge1.className = 'rounded-xl bg-emerald-600/20 py-1.5 text-emerald-950';
+                if (badge2) badge2.className = 'rounded-xl bg-bella-600 py-1.5 text-white shadow-sm';
+            }
+        }
+
+        document.getElementById('btnVolverPaso1OTP').addEventListener('click', () => {
+            ocultarAlerta(document.getElementById('authAlertaRecuperar'));
+            mostrarPasoRecuperacion(1);
+        });
+
+        document.getElementById('btnCopiarAutocompletarOTP').addEventListener('click', () => {
+            const codigo = document.getElementById('valorCodigoOTPGenerado')?.textContent.trim() || '';
+            const inputOtp = document.getElementById('recCodigoOTP');
+            if (inputOtp && /^\d{6}$/.test(codigo)) {
+                inputOtp.value = codigo;
+                document.getElementById('recNueva')?.focus();
+            }
+        });
+
+        // PASO 1: Solicitar código OTP de 6 dígitos validando Usuario + Correo + Teléfono
+        document.getElementById('authFormSolicitarOTP').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const alerta = document.getElementById('authAlertaRecuperar');
+            const btn = document.getElementById('btnSolicitarCodigoOTP');
+            ocultarAlerta(alerta);
+
+            const username = document.getElementById('recUsuario').value.trim();
+            const email = document.getElementById('recEmail').value.trim();
+            const telefono = document.getElementById('recTelefono').value.trim();
+
+            btn.disabled = true;
+            btn.textContent = 'Verificando los 3 datos...';
+
+            const respuesta = await pedir('/recuperar-password/solicitar-codigo', 'POST', {
+                username,
+                email,
+                telefono
+            });
+
+            btn.disabled = false;
+            btn.textContent = 'Verificar identidad y generar código OTP →';
+
+            if (respuesta && respuesta.success) {
+                document.getElementById('valorCodigoOTPGenerado').textContent = respuesta.codigoSimulado || '------';
+                document.getElementById('recCodigoOTP').value = '';
+                iniciarContadorOTP(respuesta.expiraSegundos || 300);
+                mostrarPasoRecuperacion(2);
+                mostrarAlerta(alerta, respuesta.message, 'ok');
+            } else {
+                mostrarAlerta(alerta, (respuesta && respuesta.message) || 'No se pudo verificar la identidad.');
+            }
+        });
+
+        // PASO 2: Confirmar código OTP de 6 dígitos y guardar nueva contraseña
         document.getElementById('authFormRecuperar').addEventListener('submit', async (e) => {
             e.preventDefault();
             const alerta = document.getElementById('authAlertaRecuperar');
+            const btn = document.getElementById('btnConfirmarCambioOTP');
             const nueva = document.getElementById('recNueva').value;
             if (nueva !== document.getElementById('recConfirmar').value) {
                 return mostrarAlerta(alerta, 'Las contraseñas no coinciden.');
             }
             const userRec = document.getElementById('recUsuario').value.trim();
+            const codigoOtp = document.getElementById('recCodigoOTP').value.trim();
+
+            btn.disabled = true;
+            btn.textContent = 'Validando código OTP...';
+
             const respuesta = await pedir('/recuperar-password', 'POST', {
                 username: userRec,
+                codigoOtp,
                 nuevaPassword: nueva
             });
+
+            btn.disabled = false;
+            btn.textContent = '🔒 Confirmar y cambiar contraseña';
+
             if (respuesta.success) {
+                if (intervaloOTP) clearInterval(intervaloOTP);
+                document.getElementById('authFormSolicitarOTP').reset();
                 e.target.reset();
+                mostrarPasoRecuperacion(1);
                 cambiarVistaAuth('login');
                 document.getElementById('authUsuario').value = userRec;
                 mostrarAlerta(document.getElementById('authAlertaLogin'), respuesta.message, 'ok');
