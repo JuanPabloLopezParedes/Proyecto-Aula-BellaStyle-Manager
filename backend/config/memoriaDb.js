@@ -5,6 +5,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const pgSync = require('./postgresSync');
 const RUTA_PERSISTENCIA = process.env.VERCEL
     ? path.join(os.tmpdir(), 'estado_memoria.local.json')
     : path.join(__dirname, 'estado_memoria.local.json');
@@ -794,10 +795,16 @@ async function ejecutarConsulta(sql, params = []) {
 }
 
 async function query(sql, params = []) {
+    if (pgSync.tienePostgresConfigurado()) {
+        await pgSync.sincronizarDesdePostgres(datos);
+    }
     const resultado = await ejecutarConsulta(sql, params);
     const s = String(sql || '').trim().toUpperCase();
     if (s.startsWith('INSERT ') || s.startsWith('UPDATE ') || s.startsWith('DELETE ')) {
         guardarEstadoDisco();
+        if (pgSync.tienePostgresConfigurado()) {
+            await pgSync.guardarEnPostgres(datos);
+        }
     }
     return resultado;
 }
