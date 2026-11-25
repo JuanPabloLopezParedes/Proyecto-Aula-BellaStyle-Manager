@@ -1,8 +1,9 @@
-// Página principal Landing Page (welcome.html):
-// - Catálogo de los 7 servicios y sus 35 especialidades con fotos de ejemplo
-// - Galería / Portafolio con 12 ejemplos reales de trabajos hechos en el salón
-// - Tienda y Vitrina de Productos con la foto real de cada producto (Shampoo de Argán, Mascarilla, Esmalte Gel, etc.)
-// - Reseñas verificadas de clientas
+// Controlador visual de la Landing Page (welcome.html) y de las 3 páginas dedicadas:
+// 1. welcome.html: Muestra 3 Carruseles interactivos (Servicios, Galería de Trabajos y Tienda de Productos)
+//    que al hacer clic transportan a su respectiva página dedicada.
+// 2. servicios.html: Página completa "Servicios que hacemos" con texto descriptivo y todos los servicios + ejemplos reales.
+// 3. galeria.html: Página completa "Galería y Portafolio de Trabajos" con filtros por categoría y vista detallada.
+// 4. tienda.html: Página completa "Tienda Oficial de Productos" con buscador, fotos reales y compra/agendamiento con popup.
 
 const observador = new IntersectionObserver((entradas) => {
     entradas.forEach((entrada) => {
@@ -27,7 +28,368 @@ function animarNumero(elemento, final) {
     requestAnimationFrame(paso);
 }
 
-// 1. Dibuja la Galería / Portafolio con los 12 ejemplos reales + los ejemplos de nuevos servicios creados por la Administradora
+// Conecta los botones de flecha (anterior / siguiente) y desplazamiento suave de cualquier carrusel
+function conectarBotonesCarrusel(idPista, idBtnPrev, idBtnNext) {
+    const pista = document.getElementById(idPista);
+    const btnPrev = document.getElementById(idBtnPrev);
+    const btnNext = document.getElementById(idBtnNext);
+    if (!pista) return;
+
+    const paso = () => Math.max(280, Math.round(pista.clientWidth * 0.78));
+
+    btnPrev?.addEventListener('click', () => {
+        if (pista.scrollLeft <= 10) {
+            pista.scrollTo({ left: pista.scrollWidth, behavior: 'smooth' });
+        } else {
+            pista.scrollBy({ left: -paso(), behavior: 'smooth' });
+        }
+    });
+
+    btnNext?.addEventListener('click', () => {
+        if (pista.scrollLeft + pista.clientWidth >= pista.scrollWidth - 15) {
+            pista.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+            pista.scrollBy({ left: paso(), behavior: 'smooth' });
+        }
+    });
+}
+
+// =========================================================================
+// A. CARRUSELES DE LA LANDING PAGE (welcome.html)
+// =========================================================================
+
+// 1. Carrusel de Servicios en la portada: muestra cada servicio principal limpio (ej. solo "Corte de Cabello", "Manicure", etc.)
+//    y al presionarlo transporta a servicios.html
+function dibujarCarruselServiciosLanding(servicios = []) {
+    const pista = document.getElementById('carruselServiciosLanding');
+    if (!pista) return;
+
+    if (!servicios || servicios.length === 0) {
+        pista.innerHTML = '<p class="text-bella-100">No hay servicios disponibles.</p>';
+        return;
+    }
+
+    pista.innerHTML = servicios.map((s) => {
+        const ficha = typeof buscarDetalleServicio === 'function'
+            ? buscarDetalleServicio(s, s.precio, s.duracion_min)
+            : null;
+        const img = s.imagen || (ficha && ficha.imagen) || 'img/servicios/cat-corte.jpg';
+        const subtitulo = s.subtitulo || (ficha && ficha.subtitulo) || 'Atención profesional personalizada en nuestro salón.';
+        const totalEjemplos = ficha
+            ? ficha.grupos.reduce((acc, g) => acc + g.opciones.length, 0)
+            : 4;
+        const urlDestino = `servicios.html?servicio=${encodeURIComponent(s.nombre)}`;
+
+        return `
+            <a href="${urlDestino}"
+               class="tarjeta-pastel group flex w-[18.5rem] shrink-0 snap-start flex-col justify-between overflow-hidden p-0 transition duration-300 hover:-translate-y-1.5 hover:border-bella-500 sm:w-[21rem]">
+                <div>
+                    <div class="relative h-52 w-full overflow-hidden bg-pastel-perla">
+                        <img src="${escapar(img)}" alt="${escapar(s.nombre)}" loading="lazy"
+                             class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
+                        <span class="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-0.5 text-[11px] font-extrabold text-bella-900 shadow-sm">
+                            ${totalEjemplos} estilos y ejemplos
+                        </span>
+                        <span class="absolute bottom-2.5 right-2.5 rounded-xl bg-bella-700/95 px-2.5 py-1 text-xs font-extrabold text-white shadow-sm">
+                            Desde ${pesos(s.precio)}
+                        </span>
+                    </div>
+                    <div class="p-5 pb-3">
+                        <h3 class="font-titulo text-2xl font-bold text-pastel-tinta">${escapar(s.nombre)}</h3>
+                        <p class="mt-1.5 line-clamp-2 text-xs leading-relaxed text-pastel-subtinta">${escapar(subtitulo)}</p>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-center justify-between border-t border-bella-300/60 bg-pastel-perla/60 px-5 py-3">
+                    <span class="text-xs font-bold text-pastel-subtinta">&#9719; ${s.duracion_min} min aprox.</span>
+                    <span class="rounded-xl bg-bella-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition group-hover:bg-bella-700">
+                        Ver servicio &rarr;
+                    </span>
+                </div>
+            </a>`;
+    }).join('');
+
+    conectarBotonesCarrusel('carruselServiciosLanding', 'btnPrevServicios', 'btnNextServicios');
+}
+
+// 2. Carrusel de Galería en la portada: muestra los trabajos realizados y al presionar cualquiera transporta a galeria.html
+function dibujarCarruselGaleriaLanding() {
+    const pista = document.getElementById('carruselGaleriaLanding');
+    if (!pista || typeof GALERIA_TRABAJOS_12 === 'undefined') return;
+
+    const lista = typeof window.obtenerTrabajosGaleriaCompleta === 'function'
+        ? window.obtenerTrabajosGaleriaCompleta()
+        : GALERIA_TRABAJOS_12;
+
+    pista.innerHTML = lista.map((t) => {
+        const urlDestino = `galeria.html?filtro=${encodeURIComponent(t.filtro)}&trabajo=${encodeURIComponent(t.id)}`;
+        return `
+            <a href="${urlDestino}"
+               class="tarjeta-pastel group flex w-[18.5rem] shrink-0 snap-start flex-col justify-between overflow-hidden p-0 transition duration-300 hover:-translate-y-1.5 hover:border-bella-500 sm:w-[20.5rem]">
+                <div>
+                    <div class="relative h-52 w-full overflow-hidden bg-pastel-perla">
+                        <img src="${escapar(t.imagen)}" alt="${escapar(t.titulo)}" loading="lazy"
+                             class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
+                        <span class="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-0.5 text-[11px] font-extrabold text-bella-900 shadow-sm">
+                            ${escapar(t.categoria)}
+                        </span>
+                        <span class="absolute bottom-2.5 right-2.5 rounded-xl bg-bella-700/95 px-2.5 py-1 text-xs font-extrabold text-white shadow-sm">
+                            ${pesos(t.precio)}
+                        </span>
+                    </div>
+                    <div class="p-4 pb-2">
+                        <h3 class="font-sans text-base font-bold text-pastel-tinta">${escapar(t.titulo)}</h3>
+                        <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-pastel-subtinta">${escapar(t.detalle)}</p>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center justify-between border-t border-bella-300/60 bg-pastel-perla/60 px-4 py-2.5">
+                    <span class="text-[11px] font-bold text-pastel-subtinta">✂ ${escapar(t.estilista)}</span>
+                    <span class="rounded-xl bg-bella-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition group-hover:bg-bella-700">
+                        Ver en galería &rarr;
+                    </span>
+                </div>
+            </a>`;
+    }).join('');
+
+    conectarBotonesCarrusel('carruselGaleriaLanding', 'btnPrevGaleria', 'btnNextGaleria');
+}
+
+// 3. Carrusel de Tienda en la portada: muestra los productos con foto y al presionar cualquiera transporta a tienda.html
+function dibujarCarruselTiendaLanding(productos = []) {
+    const pista = document.getElementById('carruselTiendaLanding');
+    if (!pista) return;
+
+    if (!productos || productos.length === 0) {
+        pista.innerHTML = '<p class="text-bella-100">No hay productos disponibles en este momento.</p>';
+        return;
+    }
+
+    pista.innerHTML = productos.map((p) => {
+        const info = typeof obtenerFichaProducto === 'function'
+            ? obtenerFichaProducto(p)
+            : { imagen: p.imagen || 'img/productos/shampoo-argan.jpg', categoria: p.categoria || 'Cuidado Capilar', descripcion: p.descripcion || 'Producto profesional de salón.' };
+        const disponible = Number(p.stock) > 0;
+        const urlDestino = `tienda.html?producto=${encodeURIComponent(p.id_producto)}`;
+
+        return `
+            <a href="${urlDestino}"
+               class="tarjeta-pastel group flex w-[18.5rem] shrink-0 snap-start flex-col justify-between overflow-hidden p-0 transition duration-300 hover:-translate-y-1.5 hover:border-bella-500 sm:w-[20.5rem]">
+                <div>
+                    <div class="relative h-52 w-full overflow-hidden bg-white">
+                        <img src="${escapar(info.imagen)}" alt="${escapar(p.nombre)}" loading="lazy"
+                             class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
+                        <span class="absolute left-3 top-3 rounded-full bg-pastel-menta px-3 py-0.5 text-[11px] font-extrabold text-emerald-950 shadow-sm">
+                            ${escapar(info.categoria)}
+                        </span>
+                        <span class="absolute right-3 top-3 rounded-full ${disponible ? 'bg-emerald-700 text-white' : 'bg-stone-500 text-white'} px-2.5 py-0.5 text-[11px] font-bold shadow-sm">
+                            ${disponible ? `${p.stock} disp.` : 'Agotado'}
+                        </span>
+                    </div>
+                    <div class="p-5 pb-3">
+                        <div class="flex items-start justify-between gap-2">
+                            <h3 class="font-sans text-lg font-bold text-pastel-tinta">${escapar(p.nombre)}</h3>
+                            <span class="shrink-0 font-titulo text-2xl font-bold text-bella-800">${pesos(p.precio)}</span>
+                        </div>
+                        <p class="mt-1.5 line-clamp-2 text-xs leading-relaxed text-pastel-subtinta">${escapar(info.descripcion)}</p>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-center justify-between border-t border-bella-300/60 bg-pastel-perla/60 px-5 py-3">
+                    <span class="text-[11px] font-bold text-pastel-subtinta">🧴 Tienda BellaStyle</span>
+                    <span class="rounded-xl bg-bella-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition group-hover:bg-bella-700">
+                        Ver en tienda &rarr;
+                    </span>
+                </div>
+            </a>`;
+    }).join('');
+
+    conectarBotonesCarrusel('carruselTiendaLanding', 'btnPrevTienda', 'btnNextTienda');
+}
+
+// =========================================================================
+// B. PÁGINAS DEDICADAS (servicios.html, galeria.html y tienda.html)
+// =========================================================================
+
+// 1. Página dedicada servicios.html: muestra todos los servicios con sus ejemplos detallados
+function dibujarPaginaServiciosCompleta(servicios = []) {
+    const lista = document.getElementById('listaServicios');
+    if (!lista) return;
+
+    if (!servicios || servicios.length === 0) {
+        lista.innerHTML = '<p class="text-bella-100">Enciende el servidor para ver los servicios.</p>';
+        return;
+    }
+
+    const barraRapida = document.getElementById('filtrosRapidosServicios');
+    if (barraRapida) {
+        barraRapida.innerHTML =
+            `<button type="button" data-filtrar-srv="todos" class="inline-flex items-center gap-2 rounded-xl bg-bella-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition">
+                Todos los servicios (${servicios.length})
+            </button>` +
+            servicios.map((s) => {
+                const ficha = typeof buscarDetalleServicio === 'function' ? buscarDetalleServicio(s) : null;
+                const img = s.imagen || (ficha && ficha.imagen) || 'img/servicios/cat-corte.jpg';
+                return `
+                    <button type="button"
+                            data-filtrar-srv="${escapar(s.nombre)}"
+                            class="inline-flex items-center gap-2 rounded-xl border border-bella-300/80 bg-pastel-crema px-3 py-1.5 text-xs font-bold text-pastel-tinta shadow-sm transition hover:border-bella-600 hover:bg-pastel-rosa">
+                        <img src="${escapar(img)}" alt="" class="h-6 w-6 rounded-md object-cover">
+                        <span>${escapar(s.nombre)}</span>
+                    </button>`;
+            }).join('');
+    }
+
+    const renderizarTarjetasServicios = (filtroNombre = 'todos') => {
+        const filtrados = filtroNombre === 'todos'
+            ? servicios
+            : servicios.filter((s) => s.nombre.toLowerCase() === filtroNombre.toLowerCase());
+
+        lista.innerHTML = filtrados.map((s) => {
+            const ficha = typeof buscarDetalleServicio === 'function'
+                ? buscarDetalleServicio(s, s.precio, s.duracion_min)
+                : null;
+
+            const bloquesOpciones = ficha
+                ? ficha.grupos.map((g) => `
+                    <div class="mt-3">
+                      <p class="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-bella-800">
+                        <span>${g.icono}</span> ${escapar(g.categoria)}
+                      </p>
+                      <ul class="mt-1.5 space-y-1.5">
+                        ${g.opciones.map((op) => `
+                          <li>
+                            <button type="button"
+                                    data-ver-subservicio="${escapar(s.nombre)}"
+                                    data-ver-variedad="${escapar(op.nombre)}"
+                                    data-ver-precio="${s.precio}"
+                                    data-ver-duracion="${s.duracion_min}"
+                                    class="flex w-full items-center justify-between gap-2 rounded-xl border border-bella-200/80 bg-white/95 p-1.5 pr-2.5 text-left text-xs font-medium text-pastel-tinta shadow-sm transition hover:border-bella-500 hover:bg-pastel-rosa/60">
+                              <div class="flex min-w-0 items-center gap-2.5">
+                                <img src="${escapar(op.imagen || ficha.imagen || 'img/servicios/cat-corte.jpg')}"
+                                     alt="${escapar(op.nombre)}"
+                                     loading="lazy"
+                                     class="h-11 w-11 shrink-0 rounded-lg object-cover ring-1 ring-bella-300/80">
+                                <div class="min-w-0">
+                                  <span class="block truncate font-bold text-pastel-tinta">${escapar(op.nombre)}</span>
+                                  <span class="block text-[10px] font-semibold text-bella-800">🔍 Ver ejemplo y agendar · ${op.duracion} min</span>
+                                </div>
+                              </div>
+                              <span class="shrink-0 font-extrabold text-bella-900">${pesos(op.precio)}</span>
+                            </button>
+                          </li>
+                        `).join('')}
+                      </ul>
+                    </div>
+                  `).join('')
+                : '';
+
+            const totalVariedades = ficha
+                ? ficha.grupos.reduce((acc, g) => acc + g.opciones.length, 0)
+                : 2;
+
+            const imgCategoria = s.imagen || (ficha && ficha.imagen) || 'img/servicios/cat-corte.jpg';
+
+            return `
+                <article class="tarjeta-pastel group flex flex-col justify-between p-5 transition duration-300 hover:-translate-y-1 hover:border-bella-500">
+                    <div>
+                        <div data-abrir-principal="${escapar(s.nombre)}"
+                             data-abrir-precio="${s.precio}"
+                             data-abrir-duracion="${s.duracion_min}"
+                             class="relative mb-3.5 h-48 w-full cursor-pointer overflow-hidden rounded-2xl border border-bella-300/70 shadow-sm">
+                            <img src="${escapar(imgCategoria)}" alt="${escapar(s.nombre)}" loading="lazy"
+                                 class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
+                            <span class="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-0.5 text-[11px] font-extrabold text-bella-900 shadow-md">
+                                ${totalVariedades} ejemplos con foto
+                            </span>
+                            <span class="absolute bottom-2.5 right-2.5 rounded-lg bg-black/75 px-2.5 py-1 text-[11px] font-bold text-white">
+                                🔍 Explorar ejemplos
+                            </span>
+                        </div>
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <h3 class="text-2xl font-bold text-pastel-tinta">${escapar(s.nombre)}</h3>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-pastel-subtinta">Desde</p>
+                                <p class="font-titulo text-2xl font-bold text-bella-800">${pesos(s.precio)}</p>
+                            </div>
+                        </div>
+                        <p class="mt-1 text-xs font-medium text-pastel-subtinta">
+                            ${ficha ? escapar(ficha.subtitulo) : 'Servicio profesional personalizado.'}
+                        </p>
+
+                        <!-- Lista clicable de todas las especialidades de este servicio con su foto -->
+                        <div class="mt-2.5 border-t border-bella-300/60 pt-1">
+                            ${bloquesOpciones}
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex items-center justify-between border-t border-bella-300/60 pt-3.5">
+                        <span class="text-xs font-bold text-pastel-subtinta">&#9719; Base: ${s.duracion_min} min</span>
+                        <button type="button"
+                                data-abrir-principal="${escapar(s.nombre)}"
+                                data-abrir-precio="${s.precio}"
+                                data-abrir-duracion="${s.duracion_min}"
+                                class="inline-flex items-center gap-1 rounded-xl bg-bella-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700">
+                            Ver todos los ejemplos &rarr;
+                        </button>
+                    </div>
+                </article>`;
+        }).join('');
+
+        lista.querySelectorAll('[data-abrir-principal]').forEach((el) => {
+            el.addEventListener('click', () => {
+                abrirModalServicio(el.dataset.abrirPrincipal, {
+                    precio: Number(el.dataset.abrirPrecio),
+                    duracion: Number(el.dataset.abrirDuracion)
+                });
+            });
+        });
+
+        lista.querySelectorAll('button[data-ver-subservicio]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                abrirModalServicio(btn.dataset.verSubservicio, {
+                    precio: Number(btn.dataset.verPrecio),
+                    duracion: Number(btn.dataset.verDuracion),
+                    variedadInicial: btn.dataset.verVariedad
+                });
+            });
+        });
+    };
+
+    if (barraRapida) {
+        barraRapida.querySelectorAll('button[data-filtrar-srv]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const elegido = btn.dataset.filtrarSrv;
+                barraRapida.querySelectorAll('button[data-filtrar-srv]').forEach((b) => {
+                    const activo = b.dataset.filtrarSrv === elegido;
+                    b.className = activo
+                        ? 'inline-flex items-center gap-2 rounded-xl bg-bella-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition'
+                        : 'inline-flex items-center gap-2 rounded-xl border border-bella-300/80 bg-pastel-crema px-3 py-1.5 text-xs font-bold text-pastel-tinta shadow-sm transition hover:border-bella-600 hover:bg-pastel-rosa';
+                });
+                renderizarTarjetasServicios(elegido);
+            });
+        });
+    }
+
+    // Si llegó desde el carrusel de la portada con ?servicio=Corte de Cabello, resaltamos o abrimos ese servicio
+    const params = new URLSearchParams(window.location.search);
+    const srvParam = params.get('servicio');
+    renderizarTarjetasServicios('todos');
+
+    if (srvParam) {
+        const encontrado = servicios.find((s) => s.nombre.toLowerCase() === srvParam.toLowerCase());
+        if (encontrado && typeof abrirModalServicio === 'function') {
+            setTimeout(() => {
+                abrirModalServicio(encontrado.nombre, {
+                    precio: Number(encontrado.precio),
+                    duracion: Number(encontrado.duracion_min)
+                });
+            }, 250);
+        }
+    }
+}
+
+// 2. Página dedicada galeria.html: muestra todos los trabajos con filtros y botón para agendar ese estilo
 let filtroGaleriaActual = 'todos';
 
 function dibujarGaleria12(filtro = filtroGaleriaActual) {
@@ -47,9 +409,9 @@ function dibujarGaleria12(filtro = filtroGaleriaActual) {
         });
 
     cont.innerHTML = lista.map((t) => `
-        <article class="tarjeta-pastel group flex flex-col justify-between overflow-hidden p-0 transition duration-300 hover:-translate-y-1.5 hover:border-bella-500">
+        <article id="trabajoGal_${t.id}" class="tarjeta-pastel group flex flex-col justify-between overflow-hidden p-0 transition duration-300 hover:-translate-y-1.5 hover:border-bella-500">
             <div>
-                <div class="relative h-52 w-full overflow-hidden bg-pastel-perla">
+                <div class="relative h-56 w-full overflow-hidden bg-pastel-perla">
                     <img src="${escapar(t.imagen)}" alt="${escapar(t.titulo)}" loading="lazy"
                          class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
                     <span class="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-0.5 text-[11px] font-extrabold text-bella-900 shadow-sm">
@@ -66,12 +428,23 @@ function dibujarGaleria12(filtro = filtroGaleriaActual) {
             </div>
             <div class="mt-3 flex items-center justify-between border-t border-bella-300/60 bg-pastel-perla/60 px-4 py-2.5">
                 <span class="text-[11px] font-bold text-pastel-subtinta">✂ ${escapar(t.estilista)}</span>
-                <button type="button"
-                        data-gal-servicio="${escapar(t.servicioBase)}"
-                        data-gal-variedad="${escapar(t.variedad)}"
-                        class="rounded-xl bg-bella-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700">
-                    Ver ejemplo &rarr;
-                </button>
+                <div class="flex items-center gap-1.5">
+                    <button type="button"
+                            data-gal-servicio="${escapar(t.servicioBase)}"
+                            data-gal-variedad="${escapar(t.variedad)}"
+                            class="rounded-xl border border-bella-400/70 bg-white px-2.5 py-1.5 text-xs font-bold text-bella-900 shadow-sm transition hover:bg-pastel-rosa">
+                        Ver detalle
+                    </button>
+                    <button type="button"
+                            data-gal-agendar-srv="${escapar(t.servicioBase)}"
+                            data-gal-agendar-var="${escapar(t.variedad)}"
+                            data-gal-agendar-cat="${escapar(t.categoria)}"
+                            data-gal-agendar-precio="${t.precio}"
+                            data-gal-agendar-dur="${t.duracion}"
+                            class="rounded-xl bg-bella-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700">
+                        Quiero este &rarr;
+                    </button>
+                </div>
             </div>
         </article>`).join('');
 
@@ -84,12 +457,47 @@ function dibujarGaleria12(filtro = filtroGaleriaActual) {
             }
         });
     });
+
+    cont.querySelectorAll('button[data-gal-agendar-srv]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const servicio = btn.dataset.galAgendarSrv;
+            const variedad = btn.dataset.galAgendarVar;
+            sessionStorage.setItem('bellaVariedadPreferida', JSON.stringify({
+                servicio,
+                variedad,
+                categoria: btn.dataset.galAgendarCat,
+                precio: Number(btn.dataset.galAgendarPrecio) || 45000,
+                duracion: Number(btn.dataset.galAgendarDur) || 60
+            }));
+            const sesion = typeof obtenerSesion === 'function' ? obtenerSesion() : null;
+            if (sesion) {
+                window.location.href = 'panel.html';
+            } else if (typeof window.abrirModalAuth === 'function') {
+                window.abrirModalAuth('login', {
+                    rol: 'cliente',
+                    mensaje: `✓ Elegiste: ${variedad} (${servicio}). Inicia sesión o regístrate para agendar tu cita.`
+                });
+            }
+        });
+    });
 }
 
 function prepararFiltrosGaleria12() {
     const barra = document.getElementById('filtrosGaleria12');
     if (!barra) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const filtroUrl = params.get('filtro');
+    if (filtroUrl && ['todos', 'corte', 'color', 'unas', 'peinado'].includes(filtroUrl)) {
+        filtroGaleriaActual = filtroUrl;
+    }
+
     barra.querySelectorAll('button[data-filtro-gal]').forEach((btn) => {
+        const esActivo = btn.dataset.filtroGal === filtroGaleriaActual;
+        btn.className = esActivo
+            ? 'rounded-xl bg-bella-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm'
+            : 'rounded-xl border border-bella-300/80 bg-pastel-crema px-3.5 py-1.5 text-xs font-bold text-pastel-tinta hover:bg-pastel-rosa';
+
         btn.addEventListener('click', () => {
             barra.querySelectorAll('button[data-filtro-gal]').forEach((otro) => {
                 const activo = otro === btn;
@@ -100,10 +508,10 @@ function prepararFiltrosGaleria12() {
             dibujarGaleria12(btn.dataset.filtroGal);
         });
     });
-    dibujarGaleria12('todos');
+    dibujarGaleria12(filtroGaleriaActual);
 }
 
-// 2. Dibuja la Tienda / Vitrina de Productos con la foto real de cada producto
+// 3. Página dedicada tienda.html: muestra todos los productos con buscador y botón "Quiero este producto" que abre el popup
 function dibujarTiendaProductos(productos = []) {
     const cont = document.getElementById('listaTiendaProductos');
     if (!cont) return;
@@ -113,66 +521,87 @@ function dibujarTiendaProductos(productos = []) {
         return;
     }
 
-    cont.innerHTML = productos.map((p) => {
-        const info = typeof obtenerFichaProducto === 'function'
-            ? obtenerFichaProducto(p)
-            : { imagen: p.imagen || 'img/productos/shampoo-argan.jpg', categoria: p.categoria || 'Cuidado Capilar', descripcion: p.descripcion || 'Producto profesional de salón.' };
-        const disponible = Number(p.stock) > 0;
+    const params = new URLSearchParams(window.location.search);
+    const idDestacado = params.get('producto');
 
-        return `
-            <article class="tarjeta-pastel group flex flex-col justify-between overflow-hidden p-0 transition duration-300 hover:-translate-y-1.5 hover:border-bella-500">
-                <div>
-                    <div class="relative h-52 w-full overflow-hidden bg-white">
-                        <img src="${escapar(info.imagen)}" alt="${escapar(p.nombre)}" loading="lazy"
-                             class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
-                        <span class="absolute left-3 top-3 rounded-full bg-pastel-menta px-3 py-0.5 text-[11px] font-extrabold text-emerald-950 shadow-sm">
-                            ${escapar(info.categoria)}
-                        </span>
-                        <span class="absolute right-3 top-3 rounded-full ${disponible ? 'bg-emerald-700 text-white' : 'bg-stone-500 text-white'} px-2.5 py-0.5 text-[11px] font-bold shadow-sm">
-                            ${disponible ? `${p.stock} disponibles` : 'Agotado'}
-                        </span>
-                    </div>
-                    <div class="p-5 pb-3">
-                        <div class="flex items-start justify-between gap-2">
-                            <h3 class="font-sans text-lg font-bold text-pastel-tinta">${escapar(p.nombre)}</h3>
-                            <span class="shrink-0 font-titulo text-2xl font-bold text-bella-800">${pesos(p.precio)}</span>
+    const renderizarLista = (filtroTexto = '') => {
+        const q = filtroTexto.trim().toLowerCase();
+        const filtrados = q
+            ? productos.filter((p) => `${p.nombre} ${p.categoria || ''} ${p.descripcion || ''}`.toLowerCase().includes(q))
+            : productos;
+
+        cont.innerHTML = filtrados.map((p) => {
+            const info = typeof obtenerFichaProducto === 'function'
+                ? obtenerFichaProducto(p)
+                : { imagen: p.imagen || 'img/productos/shampoo-argan.jpg', categoria: p.categoria || 'Cuidado Capilar', descripcion: p.descripcion || 'Producto profesional de salón.' };
+            const disponible = Number(p.stock) > 0;
+            const esDestacado = idDestacado && String(p.id_producto) === String(idDestacado);
+
+            return `
+                <article id="prodTienda_${p.id_producto}" class="tarjeta-pastel group flex flex-col justify-between overflow-hidden p-0 transition duration-300 hover:-translate-y-1.5 hover:border-bella-500 ${esDestacado ? 'ring-4 ring-bella-500' : ''}">
+                    <div>
+                        <div class="relative h-56 w-full overflow-hidden bg-white">
+                            <img src="${escapar(info.imagen)}" alt="${escapar(p.nombre)}" loading="lazy"
+                                 class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
+                            <span class="absolute left-3 top-3 rounded-full bg-pastel-menta px-3 py-0.5 text-[11px] font-extrabold text-emerald-950 shadow-sm">
+                                ${escapar(info.categoria)}
+                            </span>
+                            <span class="absolute right-3 top-3 rounded-full ${disponible ? 'bg-emerald-700 text-white' : 'bg-stone-500 text-white'} px-2.5 py-0.5 text-[11px] font-bold shadow-sm">
+                                ${disponible ? `${p.stock} disponibles` : 'Agotado'}
+                            </span>
                         </div>
-                        <p class="mt-1.5 text-xs leading-relaxed text-pastel-subtinta">${escapar(info.descripcion)}</p>
+                        <div class="p-5 pb-3">
+                            <div class="flex items-start justify-between gap-2">
+                                <h3 class="font-sans text-lg font-bold text-pastel-tinta">${escapar(p.nombre)}</h3>
+                                <span class="shrink-0 font-titulo text-2xl font-bold text-bella-800">${pesos(p.precio)}</span>
+                            </div>
+                            <p class="mt-1.5 text-xs leading-relaxed text-pastel-subtinta">${escapar(info.descripcion)}</p>
+                        </div>
                     </div>
-                </div>
-                <div class="mt-2 flex items-center justify-between border-t border-bella-300/60 bg-pastel-perla/60 px-5 py-3">
-                    <span class="text-[11px] font-bold text-pastel-subtinta">🧴 Garantía oficial BellaStyle</span>
-                    <button type="button"
-                            data-comprar-prod-id="${p.id_producto}"
-                            data-comprar-prod-nombre="${escapar(p.nombre)}"
-                            class="rounded-xl bg-bella-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700">
-                        Quiero este producto &rarr;
-                    </button>
-                </div>
-            </article>`;
-    }).join('');
+                    <div class="mt-2 flex items-center justify-between border-t border-bella-300/60 bg-pastel-perla/60 px-5 py-3">
+                        <span class="text-[11px] font-bold text-pastel-subtinta">🧴 Garantía oficial BellaStyle</span>
+                        <button type="button"
+                                data-comprar-prod-id="${p.id_producto}"
+                                data-comprar-prod-nombre="${escapar(p.nombre)}"
+                                class="rounded-xl bg-bella-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700">
+                            Quiero este producto &rarr;
+                        </button>
+                    </div>
+                </article>`;
+        }).join('');
 
-    cont.querySelectorAll('button[data-comprar-prod-id]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            const nombreProd = btn.dataset.comprarProdNombre;
-            sessionStorage.setItem('bellaProductoPreferido', JSON.stringify({
-                id_producto: btn.dataset.comprarProdId,
-                nombre: nombreProd
-            }));
-            const sesion = typeof obtenerSesion === 'function' ? obtenerSesion() : null;
-            if (sesion) {
-                window.location.href = 'panel.html';
-            } else if (typeof window.abrirModalAuth === 'function') {
-                window.abrirModalAuth('login', {
-                    rol: 'cliente',
-                    mensaje: `✓ Producto elegido: ${nombreProd}. Inicia sesión o regístrate para incluirlo en tu cita.`
-                });
-            }
+        cont.querySelectorAll('button[data-comprar-prod-id]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const nombreProd = btn.dataset.comprarProdNombre;
+                sessionStorage.setItem('bellaProductoPreferido', JSON.stringify({
+                    id_producto: btn.dataset.comprarProdId,
+                    nombre: nombreProd
+                }));
+                const sesion = typeof obtenerSesion === 'function' ? obtenerSesion() : null;
+                if (sesion) {
+                    window.location.href = 'panel.html';
+                } else if (typeof window.abrirModalAuth === 'function') {
+                    window.abrirModalAuth('login', {
+                        rol: 'cliente',
+                        mensaje: `✓ Producto elegido: ${nombreProd}. Inicia sesión o regístrate para incluirlo en tu cita.`
+                    });
+                }
+            });
         });
-    });
+    };
+
+    renderizarLista('');
+
+    const buscadorTienda = document.getElementById('buscadorProductosTienda');
+    if (buscadorTienda) {
+        buscadorTienda.addEventListener('input', () => renderizarLista(buscadorTienda.value));
+    }
 }
 
-// 3. Carga servicios, productos, estilistas y reseñas desde la API
+// =========================================================================
+// C. CARGA INICIAL DE DATOS DESDE LA API
+// =========================================================================
+
 async function cargarDatos() {
     prepararFiltrosGaleria12();
 
@@ -192,10 +621,15 @@ async function cargarDatos() {
         if (typeof window.sincronizarCatalogoConServicios === 'function') {
             window.sincronizarCatalogoConServicios(servicios.data);
         }
-        dibujarGaleria12(filtroGaleriaActual);
+        dibujarCarruselServiciosLanding(servicios.data);
+        dibujarPaginaServiciosCompleta(servicios.data);
     }
 
+    dibujarCarruselGaleriaLanding();
+    dibujarGaleria12(filtroGaleriaActual);
+
     if (productos && productos.success) {
+        dibujarCarruselTiendaLanding(productos.data);
         dibujarTiendaProductos(productos.data);
     }
 
@@ -238,154 +672,6 @@ async function cargarDatos() {
             obs.disconnect();
         }, { threshold: 0.3 }).observe(cifras);
     }
-
-    const lista = document.getElementById('listaServicios');
-    if (!servicios.success) {
-        lista.innerHTML = '<p class="text-bella-100">Enciende el servidor para ver los servicios.</p>';
-        return;
-    }
-
-    // Botones superiores para abrir cualquiera de los servicios con 1 clic
-    const barraRapida = document.getElementById('filtrosRapidosServicios');
-    if (barraRapida) {
-        barraRapida.innerHTML = servicios.data.map((s) => {
-            const ficha = typeof buscarDetalleServicio === 'function' ? buscarDetalleServicio(s) : null;
-            const img = s.imagen || (ficha && ficha.imagen) || 'img/servicios/cat-corte.jpg';
-            return `
-                <button type="button"
-                        data-abrir-cat="${escapar(s.nombre)}"
-                        data-abrir-precio="${s.precio}"
-                        data-abrir-dur="${s.duracion_min}"
-                        class="inline-flex items-center gap-2 rounded-xl border border-bella-300/80 bg-pastel-crema px-3 py-1.5 text-xs font-bold text-pastel-tinta shadow-sm transition hover:border-bella-600 hover:bg-pastel-rosa">
-                    <img src="${escapar(img)}" alt="" class="h-6 w-6 rounded-md object-cover">
-                    <span>${escapar(s.nombre)}</span>
-                </button>`;
-        }).join('');
-        barraRapida.querySelectorAll('button[data-abrir-cat]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                abrirModalServicio(btn.dataset.abrirCat, {
-                    precio: Number(btn.dataset.abrirPrecio),
-                    duracion: Number(btn.dataset.abrirDur)
-                });
-            });
-        });
-    }
-
-    // Dibuja cada uno de los servicios con todos sus sub-servicios e imágenes de ejemplo clicables
-    lista.innerHTML = servicios.data.map((s) => {
-        const ficha = typeof buscarDetalleServicio === 'function'
-            ? buscarDetalleServicio(s, s.precio, s.duracion_min)
-            : null;
-
-        const bloquesOpciones = ficha
-            ? ficha.grupos.map((g) => `
-                <div class="mt-3">
-                  <p class="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-bella-800">
-                    <span>${g.icono}</span> ${escapar(g.categoria)}
-                  </p>
-                  <ul class="mt-1.5 space-y-1.5">
-                    ${g.opciones.map((op) => `
-                      <li>
-                        <button type="button"
-                                data-ver-subservicio="${escapar(s.nombre)}"
-                                data-ver-variedad="${escapar(op.nombre)}"
-                                data-ver-precio="${s.precio}"
-                                data-ver-duracion="${s.duracion_min}"
-                                class="flex w-full items-center justify-between gap-2 rounded-xl border border-bella-200/80 bg-white/95 p-1.5 pr-2.5 text-left text-xs font-medium text-pastel-tinta shadow-sm transition hover:border-bella-500 hover:bg-pastel-rosa/60">
-                          <div class="flex min-w-0 items-center gap-2.5">
-                            <img src="${escapar(op.imagen || ficha.imagen || 'img/servicios/cat-corte.jpg')}"
-                                 alt="${escapar(op.nombre)}"
-                                 loading="lazy"
-                                 class="h-10 w-10 shrink-0 rounded-lg object-cover ring-1 ring-bella-300/80">
-                            <div class="min-w-0">
-                              <span class="block truncate font-bold text-pastel-tinta">${escapar(op.nombre)}</span>
-                              <span class="block text-[10px] font-semibold text-bella-800">🔍 Ver ejemplo · ${op.duracion} min</span>
-                            </div>
-                          </div>
-                          <span class="shrink-0 font-extrabold text-bella-900">${pesos(op.precio)}</span>
-                        </button>
-                      </li>
-                    `).join('')}
-                  </ul>
-                </div>
-              `).join('')
-            : '';
-
-        const totalVariedades = ficha
-            ? ficha.grupos.reduce((acc, g) => acc + g.opciones.length, 0)
-            : 2;
-
-        const imgCategoria = s.imagen || (ficha && ficha.imagen) || 'img/servicios/cat-corte.jpg';
-
-        return `
-            <article class="tarjeta-pastel group flex flex-col justify-between p-5 transition duration-300 hover:-translate-y-1 hover:border-bella-500">
-                <div>
-                    <div data-abrir-principal="${escapar(s.nombre)}"
-                         data-abrir-precio="${s.precio}"
-                         data-abrir-duracion="${s.duracion_min}"
-                         class="relative mb-3.5 h-44 w-full cursor-pointer overflow-hidden rounded-2xl border border-bella-300/70 shadow-sm">
-                        <img src="${escapar(imgCategoria)}" alt="${escapar(s.nombre)}" loading="lazy"
-                             class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
-                        <span class="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-0.5 text-[11px] font-extrabold text-bella-900 shadow-md">
-                            ${totalVariedades} ejemplos con foto
-                        </span>
-                        <span class="absolute bottom-2.5 right-2.5 rounded-lg bg-black/75 px-2.5 py-1 text-[11px] font-bold text-white">
-                            🔍 Explorar ejemplos
-                        </span>
-                    </div>
-                    <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <h3 class="text-2xl font-bold text-pastel-tinta">${escapar(s.nombre)}</h3>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-pastel-subtinta">Desde</p>
-                            <p class="font-titulo text-2xl font-bold text-bella-800">${pesos(s.precio)}</p>
-                        </div>
-                    </div>
-                    <p class="mt-1 text-xs font-medium text-pastel-subtinta">
-                        ${ficha ? escapar(ficha.subtitulo) : 'Servicio profesional personalizado.'}
-                    </p>
-
-                    <!-- Lista clicable de todas las especialidades de este servicio con su foto -->
-                    <div class="mt-2.5 border-t border-bella-300/60 pt-1">
-                        ${bloquesOpciones}
-                    </div>
-                </div>
-
-                <div class="mt-4 flex items-center justify-between border-t border-bella-300/60 pt-3.5">
-                    <span class="text-xs font-bold text-pastel-subtinta">&#9719; Base: ${s.duracion_min} min</span>
-                    <button type="button"
-                            data-abrir-principal="${escapar(s.nombre)}"
-                            data-abrir-precio="${s.precio}"
-                            data-abrir-duracion="${s.duracion_min}"
-                            class="inline-flex items-center gap-1 rounded-xl bg-bella-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700">
-                        Ver todos los ejemplos &rarr;
-                    </button>
-                </div>
-            </article>`;
-    }).join('');
-
-    // Clic en el encabezado o botón principal de la tarjeta -> abre el modal de ese servicio
-    lista.querySelectorAll('[data-abrir-principal]').forEach((el) => {
-        el.addEventListener('click', () => {
-            abrirModalServicio(el.dataset.abrirPrincipal, {
-                precio: Number(el.dataset.abrirPrecio),
-                duracion: Number(el.dataset.abrirDuracion)
-            });
-        });
-    });
-
-    // Clic en una opción individual (ej. Corte Bob, Fade, Uñas Acrílicas) -> abre el modal con ese ejemplo ampliado
-    lista.querySelectorAll('button[data-ver-subservicio]').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            abrirModalServicio(btn.dataset.verSubservicio, {
-                precio: Number(btn.dataset.verPrecio),
-                duracion: Number(btn.dataset.verDuracion),
-                variedadInicial: btn.dataset.verVariedad
-            });
-        });
-    });
 }
 
 cargarDatos();
