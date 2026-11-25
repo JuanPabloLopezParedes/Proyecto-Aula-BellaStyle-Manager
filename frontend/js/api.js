@@ -1,6 +1,11 @@
 // Funciones compartidas por todas las páginas (API con Token de seguridad + Modo Claro/Oscuro)
+// Arquitectura: Frontend en Vercel (https://proyecto-aula-bella-style-manager.vercel.app)
+// conectado al Backend persistente en Render (https://proyecto-aula-bellastyle-manager.onrender.com/api)
+// con respaldo automático a /api para disponibilidad 100% continua.
 
+const RENDER_API_DEFAULT = 'https://proyecto-aula-bellastyle-manager.onrender.com/api';
 const API = '/api';
+let renderDisponibleCache = null; // null = por verificar, true = Render activo, false = usar respaldo local/Vercel
 
 // Aplica el tema guardado apenas carga el script para evitar parpadeos
 (function aplicarTemaInicial() {
@@ -115,7 +120,8 @@ function cerrarSesion() {
     window.location.href = 'welcome.html';
 }
 
-// Hace una petición a la API enviando automáticamente el Token de seguridad en la cabecera Authorization
+// Hace una petición a la API enviando automáticamente el Token de seguridad en la cabecera Authorization.
+// Conecta el Frontend de Vercel con el Backend en Render (y si Render aún está iniciando, usa /api automáticamente).
 async function pedir(ruta, metodo = 'GET', datos = null) {
     const sesion = obtenerSesion();
     const opciones = { method: metodo, headers: {} };
@@ -126,6 +132,28 @@ async function pedir(ruta, metodo = 'GET', datos = null) {
         opciones.headers['Content-Type'] = 'application/json';
         opciones.body = JSON.stringify(datos);
     }
+
+    const urlRender = (localStorage.getItem('bellaRenderApiUrl') || RENDER_API_DEFAULT).replace(/\/$/, '');
+    const esLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    // Si estamos en Vercel (o si se configuró bellaRenderApiUrl), intentamos primero contra el Backend de Render
+    if (!esLocalhost && renderDisponibleCache !== false) {
+        try {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 4500);
+            const respRender = await fetch(urlRender + ruta, { ...opciones, signal: ctrl.signal });
+            clearTimeout(timer);
+            if (respRender.ok || respRender.status < 500) {
+                renderDisponibleCache = true;
+                return await respRender.json();
+            }
+        } catch (_) {
+            // Si Render aún se está desplegando o despertando, pasamos de inmediato al respaldo /api sin bloquear al usuario
+            renderDisponibleCache = false;
+            setTimeout(() => { renderDisponibleCache = null; }, 25000);
+        }
+    }
+
     try {
         const respuesta = await fetch(API + ruta, opciones);
         return await respuesta.json();
