@@ -134,6 +134,126 @@
 }
 
 /* =====================================================================
+   ANIMACIÓN DE APARICIÓN CON POLVILLO MÁGICO (PORTADA / HERO)
+   - Efecto de materialización desde polvillo luminoso difuminado
+     hasta formar el texto y los botones nítidos y completos.
+   ===================================================================== */
+@keyframes aparecerDesdePolvillo {
+  0% {
+    opacity: 0;
+    filter: blur(16px) brightness(1.85);
+    transform: translateY(22px) scale(0.94);
+    letter-spacing: 0.08em;
+  }
+  45% {
+    opacity: 0.65;
+    filter: blur(7px) brightness(1.4);
+    transform: translateY(7px) scale(0.985);
+  }
+  78% {
+    opacity: 0.94;
+    filter: blur(1.5px) brightness(1.12);
+    transform: translateY(-2px) scale(1.01);
+    letter-spacing: 0.01em;
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0) brightness(1);
+    transform: translateY(0) scale(1);
+    letter-spacing: normal;
+  }
+}
+
+@keyframes nubePolvilloBarrido {
+  0% {
+    opacity: 0;
+    transform: translate3d(-12%, 14px, 0) scale(0.85);
+    filter: blur(3px);
+  }
+  30% {
+    opacity: 0.95;
+    filter: blur(0.4px);
+  }
+  75% {
+    opacity: 0.55;
+    transform: translate3d(8%, -12px, 0) scale(1.06);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(20%, -26px, 0) scale(1.18);
+    filter: blur(5px);
+  }
+}
+
+@keyframes chispaPolvilloFlotante {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.2);
+  }
+  25% {
+    opacity: 1;
+    transform: translate3d(8px, -4px, 0) scale(1.15);
+  }
+  65% {
+    opacity: 0.85;
+    transform: translate3d(-10px, -24px, 0) scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(14px, -46px, 0) scale(0.15);
+  }
+}
+
+.polvillo-revelar {
+  position: relative;
+  opacity: 0;
+  animation: aparecerDesdePolvillo 1.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: opacity, filter, transform;
+}
+
+/* Capa de destellos de polvillo dorado y rosado que se disipa al formarse el elemento */
+.polvillo-revelar::after {
+  content: '';
+  position: absolute;
+  inset: -14px -18px;
+  pointer-events: none;
+  z-index: 15;
+  background-image:
+    radial-gradient(circle at 12% 35%, rgba(255, 232, 185, 0.95) 0 2.2px, transparent 3.2px),
+    radial-gradient(circle at 26% 72%, rgba(245, 176, 206, 0.9) 0 1.8px, transparent 3px),
+    radial-gradient(circle at 42% 24%, rgba(255, 255, 255, 0.95) 0 2px, transparent 3px),
+    radial-gradient(circle at 57% 66%, rgba(212, 175, 122, 0.95) 0 2.4px, transparent 3.5px),
+    radial-gradient(circle at 71% 38%, rgba(255, 215, 235, 0.9) 0 1.9px, transparent 3px),
+    radial-gradient(circle at 86% 52%, rgba(255, 244, 214, 0.95) 0 2.2px, transparent 3.4px),
+    radial-gradient(circle at 34% 48%, rgba(235, 176, 200, 0.85) 0 2.6px, transparent 4px),
+    radial-gradient(circle at 64% 18%, rgba(255, 235, 190, 0.9) 0 1.7px, transparent 2.8px),
+    radial-gradient(circle at 18% 82%, rgba(255, 255, 255, 0.85) 0 1.6px, transparent 2.8px),
+    radial-gradient(circle at 79% 78%, rgba(212, 175, 122, 0.9) 0 2.1px, transparent 3.2px);
+  opacity: 0;
+  animation: nubePolvilloBarrido 1.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: inherit;
+}
+
+.polvillo-delay-1 { animation-delay: 0.08s; }
+.polvillo-delay-2 { animation-delay: 0.28s; }
+.polvillo-delay-3 { animation-delay: 0.52s; }
+.polvillo-delay-4 { animation-delay: 0.76s; }
+.polvillo-delay-5 { animation-delay: 1.0s; }
+
+/* Partículas de polvillo luminoso flotando en el contenedor hero */
+.particula-polvillo {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 12;
+  background: radial-gradient(circle, #fff8e7 0%, #f5b8d1 55%, rgba(212, 175, 122, 0) 100%);
+  box-shadow: 0 0 10px 2px rgba(255, 224, 178, 0.8), 0 0 18px 4px rgba(220, 133, 169, 0.55);
+  opacity: 0;
+  animation: chispaPolvilloFlotante var(--dur-polvo, 2.8s) ease-out infinite;
+  animation-delay: var(--delay-polvo, 0s);
+}
+
+/* =====================================================================
    MODO CLARO PASTEL PROFESIONAL (html.tema-claro)
    Garantiza contraste perfecto: letras oscuras (#1a0d14) y tarjetas
    pasteles nítidas sobre el video de fondo claro.

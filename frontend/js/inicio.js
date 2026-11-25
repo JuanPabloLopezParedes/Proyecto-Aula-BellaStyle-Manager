@@ -17,6 +17,33 @@ const observador = new IntersectionObserver((entradas) => {
 
 document.querySelectorAll('.revelar').forEach((el) => observador.observe(el));
 
+// Genera partículas luminosas de polvillo mágico en la portada de welcome.html
+function iniciarPolvilloMagicoPortada() {
+    const panelHero = document.getElementById('heroPanelPolvillo');
+    if (!panelHero) return;
+
+    const totalParticulas = 34;
+    for (let i = 0; i < totalParticulas; i++) {
+        const chispa = document.createElement('span');
+        chispa.className = 'particula-polvillo';
+        const tamano = (Math.random() * 4.5 + 2.2).toFixed(1);
+        const posLeft = (Math.random() * 94 + 3).toFixed(1);
+        const posTop = (Math.random() * 88 + 6).toFixed(1);
+        const duracion = (Math.random() * 2.2 + 1.9).toFixed(2);
+        const retraso = (Math.random() * 1.4).toFixed(2);
+
+        chispa.style.width = `${tamano}px`;
+        chispa.style.height = `${tamano}px`;
+        chispa.style.left = `${posLeft}%`;
+        chispa.style.top = `${posTop}%`;
+        chispa.style.setProperty('--dur-polvo', `${duracion}s`);
+        chispa.style.setProperty('--delay-polvo', `${retraso}s`);
+        panelHero.appendChild(chispa);
+    }
+}
+
+iniciarPolvilloMagicoPortada();
+
 function animarNumero(elemento, final) {
     const duracion = 900;
     const inicio = performance.now();

@@ -552,6 +552,106 @@ async function verCorreoCita(idCita) {
     mostrarModalCorreo(res.data);
 }
 
+// Configuración visual interactiva del selector de 1 a 5 estrellas con cambio de color vivo al presionar
+const NIVELES_ESTRELLAS = {
+    1: {
+        etiqueta: '1 de 5 ★ · Necesita mejorar (Seleccionada)',
+        colorActivo: 'border-2 border-emerald-600 bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 scale-105 ring-2 ring-emerald-300',
+        badgeResumen: 'border-emerald-500 bg-emerald-500 text-white'
+    },
+    2: {
+        etiqueta: '2 de 5 ★★ · Regular (Seleccionada)',
+        colorActivo: 'border-2 border-teal-600 bg-teal-500 text-white shadow-lg shadow-teal-600/30 scale-105 ring-2 ring-teal-300',
+        badgeResumen: 'border-teal-500 bg-teal-500 text-white'
+    },
+    3: {
+        etiqueta: '3 de 5 ★★★ · Bueno / Aceptable (Seleccionada)',
+        colorActivo: 'border-2 border-amber-500 bg-amber-500 text-white shadow-lg shadow-amber-500/30 scale-105 ring-2 ring-amber-300',
+        badgeResumen: 'border-amber-500 bg-amber-500 text-white'
+    },
+    4: {
+        etiqueta: '4 de 5 ★★★★ · ¡Muy buen servicio! (Seleccionada)',
+        colorActivo: 'border-2 border-emerald-600 bg-emerald-600 text-white shadow-lg shadow-emerald-700/35 scale-105 ring-2 ring-emerald-300',
+        badgeResumen: 'border-emerald-600 bg-emerald-600 text-white'
+    },
+    5: {
+        etiqueta: '5 de 5 ★★★★★ · ¡Excelente, me encantó! (Seleccionada)',
+        colorActivo: 'border-2 border-bella-600 bg-gradient-to-r from-emerald-500 to-bella-600 text-white shadow-lg shadow-bella-600/40 scale-105 ring-2 ring-emerald-300',
+        badgeResumen: 'border-emerald-600 bg-gradient-to-r from-emerald-600 to-bella-600 text-white'
+    }
+};
+
+function generarSelectorEstrellasHTML(idContenedor, idInputHidden, calInicial = 5) {
+    const info = NIVELES_ESTRELLAS[calInicial] || NIVELES_ESTRELLAS[5];
+    return `
+        <div id="${idContenedor}" class="space-y-2 pt-1">
+            <div class="flex gap-2">
+                ${[1, 2, 3, 4, 5].map((n) => {
+                    const activa = n <= calInicial;
+                    const esExacta = n === calInicial;
+                    return `
+                        <button type="button" data-estrella-num="${n}"
+                                class="estrella-btn-interactiva flex-1 rounded-2xl py-3 text-center font-extrabold transition-all duration-200 ${
+                                    activa
+                                        ? info.colorActivo
+                                        : 'border-2 border-bella-300/80 bg-white/80 text-pastel-subtinta opacity-65 hover:opacity-100 hover:border-emerald-500'
+                                }">
+                            <span class="block text-xl leading-none">${activa ? '★' : '☆'}</span>
+                            <span class="mt-1 block text-xs">${n} ${esExacta ? '✓' : ''}</span>
+                        </button>`;
+                }).join('')}
+            </div>
+            <div data-resumen-estrella class="flex items-center justify-between rounded-xl border px-3.5 py-2 text-xs font-extrabold shadow-sm transition-all duration-200 ${info.badgeResumen}">
+                <span>✨ Calificación marcada:</span>
+                <span data-texto-estrella>${info.etiqueta}</span>
+            </div>
+            <input type="hidden" id="${idInputHidden}" value="${calInicial}">
+        </div>`;
+}
+
+function activarSelectorEstrellasInteractivo(idContenedor, idInputHidden) {
+    const contenedor = document.getElementById(idContenedor);
+    if (!contenedor) return;
+
+    const botones = contenedor.querySelectorAll('button[data-estrella-num]');
+    const resumenBox = contenedor.querySelector('[data-resumen-estrella]');
+    const resumenTexto = contenedor.querySelector('[data-texto-estrella]');
+    const inputHidden = document.getElementById(idInputHidden);
+
+    const pintarEstrellas = (elegida) => {
+        const info = NIVELES_ESTRELLAS[elegida] || NIVELES_ESTRELLAS[5];
+        if (inputHidden) inputHidden.value = String(elegida);
+
+        botones.forEach((b) => {
+            const n = Number(b.dataset.estrellaNum);
+            const activa = n <= elegida;
+            const esExacta = n === elegida;
+            b.className = `estrella-btn-interactiva flex-1 rounded-2xl py-3 text-center font-extrabold transition-all duration-200 ${
+                activa
+                    ? info.colorActivo
+                    : 'border-2 border-bella-300/80 bg-white/80 text-pastel-subtinta opacity-65 hover:opacity-100 hover:border-emerald-500'
+            }`;
+            b.innerHTML = `
+                <span class="block text-xl leading-none">${activa ? '★' : '☆'}</span>
+                <span class="mt-1 block text-xs">${n} ${esExacta ? '✓' : ''}</span>`;
+        });
+
+        if (resumenBox) {
+            resumenBox.className = `flex items-center justify-between rounded-xl border px-3.5 py-2 text-xs font-extrabold shadow-sm transition-all duration-200 ${info.badgeResumen}`;
+        }
+        if (resumenTexto) {
+            resumenTexto.textContent = info.etiqueta;
+        }
+    };
+
+    botones.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const elegida = Number(btn.dataset.estrellaNum);
+            pintarEstrellas(elegida);
+        });
+    });
+}
+
 function calificarCita(idCita) {
     const c = buscarCitaEnMemoria(idCita);
     if (!c) return;
@@ -561,22 +661,11 @@ function calificarCita(idCita) {
         <div class="rounded-2xl border border-bella-300 bg-pastel-rosa/75 p-3 text-xs text-pastel-tinta">
             <p class="font-bold text-bella-900">✂ Servicio: ${escapar(c.servicio)} · Atendió: ${escapar(c.estilista)}</p>
             ${c.producto_adicional ? `<p class="mt-0.5 font-semibold text-emerald-950">🧴 Producto incluido: ${escapar(c.producto_adicional)}</p>` : ''}
-            <p class="mt-0.5 text-[11px] text-pastel-subtinta">✨ Tu evaluación y calificación aparecerán inmediatamente en tiempo real en la sección "Experiencias reales de nuestras clientas" de la página de inicio.</p>
+            <p class="mt-0.5 text-[11px] text-pastel-subtinta">✨ Presiona una estrella del 1 al 5 para elegir tu calificación (cambiará de color al seleccionarla) y aparecerá en tiempo real en la página de inicio.</p>
         </div>
         <div>
-            <label class="etiqueta-oscura">Calificación (1 a 5 estrellas) *</label>
-            <div id="selectorEstrellasModal" class="flex gap-2 pt-1">
-                ${[1, 2, 3, 4, 5].map((n) => `
-                    <button type="button" data-estrella-val="${n}"
-                            class="flex-1 rounded-xl border py-2.5 text-sm font-bold transition ${
-                                n <= calActual
-                                    ? 'border-amber-500 bg-amber-400/30 text-amber-950 shadow-sm'
-                                    : 'border-bella-300 bg-pastel-perla text-pastel-subtinta'
-                            }">
-                        ${n} ★
-                    </button>`).join('')}
-            </div>
-            <input type="hidden" id="vCalificacion" value="${calActual}">
+            <label class="etiqueta-oscura">Selecciona tu calificación (1 a 5 estrellas) *</label>
+            ${generarSelectorEstrellasHTML('selectorEstrellasModal', 'vCalificacion', calActual)}
         </div>
         <div>
             <label for="vComentarioCal" class="etiqueta-oscura">Escribe tu evaluación sobre el servicio ${c.producto_adicional ? 'y el producto' : ''} *</label>
@@ -595,20 +684,7 @@ function calificarCita(idCita) {
         return respuesta;
     }, 'Publicar calificación en tiempo real');
 
-    document.querySelectorAll('#selectorEstrellasModal button[data-estrella-val]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            const elegida = Number(btn.dataset.estrellaVal);
-            document.getElementById('vCalificacion').value = elegida;
-            document.querySelectorAll('#selectorEstrellasModal button[data-estrella-val]').forEach((b) => {
-                const n = Number(b.dataset.estrellaVal);
-                b.className = `flex-1 rounded-xl border py-2.5 text-sm font-bold transition ${
-                    n <= elegida
-                        ? 'border-amber-500 bg-amber-400/30 text-amber-950 shadow-sm'
-                        : 'border-bella-300 bg-pastel-perla text-pastel-subtinta'
-                }`;
-            });
-        });
-    });
+    activarSelectorEstrellasInteractivo('selectorEstrellasModal', 'vCalificacion');
 }
 
 // ---------------------------------------------------------------
@@ -927,22 +1003,11 @@ function calificarCompraProductoModal(idCompra) {
     const htmlCal = `
         <div class="rounded-2xl border border-bella-300 bg-pastel-menta p-3 text-xs text-pastel-tinta">
             <p class="font-bold text-emerald-950">🧴 Producto adquirido: ${escapar(cp.producto_nombre)} (#CP-${cp.id_compra})</p>
-            <p class="mt-0.5 text-[11px] text-pastel-subtinta">✨ Tu evaluación sobre este producto aparecerá inmediatamente en tiempo real en la sección "Experiencias reales de nuestras clientas" de la página de inicio.</p>
+            <p class="mt-0.5 text-[11px] text-pastel-subtinta">✨ Presiona una estrella del 1 al 5 para elegir tu calificación (cambiará de color al seleccionarla) y aparecerá en tiempo real en la página de inicio.</p>
         </div>
         <div>
-            <label class="etiqueta-oscura">Calificación del producto (1 a 5 estrellas) *</label>
-            <div id="selectorEstrellasCompraModal" class="flex gap-2 pt-1">
-                ${[1, 2, 3, 4, 5].map((n) => `
-                    <button type="button" data-estrella-compra="${n}"
-                            class="flex-1 rounded-xl border py-2.5 text-sm font-bold transition ${
-                                n <= calActual
-                                    ? 'border-amber-500 bg-amber-400/30 text-amber-950 shadow-sm'
-                                    : 'border-bella-300 bg-pastel-perla text-pastel-subtinta'
-                            }">
-                        ${n} ★
-                    </button>`).join('')}
-            </div>
-            <input type="hidden" id="vCalificacionCompra" value="${calActual}">
+            <label class="etiqueta-oscura">Selecciona la calificación del producto (1 a 5 estrellas) *</label>
+            ${generarSelectorEstrellasHTML('selectorEstrellasCompraModal', 'vCalificacionCompra', calActual)}
         </div>
         <div>
             <label for="vComentarioCompra" class="etiqueta-oscura">Escribe tu opinión sobre el producto *</label>
@@ -960,20 +1025,7 @@ function calificarCompraProductoModal(idCompra) {
         return res;
     }, 'Publicar calificación en tiempo real');
 
-    document.querySelectorAll('#selectorEstrellasCompraModal button[data-estrella-compra]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            const elegida = Number(btn.dataset.estrellaCompra);
-            document.getElementById('vCalificacionCompra').value = elegida;
-            document.querySelectorAll('#selectorEstrellasCompraModal button[data-estrella-compra]').forEach((b) => {
-                const n = Number(b.dataset.estrellaCompra);
-                b.className = `flex-1 rounded-xl border py-2.5 text-sm font-bold transition ${
-                    n <= elegida
-                        ? 'border-amber-500 bg-amber-400/30 text-amber-950 shadow-sm'
-                        : 'border-bella-300 bg-pastel-perla text-pastel-subtinta'
-                }`;
-            });
-        });
-    });
+    activarSelectorEstrellasInteractivo('selectorEstrellasCompraModal', 'vCalificacionCompra');
 }
 
 async function cargarComprasClienta() {
