@@ -677,20 +677,18 @@ function dibujarTiendaProductos(productos = []) {
             btn.addEventListener('click', () => {
                 const idProd = btn.dataset.comprarProdId;
                 const nombreProd = btn.dataset.comprarProdNombre;
+                sessionStorage.setItem('bellaProductoPreferido', JSON.stringify({
+                    id_producto: idProd,
+                    nombre: nombreProd
+                }));
                 const sesion = typeof obtenerSesion === 'function' ? obtenerSesion() : null;
                 if (sesion) {
-                    abrirModalCompraDirectaEnTienda(idProd);
-                } else {
-                    sessionStorage.setItem('bellaProductoPreferido', JSON.stringify({
-                        id_producto: idProd,
-                        nombre: nombreProd
-                    }));
-                    if (typeof window.abrirModalAuth === 'function') {
-                        window.abrirModalAuth('login', {
-                            rol: 'cliente',
-                            mensaje: `✓ Producto elegido: ${nombreProd}. Inicia sesión o regístrate para comprarlo y descontar el stock en tiempo real.`
-                        });
-                    }
+                    window.location.href = 'panel.html';
+                } else if (typeof window.abrirModalAuth === 'function') {
+                    window.abrirModalAuth('login', {
+                        rol: 'cliente',
+                        mensaje: `✓ Producto elegido: ${nombreProd}. Inicia sesión o regístrate para añadirlo a tu carrito de compras.`
+                    });
                 }
             });
         });

@@ -264,6 +264,107 @@ async function comprarProductoDirecto(req, res) {
     }
 }
 
+// POST /api/carrito/comprar
+// Recibe: { items: [{ idProducto, cantidad }], metodoPago, referenciaPago, idUsuario, clienteNombre }
+// Valida stock de todos los productos del carrito, descuenta cada uno en tiempo real y registra las compras
+async function comprarCarritoProductos(req, res) {
+    const itemsRaw = Array.isArray(req.body.items) ? req.body.items : [];
+    if (itemsRaw.length === 0) {
+        return res.status(400).json({ success: false, message: 'Tu carrito de compras está vacío.' });
+    }
+
+    const metodoPago = ['Nequi / Daviplata', 'Tarjeta / PSE', 'Efectivo en Salón'].includes(req.body.metodoPago)
+        ? req.body.metodoPago
+        : 'Nequi / Daviplata';
+    const prefijo = metodoPago === 'Nequi / Daviplata' ? 'NEQ' : (metodoPago === 'Tarjeta / PSE' ? 'PSE' : 'TIENDA');
+    const referencia = (typeof req.body.referenciaPago === 'string' && req.body.referenciaPago.trim())
+        ? req.body.referenciaPago.trim().slice(0, 40)
+        : `${prefijo}-${Math.floor(100000 + Math.random() * 900000)}`;
+    const fechaHoy = new Date().toISOString().slice(0, 10);
+    const idUsuario = req.usuario?.id || req.body.idUsuario || null;
+    const clienteNombre = req.usuario?.nombre || req.body.clienteNombre || 'Clienta BellaStyle';
+
+    try {
+        // 1. Verificar que todos los productos del carrito existan y tengan stock suficiente
+        const validados = [];
+        for (const item of itemsRaw) {
+            const idProd = Number(item.idProducto || item.id_producto);
+            const cantidad = Math.max(1, Math.min(50, Number(item.cantidad) || 1));
+            const producto = await productoModel.buscarPorId(idProd);
+            if (!producto || producto.estado !== 'Activo') {
+                return res.status(404).json({
+                    success: false,
+                    message: `Uno de los productos del carrito ya no está disponible.`
+                });
+            }
+            if (Number(producto.stock) < cantidad) {
+                return res.status(409).json({
+                    success: false,
+                    message: Number(producto.stock) <= 0
+                        ? `El producto "${producto.nombre}" se agotó.`
+                        : `Solo quedan ${producto.stock} unidad(es) disponibles de "${producto.nombre}" y pediste ${cantidad}.`
+                });
+            }
+            validados.push({ producto, cantidad });
+        }
+
+        // 2. Descontar stock en tiempo real y registrar cada producto en el historial de compras
+        const comprasRealizadas = [];
+        let granTotal = 0;
+        let totalUnidades = 0;
+
+        for (const { producto, cantidad } of validados) {
+            const ok = await productoModel.descontarStock(producto.id_producto, cantidad);
+            if (!ok) {
+                return res.status(409).json({
+                    success: false,
+                    message: `No se pudo descontar el stock de "${producto.nombre}".`
+                });
+            }
+            const subtotal = Number(producto.precio) * cantidad;
+            granTotal += subtotal;
+            totalUnidades += cantidad;
+
+            const idCompra = await productoModel.registrarCompra({
+                idUsuario,
+                clienteNombre,
+                idProducto: producto.id_producto,
+                productoNombre: producto.nombre,
+                imagen: producto.imagen || 'img/productos/shampoo-argan.jpg',
+                cantidad,
+                precioUnitario: Number(producto.precio),
+                total: subtotal,
+                metodoPago,
+                referenciaPago: referencia,
+                fecha: fechaHoy
+            });
+
+            comprasRealizadas.push({
+                id_compra: idCompra,
+                id_producto: producto.id_producto,
+                nombre: producto.nombre,
+                cantidad,
+                subtotal
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `¡Pedido confirmado con éxito! Compraste ${totalUnidades} producto(s) por un total de $${granTotal.toLocaleString('es-CO')} (Ref: ${referencia}). El stock se actualizó en tiempo real.`,
+            data: {
+                referencia,
+                metodo_pago: metodoPago,
+                fecha: fechaHoy,
+                total: granTotal,
+                total_unidades: totalUnidades,
+                items: comprasRealizadas
+            }
+        });
+    } catch (err) {
+        errorServidor(res, err);
+    }
+}
+
 // GET /api/compras?idUsuario=5
 async function listarComprasProductos(req, res) {
     try {
@@ -437,7 +538,7 @@ async function fichaTecnicaClienta(req, res) {
 module.exports = {
     crearServicio, editarServicio, estadoServicio,
     crearProducto, editarProducto, estadoProducto,
-    comprarProductoDirecto, listarComprasProductos, calificarCompraProducto,
+    comprarProductoDirecto, comprarCarritoProductos, listarComprasProductos, calificarCompraProducto,
     estadoEstilista, serviciosEstilista, horarioEstilista,
     editarClienta, fichaTecnicaClienta
 };

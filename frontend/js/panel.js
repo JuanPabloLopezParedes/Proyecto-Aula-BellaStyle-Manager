@@ -611,77 +611,240 @@ function calificarCita(idCita) {
     });
 }
 
-// Modal de Compra Directa de Producto con descuento de stock en tiempo real (sincronizado entre PC y celular)
-function comprarProductoModal(idProducto) {
-    const p = productosDisponibles.find((x) => String(x.id_producto) === String(idProducto))
-        || productosAdmin.find((x) => String(x.id_producto) === String(idProducto));
-    if (!p) return avisar('No se encontró el producto');
+// ---------------------------------------------------------------
+// Carrito de Compras Multi-Producto (Sincronizado con Stock en Tiempo Real)
+// ---------------------------------------------------------------
 
-    const stockActual = Number(p.stock) || 0;
-    if (stockActual <= 0) {
-        return avisar(`El producto "${p.nombre}" está agotado en este momento.`);
+function agregarAlCarritoClienta(idProducto, mostrarMensaje = true) {
+    const p = productosDisponibles.find((x) => String(x.id_producto) === String(idProducto));
+    if (!p) return avisar('No se encontró el producto.');
+
+    const stockMax = Number(p.stock) || 0;
+    if (stockMax <= 0) {
+        return avisar(`El producto "${p.nombre}" está agotado.`);
     }
 
-    const info = typeof obtenerFichaProducto === 'function'
-        ? obtenerFichaProducto(p)
-        : { imagen: p.imagen || 'img/productos/shampoo-argan.jpg', categoria: 'Tienda BellaStyle', descripcion: '' };
+    const existente = carritoClienta.find((item) => String(item.id_producto) === String(p.id_producto));
+    if (existente) {
+        if (existente.cantidad >= stockMax) {
+            return avisar(`Ya tienes en tu carrito el máximo disponible (${stockMax} unidades) de "${p.nombre}".`);
+        }
+        existente.cantidad += 1;
+    } else {
+        carritoClienta.push({
+            id_producto: p.id_producto,
+            cantidad: 1
+        });
+    }
 
-    const htmlCompra = `
-        <div class="flex items-center gap-3.5 rounded-2xl border border-bella-300 bg-white p-3 shadow-sm">
-            <img src="${escapar(info.imagen)}" alt="${escapar(p.nombre)}" class="h-16 w-16 shrink-0 rounded-xl object-cover ring-1 ring-bella-300">
-            <div class="min-w-0 flex-1">
-                <span class="inline-block rounded-full bg-pastel-menta px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-950">${escapar(info.categoria)}</span>
-                <h4 class="mt-0.5 truncate text-base font-bold text-pastel-tinta">${escapar(p.nombre)}</h4>
-                <p class="text-xs font-bold text-bella-800">${pesos(p.precio)} c/u · <span class="text-emerald-800">${stockActual} disponibles en tiempo real</span></p>
-            </div>
-        </div>
+    guardarCarritoEnStorage();
+    dibujarCarritoClienta();
+    dibujarTiendaDirectaClienta();
 
-        <div class="grid gap-3 sm:grid-cols-2">
-            <div>
-                <label for="vCantidadCompraProd" class="etiqueta-oscura">Cantidad a comprar (Máx. ${stockActual})</label>
-                <input id="vCantidadCompraProd" type="number" min="1" max="${stockActual}" value="1" class="campo-pastel" required>
-            </div>
-            <div>
-                <label for="vMetodoCompraProd" class="etiqueta-oscura">Método de pago</label>
-                <select id="vMetodoCompraProd" class="campo-pastel">
-                    <option value="Nequi / Daviplata">📲 Nequi / Daviplata</option>
-                    <option value="Tarjeta / PSE">💳 Tarjeta / PSE</option>
-                    <option value="Efectivo en Salón">💵 Pagar al recoger en Salón</option>
-                </select>
-            </div>
-        </div>
+    if (mostrarMensaje) {
+        const cantEnCarrito = carritoClienta.find((i) => String(i.id_producto) === String(p.id_producto))?.cantidad || 1;
+        avisar(`🛒 "${p.nombre}" añadido al carrito (${cantEnCarrito} unid.). ¡Puedes seguir añadiendo más productos!`);
+    }
+}
 
-        <div id="vResumenTotalCompraProd" class="rounded-2xl border border-emerald-500/50 bg-pastel-menta p-3 text-xs font-bold text-emerald-950">
-            Total a pagar: ${pesos(p.precio)} (Se descontará 1 unidad del inventario en tiempo real en PC y celular)
+function cambiarCantidadCarritoClienta(idProducto, delta) {
+    const idx = carritoClienta.findIndex((item) => String(item.id_producto) === String(idProducto));
+    if (idx === -1) return;
+
+    const p = productosDisponibles.find((x) => String(x.id_producto) === String(idProducto));
+    const stockMax = p ? Number(p.stock) : 99;
+    const nuevaCant = carritoClienta[idx].cantidad + Number(delta);
+
+    if (nuevaCant <= 0) {
+        carritoClienta.splice(idx, 1);
+    } else if (nuevaCant > stockMax) {
+        avisar(`Solo hay ${stockMax} unidades disponibles de este producto.`);
+        carritoClienta[idx].cantidad = stockMax;
+    } else {
+        carritoClienta[idx].cantidad = nuevaCant;
+    }
+
+    guardarCarritoEnStorage();
+    dibujarCarritoClienta();
+    dibujarTiendaDirectaClienta();
+}
+
+function quitarDelCarritoClienta(idProducto) {
+    carritoClienta = carritoClienta.filter((item) => String(item.id_producto) !== String(idProducto));
+    guardarCarritoEnStorage();
+    dibujarCarritoClienta();
+    dibujarTiendaDirectaClienta();
+}
+
+function vaciarCarritoClienta() {
+    carritoClienta = [];
+    guardarCarritoEnStorage();
+    dibujarCarritoClienta();
+    dibujarTiendaDirectaClienta();
+    avisar('Carrito de compras vaciado.');
+}
+
+function dibujarCarritoClienta() {
+    const listaCont = document.getElementById('listaItemsCarritoClienta');
+    const barraCheckout = document.getElementById('barraCheckoutCarritoClienta');
+    const btnVaciar = document.getElementById('btnVaciarCarritoClienta');
+    const badgeTop = document.getElementById('badgeCarritoClienta');
+    const txtUnidades = document.getElementById('resumenUnidadesCarritoClienta');
+    const txtTotal = document.getElementById('resumenTotalCarritoClienta');
+
+    // Filtrar productos que existan y ajustar al stock real actual
+    const itemsDetallados = [];
+    carritoClienta.forEach((item) => {
+        const prod = productosDisponibles.find((p) => String(p.id_producto) === String(item.id_producto));
+        if (prod && Number(prod.stock) > 0) {
+            if (item.cantidad > Number(prod.stock)) {
+                item.cantidad = Number(prod.stock);
+            }
+            const info = typeof obtenerFichaProducto === 'function'
+                ? obtenerFichaProducto(prod)
+                : { imagen: prod.imagen || 'img/productos/shampoo-argan.jpg', categoria: 'Tienda BellaStyle' };
+            itemsDetallados.push({
+                id_producto: prod.id_producto,
+                nombre: prod.nombre,
+                precio: Number(prod.precio),
+                stock: Number(prod.stock),
+                cantidad: item.cantidad,
+                subtotal: Number(prod.precio) * item.cantidad,
+                imagen: info.imagen,
+                categoria: info.categoria
+            });
+        }
+    });
+
+    const totalUnidades = itemsDetallados.reduce((acc, i) => acc + i.cantidad, 0);
+    const granTotal = itemsDetallados.reduce((acc, i) => acc + i.subtotal, 0);
+
+    if (badgeTop) {
+        badgeTop.textContent = `${totalUnidades} en carrito`;
+        badgeTop.className = totalUnidades > 0
+            ? 'rounded-full bg-amber-400 px-2.5 py-0.5 text-xs font-extrabold text-amber-950 shadow-sm'
+            : 'rounded-full bg-bella-600/15 px-2.5 py-0.5 text-xs font-extrabold text-bella-900';
+    }
+
+    if (!listaCont) return;
+
+    if (itemsDetallados.length === 0) {
+        listaCont.innerHTML = `
+            <div class="rounded-2xl border border-dashed border-bella-300 bg-white/80 p-5 text-center">
+                <p class="text-sm font-bold text-pastel-tinta">🛒 Tu carrito de compras está vacío</p>
+                <p class="mt-1 text-xs font-medium text-pastel-subtinta">
+                    Presiona el botón <strong>"🛒 Comprar producto"</strong> en cualquiera de los productos de abajo para añadirlo al carrito. Puedes añadir todos los productos que quieras y pagarlos juntos en un solo pedido.
+                </p>
+            </div>`;
+        barraCheckout?.classList.add('hidden');
+        btnVaciar?.classList.add('hidden');
+        return;
+    }
+
+    barraCheckout?.classList.remove('hidden');
+    btnVaciar?.classList.remove('hidden');
+    if (txtUnidades) txtUnidades.textContent = `Total del pedido (${totalUnidades} unidad${totalUnidades === 1 ? '' : 'es'})`;
+    if (txtTotal) txtTotal.textContent = pesos(granTotal);
+
+    listaCont.innerHTML = `
+        <div class="space-y-2.5">
+            ${itemsDetallados.map((item) => `
+                <div class="flex flex-col justify-between gap-3 rounded-2xl border border-bella-300/80 bg-white p-3 shadow-sm sm:flex-row sm:items-center">
+                    <div class="flex items-center gap-3">
+                        <img src="${escapar(item.imagen)}" alt="${escapar(item.nombre)}" class="h-14 w-14 shrink-0 rounded-xl object-cover ring-1 ring-bella-300">
+                        <div>
+                            <span class="rounded-full bg-pastel-menta px-2 py-0.5 text-[10px] font-extrabold text-emerald-950">${escapar(item.categoria)}</span>
+                            <h4 class="mt-0.5 text-sm font-bold text-pastel-tinta">${escapar(item.nombre)}</h4>
+                            <p class="text-xs font-semibold text-pastel-subtinta">${pesos(item.precio)} c/u · <span class="text-emerald-800">${item.stock} disponibles</span></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 border-t border-bella-100 pt-2 sm:justify-end sm:border-t-0 sm:pt-0">
+                        <div class="inline-flex items-center gap-1.5 rounded-xl border border-bella-300 bg-pastel-perla p-1">
+                            <button type="button" data-cart-delta="-1" data-cart-id="${item.id_producto}" class="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-sm font-extrabold text-pastel-tinta shadow-sm hover:bg-pastel-rosa">&minus;</button>
+                            <span class="min-w-[2rem] text-center text-xs font-extrabold text-pastel-tinta">${item.cantidad}</span>
+                            <button type="button" data-cart-delta="1" data-cart-id="${item.id_producto}" class="flex h-7 w-7 items-center justify-center rounded-lg bg-bella-600 text-sm font-extrabold text-white shadow-sm hover:bg-bella-700">+</button>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-titulo text-xl font-bold text-bella-800">${pesos(item.subtotal)}</p>
+                            <button type="button" data-cart-remove="${item.id_producto}" class="text-[11px] font-bold text-red-700 hover:underline">Quitar</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
         </div>`;
 
-    abrirVentana(`🛒 Comprar producto · ${p.nombre}`, htmlCompra, async () => {
-        const cantidad = Math.max(1, Number(valor('vCantidadCompraProd')) || 1);
-        const metodoPago = valor('vMetodoCompraProd');
-        const res = await pedir(`/productos/${p.id_producto}/comprar`, 'POST', {
-            idUsuario: usuario.id,
-            clienteNombre: usuario.nombre,
-            cantidad,
-            metodoPago
+    listaCont.querySelectorAll('button[data-cart-delta]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            cambiarCantidadCarritoClienta(btn.dataset.cartId, Number(btn.dataset.cartDelta));
         });
-        if (res.success) {
-            await refrescarProductosTiempoReal();
-            if (usuario.rol === 'Clienta') {
-                await cargarComprasClienta();
-            }
-        }
-        return res;
-    }, 'Confirmar compra y descontar stock');
+    });
 
-    const inputCant = document.getElementById('vCantidadCompraProd');
-    const cajaRes = document.getElementById('vResumenTotalCompraProd');
-    if (inputCant && cajaRes) {
-        inputCant.addEventListener('input', () => {
-            const cant = Math.max(1, Math.min(stockActual, Number(inputCant.value) || 1));
-            const total = cant * Number(p.precio);
-            cajaRes.textContent = `Total a pagar: ${pesos(total)} (Se descontarán ${cant} unidad(es) del inventario en tiempo real en PC y celular)`;
+    listaCont.querySelectorAll('button[data-cart-remove]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            quitarDelCarritoClienta(btn.dataset.cartRemove);
         });
+    });
+}
+
+async function procesarCompraCarritoClienta() {
+    if (carritoClienta.length === 0) {
+        return avisar('Tu carrito está vacío. Añade al menos un producto.');
     }
+
+    const btnPagar = document.getElementById('btnPagarCarritoClienta');
+    const metodoPago = document.getElementById('metodoPagoCarritoClienta')?.value || 'Nequi / Daviplata';
+    const referenciaInput = document.getElementById('referenciaPagoCarritoClienta')?.value.trim() || '';
+    const prefijo = metodoPago === 'Nequi / Daviplata' ? 'NEQ' : (metodoPago === 'Tarjeta / PSE' ? 'PSE' : 'TIENDA');
+    const referenciaPago = referenciaInput
+        ? `${prefijo}-${referenciaInput.replace(/\s+/g, '')}`
+        : `${prefijo}-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    if (btnPagar) {
+        btnPagar.disabled = true;
+        btnPagar.textContent = 'Procesando pedido...';
+    }
+
+    const res = await pedir('/carrito/comprar', 'POST', {
+        idUsuario: usuario.id,
+        clienteNombre: usuario.nombre,
+        metodoPago,
+        referenciaPago,
+        items: carritoClienta.map((i) => ({
+            idProducto: i.id_producto,
+            cantidad: i.cantidad
+        }))
+    });
+
+    if (btnPagar) {
+        btnPagar.disabled = false;
+        btnPagar.textContent = '✅ Finalizar compra del carrito';
+    }
+
+    if (!res.success) {
+        return avisar(res.message);
+    }
+
+    // Limpiar carrito tras compra exitosa
+    carritoClienta = [];
+    guardarCarritoEnStorage();
+    if (document.getElementById('referenciaPagoCarritoClienta')) {
+        document.getElementById('referenciaPagoCarritoClienta').value = '';
+    }
+
+    await refrescarProductosTiempoReal();
+    await cargarComprasClienta();
+    dibujarCarritoClienta();
+
+    avisar(res.message);
+    // Llevamos a la clienta a "Mis Compras" para que vea inmediatamente su historial actualizado
+    cambiarVistaClienta('compras');
+}
+
+// Función para compatibilidad cuando se llama comprarProductoModal(idProducto)
+function comprarProductoModal(idProducto) {
+    cambiarVistaClienta('tienda');
+    agregarAlCarritoClienta(idProducto, true);
+    document.getElementById('contenedorCarritoClienta')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function verComprobanteCompraProducto(idCompra) {
@@ -828,11 +991,19 @@ async function cargarComprasClienta() {
     const res = await pedir(`/compras?idUsuario=${usuario.id}`);
     comprasClienta = res.data || [];
 
-    const badge = document.getElementById('badgeProductosClienta');
-    if (badge) {
-        badge.textContent = comprasClienta.length > 0
-            ? `${productosDisponibles.length} prod. · ${comprasClienta.length} compra(s)`
-            : `${productosDisponibles.length} productos`;
+    const badgeHist = document.getElementById('badgeHistorialComprasClienta');
+    if (badgeHist) {
+        badgeHist.textContent = `${comprasClienta.length} compra${comprasClienta.length === 1 ? '' : 's'}`;
+    }
+
+    const contMetricasCompras = document.getElementById('metricasComprasClienta');
+    if (contMetricasCompras) {
+        const totalUnidadesCompradas = comprasClienta.reduce((acc, c) => acc + Number(c.cantidad || 1), 0);
+        const totalInvertido = comprasClienta.reduce((acc, c) => acc + Number(c.total || 0), 0);
+        contMetricasCompras.innerHTML =
+            tarjetaMetrica('Órdenes de compra', comprasClienta.length, 'bg-pastel-rosa') +
+            tarjetaMetrica('Productos adquiridos', `${totalUnidadesCompradas} unid.`, 'bg-pastel-lavanda') +
+            tarjetaMetrica('Total compras tienda', pesos(totalInvertido), 'bg-pastel-menta');
     }
 
     tabla.innerHTML = comprasClienta.length === 0
@@ -900,9 +1071,11 @@ function dibujarTiendaDirectaClienta() {
             ? obtenerFichaProducto(p)
             : { imagen: p.imagen || 'img/productos/shampoo-argan.jpg', categoria: 'Tienda BellaStyle', descripcion: 'Producto profesional de salón.' };
         const disponible = Number(p.stock) > 0;
+        const itemEnCarrito = carritoClienta.find((i) => String(i.id_producto) === String(p.id_producto));
+        const cantEnCarrito = itemEnCarrito ? itemEnCarrito.cantidad : 0;
 
         return `
-            <div class="flex flex-col justify-between rounded-2xl border border-bella-300/80 bg-white p-4 shadow-sm transition hover:border-bella-500 hover:shadow-md">
+            <div class="flex flex-col justify-between rounded-2xl border ${cantEnCarrito > 0 ? 'border-2 border-bella-600 ring-2 ring-bella-400/30' : 'border-bella-300/80'} bg-white p-4 shadow-sm transition hover:border-bella-500 hover:shadow-md">
                 <div>
                     <div class="relative mb-3 h-44 w-full overflow-hidden rounded-xl bg-pastel-perla">
                         <img src="${escapar(info.imagen)}" alt="${escapar(p.nombre)}" class="h-full w-full object-cover transition duration-300 hover:scale-105">
@@ -912,6 +1085,10 @@ function dibujarTiendaDirectaClienta() {
                         <span class="absolute right-2.5 top-2.5 rounded-full ${disponible ? 'bg-emerald-700 text-white' : 'bg-stone-500 text-white'} px-2.5 py-0.5 text-[11px] font-bold shadow-sm">
                             ${disponible ? `${p.stock} disponibles` : 'Agotado'}
                         </span>
+                        ${cantEnCarrito > 0 ? `
+                        <span class="absolute bottom-2.5 left-2.5 rounded-xl bg-bella-600 px-2.5 py-1 text-[11px] font-extrabold text-white shadow-md">
+                            🛒 En tu carrito: ${cantEnCarrito} unid.
+                        </span>` : ''}
                     </div>
                     <div class="flex items-start justify-between gap-2">
                         <h4 class="text-base font-bold text-pastel-tinta">${escapar(p.nombre)}</h4>
@@ -930,7 +1107,7 @@ function dibujarTiendaDirectaClienta() {
                             data-comprar-directo-prod="${p.id_producto}"
                             ${disponible ? '' : 'disabled'}
                             class="rounded-xl bg-bella-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700 disabled:opacity-40">
-                        🛒 Comprar producto
+                        ${cantEnCarrito > 0 ? '🛒 + Añadir otro al carrito' : '🛒 Comprar producto'}
                     </button>
                 </div>
             </div>`;
@@ -951,7 +1128,7 @@ function dibujarTiendaDirectaClienta() {
 
     cont.querySelectorAll('button[data-comprar-directo-prod]').forEach((btn) => {
         btn.addEventListener('click', () => {
-            comprarProductoModal(btn.dataset.comprarDirectoProd);
+            agregarAlCarritoClienta(btn.dataset.comprarDirectoProd, true);
         });
     });
 }
@@ -967,6 +1144,7 @@ async function refrescarProductosTiempoReal() {
         if (selectProd && valorPrevio) {
             selectProd.value = valorPrevio;
         }
+        dibujarCarritoClienta();
         dibujarTiendaDirectaClienta();
         actualizarResumenTotalCita();
     }
@@ -1163,10 +1341,35 @@ function prepararEncabezado() {
 let miPerfilClienta = null;
 let citasClienta = [];
 let comprasClienta = [];
+let carritoClienta = [];
+
+function claveStorageCarrito() {
+    return `bellaCarrito_${usuario?.id || 'invitado'}`;
+}
+
+function cargarCarritoGuardado() {
+    try {
+        const guardado = localStorage.getItem(claveStorageCarrito());
+        if (guardado) {
+            const parsed = JSON.parse(guardado);
+            if (Array.isArray(parsed)) carritoClienta = parsed;
+        }
+    } catch (_) {
+        carritoClienta = [];
+    }
+}
+
+function guardarCarritoEnStorage() {
+    try {
+        localStorage.setItem(claveStorageCarrito(), JSON.stringify(carritoClienta));
+    } catch (_) {}
+}
 
 function cambiarVistaClienta(vista = 'citas') {
     const divCitas = document.getElementById('vistaClientaCitas');
     const divTienda = document.getElementById('vistaClientaTienda');
+    const divCompras = document.getElementById('vistaClientaCompras');
+
     if (divCitas) {
         divCitas.classList.toggle('hidden', vista !== 'citas');
         divCitas.classList.toggle('grid', vista === 'citas');
@@ -1174,11 +1377,15 @@ function cambiarVistaClienta(vista = 'citas') {
     if (divTienda) {
         divTienda.classList.toggle('hidden', vista !== 'tienda');
     }
+    if (divCompras) {
+        divCompras.classList.toggle('hidden', vista !== 'compras');
+    }
+
     document.querySelectorAll('[data-pestana-clienta]').forEach((btn) => {
         const activo = btn.dataset.pestanaClienta === vista;
         btn.className = activo
-            ? 'flex items-center justify-center gap-2.5 rounded-2xl bg-bella-600 px-5 py-3.5 text-sm font-extrabold text-white shadow-md transition'
-            : 'flex items-center justify-center gap-2.5 rounded-2xl border border-bella-300/80 bg-white px-5 py-3.5 text-sm font-extrabold text-pastel-tinta shadow-sm transition hover:bg-pastel-rosa';
+            ? 'flex items-center justify-center gap-2 rounded-2xl bg-bella-600 px-4 py-3.5 text-xs font-extrabold text-white shadow-md transition sm:text-sm'
+            : 'flex items-center justify-center gap-2 rounded-2xl border border-bella-300/80 bg-white px-4 py-3.5 text-xs font-extrabold text-pastel-tinta shadow-sm transition hover:bg-pastel-rosa sm:text-sm';
     });
 }
 
@@ -1498,37 +1705,42 @@ async function iniciarClienta() {
         } catch (_) {}
     }
 
-    // Pestañas principales de la Clienta: "Apartar Cita y Mis Citas" vs "Comprar Producto y Mis Compras"
+    // Pestañas principales de la Clienta: "Apartar Cita y Mis Citas" | "Comprar Producto" | "Mis Compras"
     document.querySelectorAll('[data-pestana-clienta]').forEach((btn) => {
         btn.addEventListener('click', () => {
             cambiarVistaClienta(btn.dataset.pestanaClienta);
         });
     });
+    document.getElementById('btnIrAMisComprasDesdeTienda')?.addEventListener('click', () => cambiarVistaClienta('compras'));
+    document.getElementById('btnVolverATiendaDesdeCompras')?.addEventListener('click', () => cambiarVistaClienta('tienda'));
+    document.getElementById('btnVaciarCarritoClienta')?.addEventListener('click', vaciarCarritoClienta);
+    document.getElementById('btnPagarCarritoClienta')?.addEventListener('click', procesarCompraCarritoClienta);
     document.getElementById('buscadorTiendaPanelClienta')?.addEventListener('input', dibujarTiendaDirectaClienta);
+
+    cargarCarritoGuardado();
 
     // Recuperar producto preferido si hizo clic en "Quiero este producto" desde la Tienda
     const prodPrefTexto = sessionStorage.getItem('bellaProductoPreferida') || sessionStorage.getItem('bellaProductoPreferido');
-    let idProductoAbrirCompra = null;
+    let idProductoAgregarAlCarrito = null;
     if (prodPrefTexto) {
         try {
             const prodPref = JSON.parse(prodPrefTexto);
             sessionStorage.removeItem('bellaProductoPreferido');
-            const selectProd = document.getElementById('productoAdicional');
-            if (selectProd && prodPref.id_producto) {
-                selectProd.value = String(prodPref.id_producto);
-                idProductoAbrirCompra = prodPref.id_producto;
+            if (prodPref && prodPref.id_producto) {
+                idProductoAgregarAlCarrito = prodPref.id_producto;
             }
         } catch (_) {}
     }
 
+    dibujarCarritoClienta();
     dibujarTiendaDirectaClienta();
     cargarComprasClienta();
     actualizarResumenTotalCita();
     await actualizarDisponibilidadHoras();
 
-    if (idProductoAbrirCompra) {
+    if (idProductoAgregarAlCarrito) {
         cambiarVistaClienta('tienda');
-        setTimeout(() => comprarProductoModal(idProductoAbrirCompra), 300);
+        agregarAlCarritoClienta(idProductoAgregarAlCarrito, true);
     }
 
     // Sincronización automática de stock en tiempo real entre computador y celular (cada 4 segundos)

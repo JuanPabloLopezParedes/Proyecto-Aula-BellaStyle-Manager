@@ -38,10 +38,11 @@ router.post('/servicios', protegerRuta(['Administradora']), gestion.crearServici
 router.put('/servicios/:id', protegerRuta(['Administradora']), gestion.editarServicio);
 router.put('/servicios/:id/estado', protegerRuta(['Administradora']), gestion.estadoServicio);
 
-// Productos y compras directas de la tienda
+// Productos, carrito de compras y compras directas de la tienda
 router.get('/productos', catalogo.productos);
 router.post('/productos', protegerRuta(['Administradora']), gestion.crearProducto);
 router.post('/productos/:id/comprar', protegerRuta(), gestion.comprarProductoDirecto);
+router.post('/carrito/comprar', protegerRuta(), gestion.comprarCarritoProductos);
 router.put('/productos/:id', protegerRuta(['Administradora']), gestion.editarProducto);
 router.put('/productos/:id/estado', protegerRuta(['Administradora']), gestion.estadoProducto);
 router.get('/compras', protegerRuta(), gestion.listarComprasProductos);
