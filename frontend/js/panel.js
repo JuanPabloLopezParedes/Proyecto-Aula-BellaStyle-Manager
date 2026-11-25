@@ -659,11 +659,16 @@ function comprarProductoModal(idProducto) {
         const cantidad = Math.max(1, Number(valor('vCantidadCompraProd')) || 1);
         const metodoPago = valor('vMetodoCompraProd');
         const res = await pedir(`/productos/${p.id_producto}/comprar`, 'POST', {
+            idUsuario: usuario.id,
+            clienteNombre: usuario.nombre,
             cantidad,
             metodoPago
         });
         if (res.success) {
             await refrescarProductosTiempoReal();
+            if (usuario.rol === 'Clienta') {
+                await cargarComprasClienta();
+            }
         }
         return res;
     }, 'Confirmar compra y descontar stock');
@@ -679,6 +684,203 @@ function comprarProductoModal(idProducto) {
     }
 }
 
+function verComprobanteCompraProducto(idCompra) {
+    const cp = comprasClienta.find((x) => String(x.id_compra) === String(idCompra));
+    if (!cp) return avisar('No se encontró el comprobante de compra');
+
+    const htmlRecibo = `
+        <div class="rounded-2xl border-2 border-dashed border-bella-400 bg-white p-5 text-pastel-tinta shadow-inner">
+            <div class="border-b border-bella-200 pb-3 text-center">
+                <p class="text-[11px] font-bold uppercase tracking-widest text-bella-700">BellaStyle Studio · Tienda Oficial</p>
+                <h4 class="mt-0.5 font-titulo text-2xl font-bold text-pastel-tinta">Orden de Compra #CP-${cp.id_compra}</h4>
+                <p class="mt-1 text-xs font-semibold text-emerald-800">✓ Compra confirmada y descontada del inventario</p>
+            </div>
+            <dl class="mt-3 space-y-2 text-xs">
+                <div class="flex justify-between gap-2 border-b border-bella-100 pb-1.5">
+                    <dt class="font-bold text-pastel-subtinta">Clienta:</dt>
+                    <dd class="font-bold text-pastel-tinta text-right">${escapar(cp.cliente_nombre || usuario.nombre)}</dd>
+                </div>
+                <div class="flex justify-between gap-2 border-b border-bella-100 pb-1.5">
+                    <dt class="font-bold text-pastel-subtinta">Fecha y hora:</dt>
+                    <dd class="font-bold text-bella-800 text-right">${escapar(cp.fecha)} · ${escapar(cp.hora || '')}</dd>
+                </div>
+                <div class="flex justify-between gap-2 border-b border-bella-100 pb-1.5">
+                    <dt class="font-bold text-pastel-subtinta">Producto adquirido:</dt>
+                    <dd class="font-bold text-pastel-tinta text-right">${escapar(cp.producto_nombre)}</dd>
+                </div>
+                <div class="flex justify-between gap-2 border-b border-bella-100 pb-1.5">
+                    <dt class="font-bold text-pastel-subtinta">Cantidad y valor unitario:</dt>
+                    <dd class="font-semibold text-pastel-tinta text-right">${cp.cantidad} unidad(es) × ${pesos(cp.precio_unitario)}</dd>
+                </div>
+                <div class="flex justify-between gap-2 border-b border-bella-100 pb-1.5">
+                    <dt class="font-bold text-pastel-subtinta">Método y referencia de pago:</dt>
+                    <dd class="font-bold text-emerald-900 text-right">${escapar(cp.metodo_pago)} (${escapar(cp.referencia_pago || 'Aprobado')})</dd>
+                </div>
+                <div class="flex items-center justify-between pt-2 text-sm">
+                    <dt class="font-bold uppercase tracking-wider text-pastel-tinta">Total pagado:</dt>
+                    <dd class="font-titulo text-2xl font-bold text-bella-800">${pesos(cp.total)}</dd>
+                </div>
+            </dl>
+        </div>
+        <div class="flex flex-wrap justify-end gap-2 pt-2">
+            <button type="button" id="btnImprimirReciboProducto" class="btn-primario py-2 text-xs">
+                🖨️ Imprimir / Guardar Comprobante PDF
+            </button>
+        </div>`;
+
+    abrirVentana(`🧾 Comprobante de Compra #CP-${cp.id_compra}`, htmlRecibo, null);
+
+    document.getElementById('btnImprimirReciboProducto')?.addEventListener('click', () => {
+        const v = window.open('', '_blank', 'width=700,height=640');
+        if (!v) return window.print();
+        v.document.write(`
+            <!DOCTYPE html>
+            <html lang="es">
+            <head>
+                <meta charset="UTF-8">
+                <title>Orden de Compra #CP-${cp.id_compra} · BellaStyle</title>
+                <style>
+                    body { font-family: 'Segoe UI', Arial, sans-serif; padding: 32px; color: #24131c; background: #fff9fb; }
+                    .box { max-width: 500px; margin: 0 auto; border: 2px dashed #c94b7c; border-radius: 18px; padding: 24px; background: #fff; }
+                    .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f4dce6; font-size: 14px; }
+                    .total { font-size: 20px; font-weight: bold; color: #9c2f5b; padding-top: 14px; display: flex; justify-content: space-between; }
+                </style>
+            </head>
+            <body>
+                <div class="box">
+                    <p style="text-align:center;font-size:11px;font-weight:bold;letter-spacing:2px;color:#9c2f5b;margin:0;">BELLASTYLE STUDIO · TIENDA OFICIAL</p>
+                    <h2 style="text-align:center;margin:6px 0;color:#541d37;">Orden de Compra #CP-${cp.id_compra}</h2>
+                    <div class="row"><strong>Clienta:</strong> <span>${escapar(cp.cliente_nombre || usuario.nombre)}</span></div>
+                    <div class="row"><strong>Fecha:</strong> <span>${escapar(cp.fecha)} · ${escapar(cp.hora || '')}</span></div>
+                    <div class="row"><strong>Producto:</strong> <span>${escapar(cp.producto_nombre)}</span></div>
+                    <div class="row"><strong>Cantidad:</strong> <span>${cp.cantidad} × ${pesos(cp.precio_unitario)}</span></div>
+                    <div class="row"><strong>Método de pago:</strong> <span>${escapar(cp.metodo_pago)} (${escapar(cp.referencia_pago || '')})</span></div>
+                    <div class="total"><span>Total:</span> <span>${pesos(cp.total)}</span></div>
+                </div>
+                <script>window.onload = function(){ window.print(); };<\/script>
+            </body>
+            </html>`);
+        v.document.close();
+    });
+}
+
+function calificarCompraProductoModal(idCompra) {
+    const cp = comprasClienta.find((x) => String(x.id_compra) === String(idCompra));
+    if (!cp) return;
+    const calActual = Number(cp.calificacion) || 5;
+
+    const htmlCal = `
+        <div class="rounded-2xl border border-bella-300 bg-pastel-menta p-3 text-xs text-pastel-tinta">
+            <p class="font-bold text-emerald-950">🧴 Producto adquirido: ${escapar(cp.producto_nombre)} (#CP-${cp.id_compra})</p>
+            <p class="mt-0.5 text-[11px] text-pastel-subtinta">✨ Tu evaluación sobre este producto aparecerá inmediatamente en tiempo real en la sección "Experiencias reales de nuestras clientas" de la página de inicio.</p>
+        </div>
+        <div>
+            <label class="etiqueta-oscura">Calificación del producto (1 a 5 estrellas) *</label>
+            <div id="selectorEstrellasCompraModal" class="flex gap-2 pt-1">
+                ${[1, 2, 3, 4, 5].map((n) => `
+                    <button type="button" data-estrella-compra="${n}"
+                            class="flex-1 rounded-xl border py-2.5 text-sm font-bold transition ${
+                                n <= calActual
+                                    ? 'border-amber-500 bg-amber-400/30 text-amber-950 shadow-sm'
+                                    : 'border-bella-300 bg-pastel-perla text-pastel-subtinta'
+                            }">
+                        ${n} ★
+                    </button>`).join('')}
+            </div>
+            <input type="hidden" id="vCalificacionCompra" value="${calActual}">
+        </div>
+        <div>
+            <label for="vComentarioCompra" class="etiqueta-oscura">Escribe tu opinión sobre el producto *</label>
+            <textarea id="vComentarioCompra" rows="3" class="campo-pastel" placeholder="Ej. Excelente producto, dejó mi cabello súper hidratado y con brillo desde el primer uso..." required>${escapar(cp.comentario_calificacion || '')}</textarea>
+        </div>`;
+
+    abrirVentana(`★ Calificar producto · ${cp.producto_nombre}`, htmlCal, async () => {
+        const res = await pedir(`/compras/${cp.id_compra}/calificar`, 'PUT', {
+            calificacion: Number(valor('vCalificacionCompra')),
+            comentario: valor('vComentarioCompra')
+        });
+        if (res.success) {
+            await cargarComprasClienta();
+        }
+        return res;
+    }, 'Publicar calificación en tiempo real');
+
+    document.querySelectorAll('#selectorEstrellasCompraModal button[data-estrella-compra]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const elegida = Number(btn.dataset.estrellaCompra);
+            document.getElementById('vCalificacionCompra').value = elegida;
+            document.querySelectorAll('#selectorEstrellasCompraModal button[data-estrella-compra]').forEach((b) => {
+                const n = Number(b.dataset.estrellaCompra);
+                b.className = `flex-1 rounded-xl border py-2.5 text-sm font-bold transition ${
+                    n <= elegida
+                        ? 'border-amber-500 bg-amber-400/30 text-amber-950 shadow-sm'
+                        : 'border-bella-300 bg-pastel-perla text-pastel-subtinta'
+                }`;
+            });
+        });
+    });
+}
+
+async function cargarComprasClienta() {
+    const tabla = document.getElementById('tablaComprasClienta');
+    if (!tabla) return;
+
+    const res = await pedir(`/compras?idUsuario=${usuario.id}`);
+    comprasClienta = res.data || [];
+
+    const badge = document.getElementById('badgeProductosClienta');
+    if (badge) {
+        badge.textContent = comprasClienta.length > 0
+            ? `${productosDisponibles.length} prod. · ${comprasClienta.length} compra(s)`
+            : `${productosDisponibles.length} productos`;
+    }
+
+    tabla.innerHTML = comprasClienta.length === 0
+        ? filaVacia(6, 'Aún no has comprado productos individuales. Elige cualquier producto arriba para comprarlo.')
+        : comprasClienta.map((cp) => {
+            const info = typeof obtenerFichaProducto === 'function'
+                ? obtenerFichaProducto({ nombre: cp.producto_nombre, imagen: cp.imagen })
+                : { imagen: cp.imagen || 'img/productos/shampoo-argan.jpg' };
+            return `
+                <tr>
+                    <td class="font-mono text-xs text-white/60">CP-${cp.id_compra}</td>
+                    <td>
+                        <div class="flex items-center gap-3">
+                            <img src="${escapar(info.imagen)}" alt="${escapar(cp.producto_nombre)}" class="h-10 w-10 shrink-0 rounded-xl object-cover ring-1 ring-bella-300/60">
+                            <div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="font-semibold text-white">${escapar(cp.producto_nombre)}</span>
+                                    <button type="button" data-editar="calificarCompraProductoModal" data-id="${cp.id_compra}" class="rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-300 ring-1 ring-amber-400/40 transition hover:bg-amber-400/35">
+                                        ★ ${cp.calificacion ? `Evaluado (${cp.calificacion}/5) · Editar` : 'Calificar producto'}
+                                    </button>
+                                </div>
+                                ${renderizarEstrellas(cp.calificacion, cp.comentario_calificacion)}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="font-bold text-oro">${pesos(cp.total)}</span>
+                        <span class="block text-xs text-white/60">${cp.cantidad} unidad(es) × ${pesos(cp.precio_unitario)}</span>
+                    </td>
+                    <td>
+                        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-300">
+                            ✓ ${escapar(cp.metodo_pago)}
+                        </span>
+                        ${cp.referencia_pago ? `<span class="mt-0.5 block font-mono text-[11px] text-white/50">Ref: ${escapar(cp.referencia_pago)}</span>` : ''}
+                    </td>
+                    <td class="whitespace-nowrap text-xs">${escapar(cp.fecha)} · ${escapar(cp.hora || '')}</td>
+                    <td class="whitespace-nowrap text-right">
+                        ${botonEditar('🧾 Comprobante', 'verComprobanteCompraProducto', cp.id_compra)}
+                        <button class="btn-mini bg-amber-400/25 font-extrabold text-amber-200 ring-1 ring-amber-400/50 hover:bg-amber-400/40" data-editar="calificarCompraProductoModal" data-id="${cp.id_compra}">
+                            ★ ${cp.calificacion ? 'Editar evaluación' : 'Calificar / Evaluar'}
+                        </button>
+                    </td>
+                </tr>`;
+        }).join('');
+
+    activarBotones(tabla, cargarComprasClienta);
+}
+
 function dibujarTiendaDirectaClienta() {
     const cont = document.getElementById('tiendaDirectaClienta');
     if (!cont) return;
@@ -688,39 +890,47 @@ function dibujarTiendaDirectaClienta() {
         return;
     }
 
-    cont.innerHTML = productosDisponibles.map((p) => {
+    const q = (document.getElementById('buscadorTiendaPanelClienta')?.value || '').trim().toLowerCase();
+    const lista = q
+        ? productosDisponibles.filter((p) => `${p.nombre} ${p.categoria || ''} ${p.descripcion || ''}`.toLowerCase().includes(q))
+        : productosDisponibles;
+
+    cont.innerHTML = lista.map((p) => {
         const info = typeof obtenerFichaProducto === 'function'
             ? obtenerFichaProducto(p)
             : { imagen: p.imagen || 'img/productos/shampoo-argan.jpg', categoria: 'Tienda BellaStyle', descripcion: 'Producto profesional de salón.' };
         const disponible = Number(p.stock) > 0;
 
         return `
-            <div class="flex flex-col justify-between rounded-2xl border border-bella-300/80 bg-white p-3.5 shadow-sm transition hover:border-bella-500">
-                <div class="flex items-start gap-3">
-                    <img src="${escapar(info.imagen)}" alt="${escapar(p.nombre)}" class="h-16 w-16 shrink-0 rounded-xl object-cover ring-1 ring-bella-300/70">
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center justify-between gap-1">
-                            <span class="truncate text-[10px] font-extrabold uppercase tracking-wider text-bella-800">${escapar(info.categoria)}</span>
-                            <span class="shrink-0 rounded-full ${disponible ? 'bg-emerald-700 text-white' : 'bg-stone-500 text-white'} px-2 py-0.5 text-[10px] font-bold">
-                                ${disponible ? `${p.stock} disp.` : 'Agotado'}
-                            </span>
-                        </div>
-                        <h4 class="mt-0.5 truncate text-sm font-bold text-pastel-tinta">${escapar(p.nombre)}</h4>
-                        <p class="mt-0.5 font-titulo text-xl font-bold text-bella-800">${pesos(p.precio)}</p>
+            <div class="flex flex-col justify-between rounded-2xl border border-bella-300/80 bg-white p-4 shadow-sm transition hover:border-bella-500 hover:shadow-md">
+                <div>
+                    <div class="relative mb-3 h-44 w-full overflow-hidden rounded-xl bg-pastel-perla">
+                        <img src="${escapar(info.imagen)}" alt="${escapar(p.nombre)}" class="h-full w-full object-cover transition duration-300 hover:scale-105">
+                        <span class="absolute left-2.5 top-2.5 rounded-full bg-pastel-menta px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-950 shadow-sm">
+                            ${escapar(info.categoria)}
+                        </span>
+                        <span class="absolute right-2.5 top-2.5 rounded-full ${disponible ? 'bg-emerald-700 text-white' : 'bg-stone-500 text-white'} px-2.5 py-0.5 text-[11px] font-bold shadow-sm">
+                            ${disponible ? `${p.stock} disponibles` : 'Agotado'}
+                        </span>
                     </div>
+                    <div class="flex items-start justify-between gap-2">
+                        <h4 class="text-base font-bold text-pastel-tinta">${escapar(p.nombre)}</h4>
+                        <p class="shrink-0 font-titulo text-2xl font-bold text-bella-800">${pesos(p.precio)}</p>
+                    </div>
+                    <p class="mt-1 text-xs leading-relaxed text-pastel-subtinta">${escapar(info.descripcion)}</p>
                 </div>
-                <div class="mt-3 flex items-center justify-between gap-2 border-t border-bella-200/70 pt-2.5">
+                <div class="mt-3.5 flex items-center justify-between gap-2 border-t border-bella-200/70 pt-3">
                     <button type="button"
                             data-sumar-cita-prod="${p.id_producto}"
                             ${disponible ? '' : 'disabled'}
                             class="rounded-xl border border-bella-400/70 bg-pastel-perla px-2.5 py-1.5 text-[11px] font-bold text-pastel-tinta transition hover:bg-pastel-rosa disabled:opacity-40">
-                        + Sumar a mi cita
+                        + Incluir en cita
                     </button>
                     <button type="button"
                             data-comprar-directo-prod="${p.id_producto}"
                             ${disponible ? '' : 'disabled'}
-                            class="rounded-xl bg-bella-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-bella-700 disabled:opacity-40">
-                        🛒 Comprar ahora
+                            class="rounded-xl bg-bella-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-bella-700 disabled:opacity-40">
+                        🛒 Comprar producto
                     </button>
                 </div>
             </div>`;
@@ -728,6 +938,7 @@ function dibujarTiendaDirectaClienta() {
 
     cont.querySelectorAll('button[data-sumar-cita-prod]').forEach((btn) => {
         btn.addEventListener('click', () => {
+            cambiarVistaClienta('citas');
             const selectProd = document.getElementById('productoAdicional');
             if (selectProd) {
                 selectProd.value = String(btn.dataset.sumarCitaProd);
@@ -951,6 +1162,25 @@ function prepararEncabezado() {
 
 let miPerfilClienta = null;
 let citasClienta = [];
+let comprasClienta = [];
+
+function cambiarVistaClienta(vista = 'citas') {
+    const divCitas = document.getElementById('vistaClientaCitas');
+    const divTienda = document.getElementById('vistaClientaTienda');
+    if (divCitas) {
+        divCitas.classList.toggle('hidden', vista !== 'citas');
+        divCitas.classList.toggle('grid', vista === 'citas');
+    }
+    if (divTienda) {
+        divTienda.classList.toggle('hidden', vista !== 'tienda');
+    }
+    document.querySelectorAll('[data-pestana-clienta]').forEach((btn) => {
+        const activo = btn.dataset.pestanaClienta === vista;
+        btn.className = activo
+            ? 'flex items-center justify-center gap-2.5 rounded-2xl bg-bella-600 px-5 py-3.5 text-sm font-extrabold text-white shadow-md transition'
+            : 'flex items-center justify-center gap-2.5 rounded-2xl border border-bella-300/80 bg-white px-5 py-3.5 text-sm font-extrabold text-pastel-tinta shadow-sm transition hover:bg-pastel-rosa';
+    });
+}
 
 function actualizarResumenTotalCita() {
     const selectSrv = document.getElementById('servicio');
@@ -1268,6 +1498,14 @@ async function iniciarClienta() {
         } catch (_) {}
     }
 
+    // Pestañas principales de la Clienta: "Apartar Cita y Mis Citas" vs "Comprar Producto y Mis Compras"
+    document.querySelectorAll('[data-pestana-clienta]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            cambiarVistaClienta(btn.dataset.pestanaClienta);
+        });
+    });
+    document.getElementById('buscadorTiendaPanelClienta')?.addEventListener('input', dibujarTiendaDirectaClienta);
+
     // Recuperar producto preferido si hizo clic en "Quiero este producto" desde la Tienda
     const prodPrefTexto = sessionStorage.getItem('bellaProductoPreferida') || sessionStorage.getItem('bellaProductoPreferido');
     let idProductoAbrirCompra = null;
@@ -1284,10 +1522,12 @@ async function iniciarClienta() {
     }
 
     dibujarTiendaDirectaClienta();
+    cargarComprasClienta();
     actualizarResumenTotalCita();
     await actualizarDisponibilidadHoras();
 
     if (idProductoAbrirCompra) {
+        cambiarVistaClienta('tienda');
         setTimeout(() => comprarProductoModal(idProductoAbrirCompra), 300);
     }
 
@@ -3408,6 +3648,8 @@ const EDITORES = {
     verCorreoCita,
     calificarCita,
     comprarProductoModal,
+    verComprobanteCompraProducto,
+    calificarCompraProductoModal,
     editarServicio,
     editarProducto
 };

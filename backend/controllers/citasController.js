@@ -564,23 +564,19 @@ async function reprogramar(req, res) {
     }
 }
 
-// GET /api/resenas  (Reseñas verificadas en tiempo real para mostrar en la Landing Page)
+// GET /api/resenas  (Reseñas verificadas en tiempo real de citas y productos comprados para mostrar en la Landing Page)
 async function resenasPublicas(_req, res) {
     try {
-        const todas = await citaModel.listarTodas();
-        const calificadas = todas
-            .filter((c) => Number(c.calificacion) >= 1)
-            .sort((a, b) => {
-                const fa = Number(a.fecha_calificacion || 0);
-                const fb = Number(b.fecha_calificacion || 0);
-                if (fb !== fa) return fb - fa;
-                return Number(b.id) - Number(a.id);
-            });
+        const [todasCitas, todasCompras] = await Promise.all([
+            citaModel.listarTodas(),
+            productoModel.listarTodasLasCompras()
+        ]);
 
-        const resenas = calificadas
-            .slice(0, 8)
+        const deCitas = todasCitas
+            .filter((c) => Number(c.calificacion) >= 1)
             .map((c) => ({
-                id: c.id,
+                id: `cita-${c.id}`,
+                orden: Number(c.fecha_calificacion || 0) || Number(c.id),
                 cliente: c.cliente,
                 estilista: c.estilista,
                 servicio: c.servicio,
@@ -590,7 +586,27 @@ async function resenasPublicas(_req, res) {
                 especialidad: c.observaciones || '',
                 reciente: Boolean(c.fecha_calificacion)
             }));
-        res.json({ success: true, data: resenas });
+
+        const deCompras = (todasCompras || [])
+            .filter((cp) => Number(cp.calificacion) >= 1)
+            .map((cp) => ({
+                id: `prod-${cp.id_compra}`,
+                orden: Number(cp.fecha_calificacion || 0) || (100000 + Number(cp.id_compra)),
+                cliente: cp.cliente_nombre || 'Clienta BellaStyle',
+                estilista: 'Tienda Oficial BellaStyle',
+                servicio: `🧴 ${cp.producto_nombre}`,
+                fecha: cp.fecha,
+                calificacion: Number(cp.calificacion),
+                comentario: cp.comentario_calificacion || 'Excelente producto profesional de salón.',
+                especialidad: 'Compra verificada en tienda',
+                reciente: Boolean(cp.fecha_calificacion)
+            }));
+
+        const combinadas = [...deCitas, ...deCompras]
+            .sort((a, b) => b.orden - a.orden)
+            .slice(0, 8);
+
+        res.json({ success: true, data: combinadas });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Error al cargar reseñas.' });
     }

@@ -225,19 +225,71 @@ async function comprarProductoDirecto(req, res) {
         const totalPagado = Number(producto.precio) * cantidad;
         const prefijo = metodoPago === 'Nequi / Daviplata' ? 'NEQ' : (metodoPago === 'Tarjeta / PSE' ? 'PSE' : 'TIENDA');
         const referencia = req.body.referenciaPago || `${prefijo}-${Math.floor(100000 + Math.random() * 900000)}`;
+        const fechaHoy = new Date().toISOString().slice(0, 10);
+
+        const idUsuario = req.usuario?.id || req.body.idUsuario || null;
+        const clienteNombre = req.usuario?.nombre || req.body.clienteNombre || 'Clienta BellaStyle';
+
+        const idCompra = await productoModel.registrarCompra({
+            idUsuario,
+            clienteNombre,
+            idProducto: producto.id_producto,
+            productoNombre: producto.nombre,
+            imagen: producto.imagen || 'img/productos/shampoo-argan.jpg',
+            cantidad,
+            precioUnitario: Number(producto.precio),
+            total: totalPagado,
+            metodoPago,
+            referenciaPago: referencia,
+            fecha: fechaHoy
+        });
 
         res.status(200).json({
             success: true,
-            message: `¡Compra exitosa de ${cantidad}x ${producto.nombre} por $${totalPagado.toLocaleString('es-CO')}! Stock actualizado en tiempo real: quedan ${actualizado.stock} disponibles.`,
+            message: `¡Compra #CP-${idCompra} realizada con éxito! (${cantidad}x ${producto.nombre} por $${totalPagado.toLocaleString('es-CO')}). Stock actualizado en tiempo real: quedan ${actualizado.stock} disponibles.`,
             data: {
+                id_compra: idCompra,
                 id_producto: producto.id_producto,
                 nombre: producto.nombre,
                 cantidad,
                 total: totalPagado,
                 metodo_pago: metodoPago,
                 referencia,
+                fecha: fechaHoy,
                 stock_restante: actualizado.stock
             }
+        });
+    } catch (err) {
+        errorServidor(res, err);
+    }
+}
+
+// GET /api/compras?idUsuario=5
+async function listarComprasProductos(req, res) {
+    try {
+        const idUsuario = req.query.idUsuario || (req.usuario?.rol === 'Clienta' ? req.usuario.id : null);
+        const compras = idUsuario
+            ? await productoModel.listarComprasPorUsuario(idUsuario)
+            : await productoModel.listarTodasLasCompras();
+        res.json({ success: true, data: compras });
+    } catch (err) {
+        errorServidor(res, err);
+    }
+}
+
+// PUT /api/compras/:id/calificar   Recibe: { calificacion: 1..5, comentario }
+async function calificarCompraProducto(req, res) {
+    const estrellas = Number(req.body.calificacion);
+    const comentario = typeof req.body.comentario === 'string' ? req.body.comentario.trim().slice(0, 300) : '';
+    if (!Number.isInteger(estrellas) || estrellas < 1 || estrellas > 5) {
+        return res.status(400).json({ success: false, message: 'Selecciona una calificación de 1 a 5 estrellas.' });
+    }
+    try {
+        const ok = await productoModel.calificarCompra(req.params.id, estrellas, comentario);
+        if (!ok) return res.status(404).json({ success: false, message: 'No se encontró la compra.' });
+        res.json({
+            success: true,
+            message: '¡Gracias por calificar tu producto! Tu evaluación ya es visible en tiempo real en la página de inicio.'
         });
     } catch (err) {
         errorServidor(res, err);
@@ -384,7 +436,8 @@ async function fichaTecnicaClienta(req, res) {
 
 module.exports = {
     crearServicio, editarServicio, estadoServicio,
-    crearProducto, editarProducto, estadoProducto, comprarProductoDirecto,
+    crearProducto, editarProducto, estadoProducto,
+    comprarProductoDirecto, listarComprasProductos, calificarCompraProducto,
     estadoEstilista, serviciosEstilista, horarioEstilista,
     editarClienta, fichaTecnicaClienta
 };

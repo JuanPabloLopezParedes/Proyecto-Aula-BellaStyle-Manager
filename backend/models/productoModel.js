@@ -47,4 +47,33 @@ async function cambiarEstado(idProducto, estado) {
     return resultado.affectedRows > 0;
 }
 
-module.exports = { listarActivos, listarTodos, buscarPorId, crear, actualizar, descontarStock, cambiarEstado };
+async function registrarCompra({ idUsuario, clienteNombre, idProducto, productoNombre, imagen, cantidad, precioUnitario, total, metodoPago, referenciaPago, fecha }) {
+    const [resultado] = await db.query(
+        'INSERT INTO compras_productos (id_usuario, cliente_nombre, id_producto, producto_nombre, imagen, cantidad, precio_unitario, total, metodo_pago, referencia_pago, fecha, hora) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TIME_FORMAT(NOW(), "%H:%i"))',
+        [idUsuario || null, clienteNombre || 'Clienta BellaStyle', idProducto, productoNombre, imagen || null, cantidad, precioUnitario, total, metodoPago, referenciaPago, fecha]
+    );
+    return resultado.insertId;
+}
+
+async function listarComprasPorUsuario(idUsuario) {
+    const [filas] = await db.query('SELECT * FROM compras_productos WHERE id_usuario = ? ORDER BY id_compra DESC', [idUsuario]);
+    return filas;
+}
+
+async function listarTodasLasCompras() {
+    const [filas] = await db.query('SELECT * FROM compras_productos ORDER BY id_compra DESC');
+    return filas;
+}
+
+async function calificarCompra(idCompra, calificacion, comentario) {
+    const [resultado] = await db.query(
+        'UPDATE compras_productos SET calificacion = ?, comentario_calificacion = ?, fecha_calificacion = ? WHERE id_compra = ?',
+        [calificacion, comentario || null, Date.now(), idCompra]
+    );
+    return resultado.affectedRows > 0;
+}
+
+module.exports = {
+    listarActivos, listarTodos, buscarPorId, crear, actualizar, descontarStock, cambiarEstado,
+    registrarCompra, listarComprasPorUsuario, listarTodasLasCompras, calificarCompra
+};

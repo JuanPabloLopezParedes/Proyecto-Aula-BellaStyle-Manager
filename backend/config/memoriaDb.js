@@ -164,6 +164,9 @@ const datos = {
         { id_mensaje_cita: 1, id_cita: 8, autor: 'César Pestana', rol_autor: 'Clienta', texto: 'Hola Diana, llegaré 5 minutos antes. Quiero mantener el largo superior.', hora: '09:30' },
         { id_mensaje_cita: 2, id_cita: 8, autor: 'Diana Martínez', rol_autor: 'Estilista', texto: '¡Claro que sí César! Ya tengo todo listo en la estación para tu turno.', hora: '09:35' },
         { id_mensaje_cita: 3, id_cita: 9, autor: 'Mariana López', rol_autor: 'Clienta', texto: 'Hola Valentina, llevaré el tocado de perlas para probarlo en el recogido.', hora: '11:15' }
+    ],
+    compras_productos: [
+        { id_compra: 1, id_usuario: 5, cliente_nombre: 'César Pestana', id_producto: 1, producto_nombre: 'Shampoo Hidratante Argán', imagen: 'img/productos/shampoo-argan.jpg', cantidad: 1, precio_unitario: 28000, total: 28000, metodo_pago: 'Nequi / Daviplata', referencia_pago: 'NEQ-748291', fecha: '2026-11-18', hora: '11:15', calificacion: 5, comentario_calificacion: 'El Shampoo de Argán deja el cabello súper suave y con aroma delicioso.', fecha_calificacion: 1732000000000 }
     ]
 };
 
@@ -411,6 +414,54 @@ async function ejecutarConsulta(sql, params = []) {
         const pr = datos.productos.find((x) => String(x.id_producto) === String(params[1]));
         if (pr) pr.estado = params[0];
         return [{ affectedRows: pr ? 1 : 0 }];
+    }
+
+    // COMPRAS DIRECTAS DE PRODUCTOS
+    if (s.startsWith('CREATE TABLE IF NOT EXISTS compras_productos')) {
+        if (!Array.isArray(datos.compras_productos)) datos.compras_productos = [];
+        return [{ affectedRows: 0 }];
+    }
+    if (s.startsWith('INSERT INTO compras_productos')) {
+        if (!Array.isArray(datos.compras_productos)) datos.compras_productos = [];
+        const id_compra = datos.compras_productos.reduce((max, x) => Math.max(max, Number(x.id_compra) || 0), 0) + 1;
+        const [id_usuario, cliente_nombre, id_producto, producto_nombre, imagen, cantidad, precio_unitario, total, metodo_pago, referencia_pago, fecha] = params;
+        datos.compras_productos.push({
+            id_compra,
+            id_usuario: id_usuario ? Number(id_usuario) : null,
+            cliente_nombre: cliente_nombre || 'Clienta BellaStyle',
+            id_producto: Number(id_producto),
+            producto_nombre,
+            imagen: imagen || 'img/productos/shampoo-argan.jpg',
+            cantidad: Number(cantidad) || 1,
+            precio_unitario: Number(precio_unitario) || 0,
+            total: Number(total) || 0,
+            metodo_pago: metodo_pago || 'Nequi / Daviplata',
+            referencia_pago: referencia_pago || 'NEQ-000000',
+            fecha: fecha || new Date().toISOString().slice(0, 10),
+            hora: horaActual(),
+            calificacion: null,
+            comentario_calificacion: null,
+            fecha_calificacion: null
+        });
+        return [{ insertId: id_compra, affectedRows: 1 }];
+    }
+    if (s.startsWith('SELECT * FROM compras_productos WHERE id_usuario = ?')) {
+        if (!Array.isArray(datos.compras_productos)) datos.compras_productos = [];
+        return [datos.compras_productos.filter((x) => String(x.id_usuario) === String(params[0])).slice().sort((a, b) => b.id_compra - a.id_compra)];
+    }
+    if (s.startsWith('SELECT * FROM compras_productos ORDER BY')) {
+        if (!Array.isArray(datos.compras_productos)) datos.compras_productos = [];
+        return [datos.compras_productos.slice().sort((a, b) => b.id_compra - a.id_compra)];
+    }
+    if (s.startsWith('UPDATE compras_productos SET calificacion = ?')) {
+        if (!Array.isArray(datos.compras_productos)) datos.compras_productos = [];
+        const cp = datos.compras_productos.find((x) => String(x.id_compra) === String(params[2]));
+        if (cp) {
+            cp.calificacion = Number(params[0]);
+            cp.comentario_calificacion = params[1] || null;
+            cp.fecha_calificacion = Date.now();
+        }
+        return [{ affectedRows: cp ? 1 : 0 }];
     }
 
     // CLIENTAS

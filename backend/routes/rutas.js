@@ -38,12 +38,14 @@ router.post('/servicios', protegerRuta(['Administradora']), gestion.crearServici
 router.put('/servicios/:id', protegerRuta(['Administradora']), gestion.editarServicio);
 router.put('/servicios/:id/estado', protegerRuta(['Administradora']), gestion.estadoServicio);
 
-// Productos
+// Productos y compras directas de la tienda
 router.get('/productos', catalogo.productos);
 router.post('/productos', protegerRuta(['Administradora']), gestion.crearProducto);
 router.post('/productos/:id/comprar', protegerRuta(), gestion.comprarProductoDirecto);
 router.put('/productos/:id', protegerRuta(['Administradora']), gestion.editarProducto);
 router.put('/productos/:id/estado', protegerRuta(['Administradora']), gestion.estadoProducto);
+router.get('/compras', protegerRuta(), gestion.listarComprasProductos);
+router.put('/compras/:id/calificar', protegerRuta(), gestion.calificarCompraProducto);
 
 // Estilistas y horarios semanales
 router.get('/estilistas', catalogo.estilistas);

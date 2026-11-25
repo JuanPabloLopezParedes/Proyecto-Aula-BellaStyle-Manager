@@ -40,6 +40,26 @@ async function asegurarColumnasFotos() {
         if (colFechaCal.length === 0) {
             await db.query('ALTER TABLE citas ADD COLUMN fecha_calificacion TIMESTAMP NULL DEFAULT NULL');
         }
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS compras_productos (
+                id_compra INT AUTO_INCREMENT PRIMARY KEY,
+                id_usuario INT DEFAULT NULL,
+                cliente_nombre VARCHAR(120) NOT NULL,
+                id_producto INT NOT NULL,
+                producto_nombre VARCHAR(120) NOT NULL,
+                imagen VARCHAR(255) DEFAULT NULL,
+                cantidad INT NOT NULL DEFAULT 1,
+                precio_unitario DECIMAL(10,2) NOT NULL DEFAULT 0,
+                total DECIMAL(10,2) NOT NULL DEFAULT 0,
+                metodo_pago VARCHAR(50) NOT NULL DEFAULT 'Nequi / Daviplata',
+                referencia_pago VARCHAR(60) DEFAULT NULL,
+                fecha VARCHAR(20) NOT NULL,
+                hora VARCHAR(10) NOT NULL,
+                calificacion TINYINT DEFAULT NULL,
+                comentario_calificacion VARCHAR(300) DEFAULT NULL,
+                fecha_calificacion BIGINT DEFAULT NULL
+            )
+        `);
     } catch (_) {}
 }
 
