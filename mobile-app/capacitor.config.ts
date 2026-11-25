@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 import { KeyboardResize } from '@capacitor/keyboard';
 
 const config: CapacitorConfig = {
-  appId: 'com.bellastyle.manager',
+  appId: 'com.nexo.users',
   appName: 'BellaStyle Mobile',
   webDir: 'dist',
   plugins: {

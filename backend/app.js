@@ -78,6 +78,14 @@ async function asegurarColumnasFotos() {
 // La dirección principal (http://localhost:3000) abre la Landing Page (welcome.html)
 app.get('/', (req, res) => res.redirect('/welcome.html'));
 
+// Ruta dedicada para descargar directamente el instalador APK de la App Móvil (BellaStyle-Mobile.apk)
+app.get(['/descargar-apk', '/api/descargar-apk', '/descargas/BellaStyle-Mobile.apk'], (req, res) => {
+    const rutaApk = path.join(__dirname, '../frontend/descargas/BellaStyle-Mobile.apk');
+    res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+    res.setHeader('Content-Disposition', 'attachment; filename="BellaStyle-Mobile.apk"');
+    return res.sendFile(rutaApk);
+});
+
 // Sirve las páginas del frontend (welcome.html, index.html, panel.html, etc.)
 app.use(express.static(path.join(__dirname, '../frontend')));
 
