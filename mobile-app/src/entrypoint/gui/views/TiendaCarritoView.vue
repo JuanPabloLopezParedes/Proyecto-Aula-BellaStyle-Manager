@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, onIonViewWillEnter } from '@ionic/vue';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, onIonViewWillEnter, onIonViewWillLeave } from '@ionic/vue';
 import { useApplication, errorMessage, pesos } from '../context';
 import type { ProductoBella, ItemCarritoBella } from '../../../domain/model/BellaModels';
 
@@ -13,25 +13,38 @@ const metodoPago = ref('Nequi / Daviplata');
 const busy = ref(false);
 const error = ref('');
 const success = ref('');
+let timerStockRealtime: ReturnType<typeof setInterval> | null = null;
 
 function syncCarrito() {
   carrito.value = app.obtenerCarrito();
 }
 
-async function load() {
-  busy.value = true;
-  error.value = '';
+async function load(silencioso = false) {
+  if (!silencioso) busy.value = true;
+  if (!silencioso) error.value = '';
   try {
     productos.value = await app.listarProductos();
     syncCarrito();
   } catch (err) {
-    error.value = errorMessage(err);
+    if (!silencioso) error.value = errorMessage(err);
   } finally {
-    busy.value = false;
+    if (!silencioso) busy.value = false;
   }
 }
 
-onIonViewWillEnter(load);
+onIonViewWillEnter(() => {
+  void load(false);
+  if (timerStockRealtime) clearInterval(timerStockRealtime);
+  // Sincronización en tiempo real cada 4 segundos del stock de productos con Vercel
+  timerStockRealtime = setInterval(() => void load(true), 4000);
+});
+
+onIonViewWillLeave(() => {
+  if (timerStockRealtime) {
+    clearInterval(timerStockRealtime);
+    timerStockRealtime = null;
+  }
+});
 
 const itemsDetallados = computed(() =>
   carrito.value
@@ -99,7 +112,7 @@ async function pagarTodo() {
       <main class="page-content">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
           <div>
-            <p class="eyebrow">STOCK SINCRONIZADO EN TIEMPO REAL</p>
+            <p class="eyebrow">🟢 STOCK EN TIEMPO REAL CON VERCEL</p>
             <h1>Comprar Producto</h1>
           </div>
           <RouterLink to="/historial" class="button secondary">🧾 Ir a Mis Compras →</RouterLink>

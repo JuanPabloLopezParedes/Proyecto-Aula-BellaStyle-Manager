@@ -7,6 +7,18 @@ const rutas = require('./routes/rutas');
 
 const app = express();
 
+// Habilitar CORS completo para que la aplicación móvil (Vue.js + Ionic + Capacitor)
+// y cualquier cliente autorizado puedan conectarse en tiempo real al backend de Vercel
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(204);
+    }
+    next();
+});
+
 // Permite leer JSON en el cuerpo de las peticiones (hasta 15MB para fotos de productos y ejemplos de servicios)
 app.use(express.json({ limit: '15mb' }));
 

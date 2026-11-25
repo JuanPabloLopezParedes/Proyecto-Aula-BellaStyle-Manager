@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, onIonViewWillEnter } from '@ionic/vue';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, onIonViewWillEnter, onIonViewWillLeave } from '@ionic/vue';
 import { useApplication, errorMessage, pesos } from '../context';
 import type { ServicioBella, ProductoBella, CitaBella, CompraProductoBella } from '../../../domain/model/BellaModels';
 
@@ -12,9 +12,10 @@ const citas = ref<CitaBella[]>([]);
 const compras = ref<CompraProductoBella[]>([]);
 const error = ref('');
 const busy = ref(false);
+let timerRealtime: ReturnType<typeof setInterval> | null = null;
 
-async function load() {
-  busy.value = true;
+async function load(silencioso = false) {
+  if (!silencioso) busy.value = true;
   error.value = '';
   try {
     const [s, p, c, cp] = await Promise.all([
@@ -28,13 +29,24 @@ async function load() {
     citas.value = c;
     compras.value = cp;
   } catch (e) {
-    error.value = errorMessage(e);
+    if (!silencioso) error.value = errorMessage(e);
   } finally {
-    busy.value = false;
+    if (!silencioso) busy.value = false;
   }
 }
 
-onIonViewWillEnter(load);
+onIonViewWillEnter(() => {
+  void load(false);
+  if (timerRealtime) clearInterval(timerRealtime);
+  timerRealtime = setInterval(() => void load(true), 4000);
+});
+
+onIonViewWillLeave(() => {
+  if (timerRealtime) {
+    clearInterval(timerRealtime);
+    timerRealtime = null;
+  }
+});
 </script>
 
 <template>
@@ -46,14 +58,17 @@ onIonViewWillEnter(load);
     </IonHeader>
     <IonContent>
       <main class="page-content">
-        <p class="eyebrow">SALÓN DE BELLEZA · CARTAGENA</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+          <p class="eyebrow">SALÓN DE BELLEZA · CARTAGENA</p>
+          <span class="badge ok">🟢 En vivo: Vercel Backend</span>
+        </div>
         <h1>Hola, {{ session?.nombre }}</h1>
-        <p class="muted">Tu experiencia móvil conectada en tiempo real con el servidor central de BellaStyle.</p>
+        <p class="muted">Sincronizado en tiempo real cada 4s con <b>proyecto-aula-bella-style-manager.vercel.app</b>.</p>
 
         <section class="welcome">
-          <span class="pill">✨ SINCRONIZACIÓN EN TIEMPO REAL</span>
+          <span class="pill">✨ MISMO BACKEND EN VERCEL</span>
           <h2>Tu estilo, a un toque desde tu celular.</h2>
-          <p>Aparta citas, añade varios productos a tu carrito con descuento de stock real y califica tus experiencias.</p>
+          <p>Todo lo que compres, agendes o califiques aquí se actualiza en tiempo real en la página web desplegada en Vercel y viceversa.</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
             <RouterLink to="/servicios" class="button mint">✂ Agendar Cita</RouterLink>
             <RouterLink to="/tienda" class="button secondary">🛍️ Comprar Producto</RouterLink>
@@ -63,7 +78,7 @@ onIonViewWillEnter(load);
 
         <div v-if="error" class="error" role="alert">
           {{ error }}
-          <button class="button secondary" style="margin-top:8px;" @click="load">Reintentar</button>
+          <button class="button secondary" style="margin-top:8px;" @click="load(false)">Reintentar</button>
         </div>
 
         <section class="stats">

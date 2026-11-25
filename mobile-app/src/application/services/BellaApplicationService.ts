@@ -25,6 +25,10 @@ export class BellaApplicationService {
     private readonly sessions: SessionStore
   ) {}
 
+  apiBaseUrl(): string {
+    return this.http.getBaseUrl();
+  }
+
   currentSession(): BellaSession | null {
     return this.sessions.get();
   }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, onIonViewWillEnter } from '@ionic/vue';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, onIonViewWillEnter, onIonViewWillLeave } from '@ionic/vue';
 import { useApplication, errorMessage, pesos } from '../context';
 import type { CitaBella, CompraProductoBella } from '../../../domain/model/BellaModels';
 
@@ -11,6 +11,7 @@ const citas = ref<CitaBella[]>([]);
 const busy = ref(false);
 const error = ref('');
 const success = ref('');
+let timerHistorialRealtime: ReturnType<typeof setInterval> | null = null;
 
 // Estado para calificar con estrellas que cambian de color vivo al presionar
 const itemEvaluando = ref<{ tipo: 'cita' | 'compra'; id: number; titulo: string } | null>(null);
@@ -25,21 +26,32 @@ const textosEstrella: Record<number, string> = {
   5: '5 de 5 ★★★★★ · ¡Excelente, me encantó! (Seleccionada)',
 };
 
-async function load() {
-  busy.value = true;
-  error.value = '';
+async function load(silencioso = false) {
+  if (!silencioso) busy.value = true;
+  if (!silencioso) error.value = '';
   try {
     const [cp, ct] = await Promise.all([app.listarMisCompras(), app.listarCitas()]);
     compras.value = cp;
     citas.value = ct;
   } catch (err) {
-    error.value = errorMessage(err);
+    if (!silencioso) error.value = errorMessage(err);
   } finally {
-    busy.value = false;
+    if (!silencioso) busy.value = false;
   }
 }
 
-onIonViewWillEnter(load);
+onIonViewWillEnter(() => {
+  void load(false);
+  if (timerHistorialRealtime) clearInterval(timerHistorialRealtime);
+  timerHistorialRealtime = setInterval(() => void load(true), 4000);
+});
+
+onIonViewWillLeave(() => {
+  if (timerHistorialRealtime) {
+    clearInterval(timerHistorialRealtime);
+    timerHistorialRealtime = null;
+  }
+});
 
 function abrirEvaluacion(tipo: 'cita' | 'compra', id: number, titulo: string, calActual?: number | null, comActual?: string | null) {
   itemEvaluando.value = { tipo, id, titulo };
@@ -59,7 +71,7 @@ async function guardarEvaluacion() {
       success.value = await app.calificarCompra(itemEvaluando.value.id, estrellasElegidas.value, comentarioEvaluacion.value);
     }
     itemEvaluando.value = null;
-    await load();
+    await load(false);
   } catch (err) {
     error.value = errorMessage(err);
   } finally {
@@ -115,7 +127,7 @@ async function guardarEvaluacion() {
           <textarea
             v-model="comentarioEvaluacion"
             rows="3"
-            placeholder="Escribe tu experiencia (aparecerá en vivo en la Landing Page)..."
+            placeholder="Escribe tu experiencia (aparecerá en vivo en la Landing Page de Vercel)..."
             style="width:100%;padding:10px;border-radius:12px;border:1px solid #6ee7b7;margin-top:6px;"
           ></textarea>
 

@@ -6,6 +6,7 @@ import { useApplication } from '../context';
 const app = useApplication();
 const router = useRouter();
 const session = app.currentSession();
+const backendConectado = app.apiBaseUrl();
 
 function logout() {
   app.logout();
@@ -23,7 +24,7 @@ function logout() {
     </IonHeader>
     <IonContent>
       <main class="page-content">
-        <p class="eyebrow">PERFIL SINCRONIZADO CON BACKEND</p>
+        <p class="eyebrow">PERFIL SINCRONIZADO EN TIEMPO REAL</p>
         <h1>{{ session?.nombre }}</h1>
 
         <section class="panel">
@@ -32,7 +33,10 @@ function logout() {
             <span class="badge ok">{{ session?.rol }}</span>
           </div>
           <p class="muted" style="margin-top:8px;">
-            Esta aplicación móvil Vue.js + Ionic consume en tiempo real la misma API REST (`/api`) y la misma base de datos de tu plataforma web BellaStyle Manager.
+            🟢 <strong>Backend en vivo:</strong> <code>{{ backendConectado }}</code>
+          </p>
+          <p class="muted" style="margin-top:4px;">
+            Esta aplicación móvil Vue.js + Ionic está conectada directamente a tu servidor en Vercel (<b>proyecto-aula-bella-style-manager.vercel.app</b>) y se sincroniza cada 4 segundos.
           </p>
         </section>
 
