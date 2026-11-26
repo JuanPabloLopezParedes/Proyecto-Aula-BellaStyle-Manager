@@ -381,6 +381,40 @@ function verComprobanteCita(idCita) {
     });
 }
 
+// Solicita al backend la firma criptográfica MD5 oficial de PayU Latam y abre el WebCheckout de PayU Colombia (COP)
+async function lanzarWebCheckoutPayU({ monto, descripcion, referencia }) {
+    const resPayU = await pedir('/payu/checkout', 'POST', {
+        monto,
+        descripcion,
+        referencia,
+        compradorNombre: usuario?.nombre || 'Clienta BellaStyle',
+        compradorEmail: miPerfilClienta?.email || 'cesar@correo.com',
+        compradorTelefono: miPerfilClienta?.telefono || '3001112233',
+        urlRetorno: window.location.href
+    });
+
+    if (!resPayU || !resPayU.success || !resPayU.data) return;
+
+    const { actionUrl, fields } = resPayU.data;
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = actionUrl;
+    form.target = '_blank';
+    form.style.display = 'none';
+
+    for (const [clave, valorCampo] of Object.entries(fields)) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = clave;
+        input.value = String(valorCampo ?? '');
+        form.appendChild(input);
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+    setTimeout(() => form.remove(), 1500);
+}
+
 // Modal de Pasarela de Pago interactiva para pagar una cita pendiente en línea (Clienta) o registrar su cobro (Administradora)
 function pagarCitaModal(idCita) {
     const c = buscarCitaEnMemoria(idCita);
@@ -396,43 +430,62 @@ function pagarCitaModal(idCita) {
         </div>
 
         <div>
-            <label for="vMetodoPagoModal" class="etiqueta-oscura">Selecciona el medio de pago</label>
+            <label for="vMetodoPagoModal" class="etiqueta-oscura">Selecciona la pasarela / medio de pago</label>
             <select id="vMetodoPagoModal" class="campo-pastel">
+                <option value="PayU Latam">🟢 PayU Latam Colombia (WebCheckout Oficial: PSE / Tarjetas / Nequi / Efecty)</option>
                 <option value="Nequi / Daviplata">📲 Nequi / Daviplata (Aprobación inmediata QR)</option>
                 <option value="Tarjeta / PSE">💳 Tarjeta Débito/Crédito o PSE Bancario</option>
                 <option value="Efectivo en Salón">💵 Efectivo en Recepción del Salón</option>
             </select>
         </div>
 
-        <div id="vInfoPasarelaModal" class="rounded-2xl border border-bella-300 bg-white p-3.5 text-xs text-pastel-tinta shadow-inner">
-            <p class="font-extrabold text-bella-900">📲 Cuenta oficial Nequi / Daviplata BellaStyle: 300 655 0192</p>
-            <p class="mt-0.5 text-[11px] text-pastel-subtinta">Ingresa el número celular o comprobante para generar tu referencia aprobada en línea.</p>
+        <div id="vInfoPasarelaModal" class="rounded-2xl border border-emerald-500/60 bg-white p-3.5 text-xs text-pastel-tinta shadow-inner">
+            <div class="flex items-center justify-between gap-2">
+                <p class="font-extrabold text-emerald-950">🟢 Pasarela Oficial PayU Latam (Merchant ID: 508029 · Colombia COP)</p>
+                <span class="rounded-lg bg-emerald-600 px-2 py-0.5 font-mono text-[10px] font-bold text-white">MD5 SIGNED</span>
+            </div>
+            <p class="mt-0.5 text-[11px] text-pastel-subtinta">Al confirmar se aprueba tu pago en el sistema y se abre la pasarela oficial WebCheckout de PayU Latam.</p>
+            <label class="mt-2 flex cursor-pointer items-center gap-2 rounded-lg bg-pastel-menta/70 px-2.5 py-1.5 text-[11px] font-bold text-emerald-950">
+                <input id="vAbrirPayUModal" type="checkbox" class="h-3.5 w-3.5 accent-emerald-700" checked>
+                <span>Abrir ventana WebCheckout oficial de PayU Latam</span>
+            </label>
         </div>
 
         <div>
-            <label for="vReferenciaPagoModal" class="etiqueta-oscura">Número de referencia / Celular o últimos 4 dígitos (opcional)</label>
-            <input id="vReferenciaPagoModal" type="text" class="campo-pastel" placeholder="Si lo dejas vacío se genera código de autorización automático">
+            <label for="vReferenciaPagoModal" class="etiqueta-oscura">Número de referencia / Correo o celular (opcional)</label>
+            <input id="vReferenciaPagoModal" type="text" class="campo-pastel" placeholder="Si lo dejas vacío se genera referencia firmada PayU automática">
         </div>`;
 
-    abrirVentana(`💳 Pasarela de Pago · Cita BS-${c.id}`, htmlPago, async () => {
+    abrirVentana(`🟢 Pasarela de Pago PayU · Cita BS-${c.id}`, htmlPago, async () => {
         const metodoPago = valor('vMetodoPagoModal');
         const refInput = valor('vReferenciaPagoModal');
-        const prefijo = metodoPago === 'Nequi / Daviplata' ? 'NEQ' : (metodoPago === 'Tarjeta / PSE' ? 'PSE' : 'CAJA');
+        const prefijo = metodoPago === 'PayU Latam'
+            ? 'PAYU'
+            : (metodoPago === 'Nequi / Daviplata' ? 'NEQ' : (metodoPago === 'Tarjeta / PSE' ? 'PSE' : 'CAJA'));
         const referenciaPago = refInput
             ? `${prefijo}-${refInput.replace(/\s+/g, '')}`
             : `${prefijo}-${Math.floor(100000 + Math.random() * 900000)}`;
+
+        const abrirPayU = metodoPago === 'PayU Latam' && Boolean(document.getElementById('vAbrirPayUModal')?.checked);
 
         const res = await pedir(`/citas/${c.id}/pago`, 'PUT', {
             metodoPago,
             referenciaPago
         });
         if (res.success) {
+            if (abrirPayU) {
+                await lanzarWebCheckoutPayU({
+                    monto: Number(c.precio) + Number(c.precio_producto || 0),
+                    descripcion: `Cita BellaStyle #BS-${c.id}: ${c.servicio}`,
+                    referencia: referenciaPago
+                });
+            }
             if (usuario.rol === 'Clienta') await cargarCitasClienta();
             if (usuario.rol === 'Estilista') await cargarCitasEstilista();
             if (usuario.rol === 'Administradora') await cargarCitasAdmin();
         }
         return res;
-    }, 'Confirmar y aprobar pago');
+    }, 'Confirmar y pagar con PayU');
 }
 
 // Modal de Galería de Resultado Final de la Cita:
@@ -867,16 +920,29 @@ async function pagarCarritoClienta() {
         return avisar('Añade al menos un producto al carrito antes de confirmar.');
     }
     const btnPagar = document.getElementById('btnPagarCarritoClienta');
-    const metodoPago = document.getElementById('metodoPagoCarritoClienta')?.value || 'Nequi / Daviplata';
+    const metodoPago = document.getElementById('metodoPagoCarritoClienta')?.value || 'PayU Latam';
     const refInput = document.getElementById('referenciaCarritoClienta')?.value.trim() || '';
-    const prefijo = metodoPago === 'Nequi / Daviplata' ? 'NEQ' : (metodoPago === 'Tarjeta / PSE' ? 'PSE' : 'TIENDA');
+    const prefijo = metodoPago === 'PayU Latam'
+        ? 'PAYU'
+        : (metodoPago === 'Nequi / Daviplata' ? 'NEQ' : (metodoPago === 'Tarjeta / PSE' ? 'PSE' : 'TIENDA'));
     const referenciaPago = refInput
         ? `${prefijo}-${refInput.replace(/\s+/g, '')}`
         : `${prefijo}-${Math.floor(100000 + Math.random() * 900000)}`;
 
+    // Calcular monto y descripción del carrito para PayU antes de vaciarlo
+    let montoTotalPayU = 0;
+    const nombresItems = [];
+    carritoClienta.forEach((it) => {
+        const p = productosDisponibles.find((x) => String(x.id_producto) === String(it.id_producto));
+        if (p) {
+            montoTotalPayU += Number(p.precio) * Number(it.cantidad);
+            nombresItems.push(`${it.cantidad}x ${p.nombre}`);
+        }
+    });
+
     if (btnPagar) {
         btnPagar.disabled = true;
-        btnPagar.textContent = 'Procesando compra...';
+        btnPagar.textContent = 'Procesando con PayU...';
     }
 
     const res = await pedir('/carrito/comprar', 'POST', {
@@ -889,10 +955,17 @@ async function pagarCarritoClienta() {
 
     if (btnPagar) {
         btnPagar.disabled = false;
-        btnPagar.textContent = '✓ Confirmar y Pagar Carrito';
+        btnPagar.textContent = '🟢 Confirmar y Pagar con PayU';
     }
 
     if (res && res.success) {
+        if (metodoPago === 'PayU Latam') {
+            await lanzarWebCheckoutPayU({
+                monto: montoTotalPayU,
+                descripcion: `Carrito BellaStyle: ${nombresItems.join(', ')}`,
+                referencia: referenciaPago
+            });
+        }
         carritoClienta = [];
         guardarCarritoEnStorage();
         if (document.getElementById('referenciaCarritoClienta')) {
@@ -1636,6 +1709,7 @@ async function iniciarClienta() {
 
     // Selector interactivo de Método de Pago en el formulario de la Clienta
     const inputMetodoPago = document.getElementById('metodoPagoCita');
+    const cajaPayU = document.getElementById('cajaPagoPayU');
     const cajaNequi = document.getElementById('cajaPagoNequi');
     const cajaTarjeta = document.getElementById('cajaPagoTarjeta');
     document.querySelectorAll('[data-btn-metodo]').forEach((btn) => {
@@ -1648,6 +1722,7 @@ async function iniciarClienta() {
                     ? 'rounded-xl border-2 border-bella-600 bg-pastel-rosa px-2 py-2 text-center text-[11px] font-extrabold text-bella-900 shadow-sm transition'
                     : 'rounded-xl border border-bella-300 bg-white px-2 py-2 text-center text-[11px] font-bold text-pastel-tinta transition hover:bg-pastel-rosa/50';
             });
+            cajaPayU?.classList.toggle('hidden', elegido !== 'PayU Latam');
             cajaNequi?.classList.toggle('hidden', elegido !== 'Nequi / Daviplata');
             cajaTarjeta?.classList.toggle('hidden', elegido !== 'Tarjeta / PSE');
         });
@@ -1786,10 +1861,12 @@ async function agendarCita(e) {
     const idProducto = document.getElementById('productoAdicional')?.value || null;
     const codigoPromo = document.getElementById('codigoPromocional')?.value.trim() || '';
     const finalizadasCount = citasClienta.filter((c) => c.estado === 'Finalizada').length;
-    const metodoPago = document.getElementById('metodoPagoCita')?.value || 'Efectivo en Salón';
+    const metodoPago = document.getElementById('metodoPagoCita')?.value || 'PayU Latam';
 
     let referenciaPago = null;
-    if (metodoPago === 'Nequi / Daviplata') {
+    if (metodoPago === 'PayU Latam') {
+        referenciaPago = `PAYU-BS-${Math.floor(100000 + Math.random() * 900000)}`;
+    } else if (metodoPago === 'Nequi / Daviplata') {
         const cel = document.getElementById('celularNequiCita')?.value.trim() || '';
         referenciaPago = cel ? `NEQ-${cel.replace(/\s+/g, '').slice(-6)}` : `NEQ-${Math.floor(100000 + Math.random() * 900000)}`;
     } else if (metodoPago === 'Tarjeta / PSE') {
@@ -1815,6 +1892,15 @@ async function agendarCita(e) {
     });
 
     if (respuesta.success) {
+        if (metodoPago === 'PayU Latam' && document.getElementById('abrirCheckoutPayUCita')?.checked) {
+            const srvObj = servicios.find((s) => String(s.id_servicio) === String(document.getElementById('servicio').value));
+            const montoBase = Number(precioEspecialidadSeleccionada || srvObj?.precio || 35000);
+            await lanzarWebCheckoutPayU({
+                monto: montoBase,
+                descripcion: `Cita BellaStyle: ${srvObj?.nombre || 'Servicio de salón'} (${fecha} ${hora})`,
+                referencia: referenciaPago
+            });
+        }
         mostrarAlerta(alerta, respuesta.message, 'ok');
         avisar(respuesta.message);
         document.getElementById('observaciones').value = '';

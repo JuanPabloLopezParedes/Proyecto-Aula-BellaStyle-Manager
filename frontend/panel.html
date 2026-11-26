@@ -135,23 +135,41 @@
             <input id="codigoPromocional" type="text" class="campo-pastel uppercase" placeholder="Ej: BELLA15 (15% de descuento)">
           </div>
 
-          <!-- 8. Pasarela de Pago Interactiva (Nequi / PSE-Tarjeta / Efectivo en Salón) -->
+          <!-- 8. Pasarela de Pago Interactiva (PayU Latam / Nequi / PSE-Tarjeta / Efectivo en Salón) -->
           <div class="rounded-2xl border-2 border-bella-400/70 bg-pastel-perla p-3.5">
             <div class="flex items-center justify-between gap-2">
               <label class="text-xs font-extrabold uppercase tracking-wider text-bella-900">8. Método de pago</label>
-              <span class="rounded-full bg-emerald-600/15 px-2.5 py-0.5 text-[10px] font-bold text-emerald-950">🔒 Pasarela segura</span>
+              <span class="rounded-full bg-emerald-600/15 px-2.5 py-0.5 text-[10px] font-bold text-emerald-950">🔒 Pasarela PayU Latam</span>
             </div>
-            <input type="hidden" id="metodoPagoCita" value="Efectivo en Salón">
-            <div class="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-3">
-              <button type="button" data-btn-metodo="Efectivo en Salón" class="rounded-xl border-2 border-bella-600 bg-pastel-rosa px-2.5 py-2 text-center text-xs font-extrabold text-bella-900 shadow-sm transition sm:text-[11px]">
+            <input type="hidden" id="metodoPagoCita" value="PayU Latam">
+            <div class="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+              <button type="button" data-btn-metodo="PayU Latam" class="rounded-xl border-2 border-bella-600 bg-pastel-rosa px-2 py-2 text-center text-xs font-extrabold text-bella-900 shadow-sm transition sm:text-[11px]">
+                🟢 PayU Latam
+              </button>
+              <button type="button" data-btn-metodo="Efectivo en Salón" class="rounded-xl border border-bella-300 bg-white px-2 py-2 text-center text-xs font-bold text-pastel-tinta transition hover:bg-pastel-rosa/50 sm:text-[11px]">
                 💵 En Salón
               </button>
-              <button type="button" data-btn-metodo="Nequi / Daviplata" class="rounded-xl border border-bella-300 bg-white px-2.5 py-2 text-center text-xs font-bold text-pastel-tinta transition hover:bg-pastel-rosa/50 sm:text-[11px]">
+              <button type="button" data-btn-metodo="Nequi / Daviplata" class="rounded-xl border border-bella-300 bg-white px-2 py-2 text-center text-xs font-bold text-pastel-tinta transition hover:bg-pastel-rosa/50 sm:text-[11px]">
                 📲 Nequi / QR
               </button>
-              <button type="button" data-btn-metodo="Tarjeta / PSE" class="rounded-xl border border-bella-300 bg-white px-2.5 py-2 text-center text-xs font-bold text-pastel-tinta transition hover:bg-pastel-rosa/50 sm:text-[11px]">
+              <button type="button" data-btn-metodo="Tarjeta / PSE" class="rounded-xl border border-bella-300 bg-white px-2 py-2 text-center text-xs font-bold text-pastel-tinta transition hover:bg-pastel-rosa/50 sm:text-[11px]">
                 💳 PSE / Tarjeta
               </button>
+            </div>
+
+            <!-- Panel dinámico de PayU Latam -->
+            <div id="cajaPagoPayU" class="mt-2.5 rounded-xl border border-emerald-500/60 bg-white p-3 text-xs text-pastel-tinta">
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <p class="font-extrabold text-emerald-950">🟢 Pasarela Oficial PayU Latam Colombia (COP)</p>
+                  <p class="mt-0.5 text-[11px] text-pastel-subtinta">Acepta PSE, Tarjetas Visa/Mastercard, Nequi, Daviplata y Efecty con firma MD5 verificada.</p>
+                </div>
+                <span class="rounded-lg bg-emerald-600 px-2 py-1 font-mono text-[10px] font-extrabold text-white">PayU ACTIVO</span>
+              </div>
+              <label class="mt-2 flex cursor-pointer items-center gap-2 rounded-lg bg-pastel-menta/70 px-2.5 py-1.5 text-[11px] font-bold text-emerald-950">
+                <input id="abrirCheckoutPayUCita" type="checkbox" class="h-3.5 w-3.5 accent-emerald-700" checked>
+                <span>Abrir pasarela WebCheckout oficial de PayU Latam al confirmar</span>
+              </label>
             </div>
 
             <!-- Panel dinámico de Nequi / Daviplata -->
@@ -254,25 +272,28 @@
           <div id="barraCheckoutCarritoClienta" class="mt-4 hidden rounded-2xl border-2 border-emerald-500/50 bg-pastel-menta/80 p-4">
             <div class="grid items-center gap-4 lg:grid-cols-12">
               <div class="lg:col-span-5">
-                <label for="metodoPagoCarritoClienta" class="block text-xs font-extrabold uppercase tracking-wider text-emerald-950">Método de pago del pedido</label>
+                <label for="metodoPagoCarritoClienta" class="block text-xs font-extrabold uppercase tracking-wider text-emerald-950">Pasarela / Método de pago del pedido</label>
                 <select id="metodoPagoCarritoClienta" class="campo-pastel mt-1 bg-white py-2 text-xs">
+                  <option value="PayU Latam">🟢 PayU Latam Colombia (PSE / Tarjetas / Nequi / Efecty)</option>
                   <option value="Nequi / Daviplata">📲 Nequi / Daviplata (Línea 300 655 0192 · Aprobación inmediata)</option>
                   <option value="Tarjeta / PSE">💳 Tarjeta Débito / Crédito o PSE Bancario</option>
                   <option value="Efectivo en Salón">💵 Pagar en efectivo al recoger en el Salón</option>
                 </select>
               </div>
               <div class="lg:col-span-3">
-                <label for="referenciaCarritoClienta" class="block text-xs font-extrabold uppercase tracking-wider text-emerald-950">Celular / Ref. (Opcional)</label>
-                <input id="referenciaCarritoClienta" type="text" class="campo-pastel mt-1 bg-white py-2 text-xs" placeholder="Ej: 300 123 4567">
+                <label for="referenciaCarritoClienta" class="block text-xs font-extrabold uppercase tracking-wider text-emerald-950">Correo / Celular PayU (Opcional)</label>
+                <input id="referenciaCarritoClienta" type="text" class="campo-pastel mt-1 bg-white py-2 text-xs" placeholder="Ej: cliente@correo.com">
               </div>
               <div class="flex flex-col items-stretch justify-between gap-2 sm:flex-row sm:items-center lg:col-span-4 lg:justify-end">
                 <div class="text-left sm:text-right">
                   <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-950">Total del Carrito</p>
                   <p id="granTotalCarritoClienta" class="font-titulo text-3xl font-bold text-bella-900">$0</p>
                 </div>
-                <button type="button" id="btnPagarCarritoClienta" class="btn-primario px-5 py-3 text-xs font-extrabold shadow-lg sm:text-sm">
-                  ✓ Confirmar y Pagar Carrito
-                </button>
+                <div class="flex flex-col gap-1.5">
+                  <button type="button" id="btnPagarCarritoClienta" class="btn-primario px-4 py-2.5 text-xs font-extrabold shadow-lg">
+                    🟢 Confirmar y Pagar con PayU
+                  </button>
+                </div>
               </div>
             </div>
           </div>

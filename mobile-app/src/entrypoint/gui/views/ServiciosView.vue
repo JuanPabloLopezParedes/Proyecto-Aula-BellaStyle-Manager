@@ -11,7 +11,7 @@ const idServicio = ref<number>(0);
 const idEstilista = ref<number>(0);
 const fecha = ref(new Date().toISOString().slice(0, 10));
 const hora = ref('10:00');
-const metodoPago = ref('Nequi / Daviplata');
+const metodoPago = ref('PayU Latam');
 const observaciones = ref('');
 const busy = ref(false);
 const error = ref('');
@@ -110,8 +110,9 @@ async function agendar() {
               </div>
             </div>
             <div>
-              <label class="eyebrow">Método de pago</label>
+              <label class="eyebrow">Pasarela / Método de pago</label>
               <select v-model="metodoPago" style="width:100%;padding:10px;border-radius:12px;border:1px solid #ebb0c8;margin-top:4px;">
+                <option value="PayU Latam">🟢 PayU Latam (PSE / Tarjetas / Nequi)</option>
                 <option value="Nequi / Daviplata">📲 Nequi / Daviplata</option>
                 <option value="Tarjeta / PSE">💳 Tarjeta / PSE</option>
                 <option value="Efectivo en Salón">💵 Efectivo en Salón</option>

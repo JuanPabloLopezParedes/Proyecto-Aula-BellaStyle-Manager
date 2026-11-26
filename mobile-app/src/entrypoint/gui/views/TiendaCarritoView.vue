@@ -9,7 +9,7 @@ const app = useApplication();
 const router = useRouter();
 const productos = ref<ProductoBella[]>([]);
 const carrito = ref<ItemCarritoBella[]>([]);
-const metodoPago = ref('Nequi / Daviplata');
+const metodoPago = ref('PayU Latam');
 const busy = ref(false);
 const error = ref('');
 const success = ref('');
@@ -153,12 +153,13 @@ async function pagarTodo() {
                 <strong style="display:block;font-size:22px;color:#8d2f58;">{{ pesos(granTotal) }}</strong>
               </div>
               <select v-model="metodoPago" style="padding:10px;border-radius:12px;border:1px solid #ebb0c8;">
+                <option value="PayU Latam">🟢 PayU Latam (PSE / Tarjetas / Nequi)</option>
                 <option value="Nequi / Daviplata">📲 Nequi / Daviplata</option>
                 <option value="Tarjeta / PSE">💳 Tarjeta / PSE</option>
                 <option value="Efectivo en Salón">💵 Efectivo en Salón</option>
               </select>
               <button type="button" class="button primary" :disabled="busy" @click="pagarTodo">
-                {{ busy ? 'Procesando…' : '✅ Confirmar y Pagar Carrito' }}
+                {{ busy ? 'Procesando…' : '🟢 Confirmar y Pagar con PayU' }}
               </button>
             </div>
           </div>

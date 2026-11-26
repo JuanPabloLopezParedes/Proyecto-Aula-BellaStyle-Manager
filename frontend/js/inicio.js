@@ -701,8 +701,9 @@ function abrirModalCompraDirectaEnTienda(idProducto) {
                 <input id="cantCompraTienda" type="number" min="1" max="${stockActual}" value="1" class="campo-pastel" required>
             </div>
             <div>
-                <label class="etiqueta-oscura">Método de pago</label>
+                <label class="etiqueta-oscura">Pasarela / Método de pago</label>
                 <select id="metodoCompraTienda" class="campo-pastel">
+                    <option value="PayU Latam">🟢 PayU Latam Colombia (PSE / Tarjetas / Nequi)</option>
                     <option value="Nequi / Daviplata">📲 Nequi / Daviplata</option>
                     <option value="Tarjeta / PSE">💳 Tarjeta / PSE</option>
                     <option value="Efectivo en Salón">💵 Efectivo en Salón</option>
@@ -756,6 +757,30 @@ function abrirModalCompraDirectaEnTienda(idProducto) {
         btn.textContent = 'Confirmar compra';
 
         if (res.success) {
+            if (metodoPago === 'PayU Latam') {
+                const resPayU = await pedir('/payu/checkout', 'POST', {
+                    monto: cantidad * Number(p.precio),
+                    descripcion: `Compra Tienda BellaStyle: ${cantidad}x ${p.nombre}`,
+                    referencia: `PAYU-TIENDA-${Date.now()}`
+                });
+                if (resPayU && resPayU.success && resPayU.data) {
+                    const f = document.createElement('form');
+                    f.method = 'POST';
+                    f.action = resPayU.data.actionUrl;
+                    f.target = '_blank';
+                    f.style.display = 'none';
+                    for (const [k, v] of Object.entries(resPayU.data.fields)) {
+                        const inp = document.createElement('input');
+                        inp.type = 'hidden';
+                        inp.name = k;
+                        inp.value = String(v ?? '');
+                        f.appendChild(inp);
+                    }
+                    document.body.appendChild(f);
+                    f.submit();
+                    setTimeout(() => f.remove(), 1500);
+                }
+            }
             mostrarAlerta(document.getElementById('alertaCompraTienda'), res.message, 'ok');
             await sincronizarTiempoRealLandingYTienda();
             setTimeout(() => dialog.close(), 1400);

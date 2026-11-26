@@ -524,10 +524,74 @@ async function fichaTecnicaClienta(req, res) {
     } catch (err) { errorServidor(res, err); }
 }
 
+// ---------------------------------------------------------------
+// PASARELA DE PAGO OFICIAL PAYU LATAM (COLOMBIA - COP)
+// ---------------------------------------------------------------
+// POST /api/payu/checkout
+// Genera los parámetros firmados con MD5(ApiKey~merchantId~referenceCode~amount~currency)
+// para enviar al WebCheckout oficial de PayU Latam (Sandbox o Producción).
+async function generarCheckoutPayU(req, res) {
+    try {
+        const crypto = require('crypto');
+        const apiKey = process.env.PAYU_API_KEY || '4Vj8eK4rloUd272L48hsrarnUA';
+        const merchantId = process.env.PAYU_MERCHANT_ID || '508029';
+        const accountId = process.env.PAYU_ACCOUNT_ID || '512321'; // PayU Colombia (COP)
+        const esProduccion = process.env.PAYU_PRODUCTION === 'true';
+        const actionUrl = esProduccion
+            ? 'https://checkout.payulatam.com/ppp-web-gateway-payu/'
+            : 'https://sandbox.checkout.payulatam.com/ppp-web-gateway-payu/';
+
+        const montoNum = Math.max(1000, Math.round(Number(req.body.monto) || 35000));
+        const amount = String(montoNum);
+        const currency = 'COP';
+        const referenceCode = String(
+            req.body.referencia || `PAYU-BS-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`
+        ).slice(0, 50);
+        const description = String(req.body.descripcion || 'Pedido BellaStyle Salón de Belleza').slice(0, 250);
+        const buyerFullName = String(req.body.compradorNombre || req.usuario?.nombre || 'Clienta BellaStyle').slice(0, 120);
+        const buyerEmail = String(req.body.compradorEmail || 'cesar@correo.com').trim();
+        const telephone = String(req.body.compradorTelefono || '3001112233').trim();
+        const responseUrl = String(
+            req.body.urlRetorno || 'https://proyecto-aula-bella-style-manager.vercel.app/panel.html'
+        );
+
+        // Firma criptográfica oficial exigida por PayU Latam: MD5(ApiKey~merchantId~referenceCode~amount~currency)
+        const cadenaFirma = `${apiKey}~${merchantId}~${referenceCode}~${amount}~${currency}`;
+        const signature = crypto.createHash('md5').update(cadenaFirma).digest('hex');
+
+        return res.json({
+            success: true,
+            data: {
+                actionUrl,
+                fields: {
+                    merchantId,
+                    accountId,
+                    description,
+                    referenceCode,
+                    amount,
+                    tax: '0',
+                    taxReturnBase: '0',
+                    currency,
+                    signature,
+                    test: esProduccion ? '0' : '1',
+                    buyerFullName,
+                    buyerEmail,
+                    telephone,
+                    responseUrl,
+                    confirmationUrl: 'https://proyecto-aula-bellastyle-manager.onrender.com/api/servicios'
+                }
+            }
+        });
+    } catch (err) {
+        errorServidor(res, err);
+    }
+}
+
 module.exports = {
     crearServicio, editarServicio, estadoServicio,
     crearProducto, editarProducto, estadoProducto,
     comprarProductoDirecto, comprarCarritoProductos, listarComprasProductos, calificarCompraProducto,
     estadoEstilista, serviciosEstilista, horarioEstilista,
-    editarClienta, fichaTecnicaClienta
+    editarClienta, fichaTecnicaClienta,
+    generarCheckoutPayU
 };
