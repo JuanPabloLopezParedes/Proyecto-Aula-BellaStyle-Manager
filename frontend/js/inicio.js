@@ -757,6 +757,7 @@ function abrirModalCompraDirectaEnTienda(idProducto) {
         btn.textContent = 'Confirmar compra';
 
         if (res.success) {
+            let linkExternoPayU = '';
             if (metodoPago === 'PayU Latam') {
                 const resPayU = await pedir('/payu/checkout', 'POST', {
                     monto: cantidad * Number(p.precio),
@@ -764,26 +765,25 @@ function abrirModalCompraDirectaEnTienda(idProducto) {
                     referencia: `PAYU-TIENDA-${Date.now()}`
                 });
                 if (resPayU && resPayU.success && resPayU.data) {
-                    const f = document.createElement('form');
-                    f.method = 'POST';
-                    f.action = resPayU.data.actionUrl;
-                    f.target = '_blank';
-                    f.style.display = 'none';
-                    for (const [k, v] of Object.entries(resPayU.data.fields)) {
-                        const inp = document.createElement('input');
-                        inp.type = 'hidden';
-                        inp.name = k;
-                        inp.value = String(v ?? '');
-                        f.appendChild(inp);
-                    }
-                    document.body.appendChild(f);
-                    f.submit();
-                    setTimeout(() => f.remove(), 1500);
+                    const inputs = Object.entries(resPayU.data.fields)
+                        .map(([k, v]) => `<input type="hidden" name="${escapar(k)}" value="${escapar(String(v ?? ''))}">`)
+                        .join('');
+                    document.getElementById('cuerpoCompraTienda').insertAdjacentHTML('beforeend', `
+                        <form method="POST" action="${escapar(resPayU.data.actionUrl)}" target="_blank" class="mt-2">
+                            ${inputs}
+                            <button type="submit" class="w-full rounded-xl bg-[#a6c307] px-3.5 py-2 text-xs font-extrabold text-white shadow-md hover:bg-[#8aa304]">
+                                🌐 Abrir portal externo PayU Sandbox (Firma MD5: ${escapar(resPayU.data.fields.referenceCode)}) &rarr;
+                            </button>
+                        </form>
+                    `);
+                    linkExternoPayU = ' Puedes abrir el comprobante en PayU Sandbox con el botón verde de abajo.';
                 }
             }
-            mostrarAlerta(document.getElementById('alertaCompraTienda'), res.message, 'ok');
+            mostrarAlerta(document.getElementById('alertaCompraTienda'), res.message + linkExternoPayU, 'ok');
             await sincronizarTiempoRealLandingYTienda();
-            setTimeout(() => dialog.close(), 1400);
+            if (metodoPago !== 'PayU Latam') {
+                setTimeout(() => dialog.close(), 1400);
+            }
         } else {
             mostrarAlerta(document.getElementById('alertaCompraTienda'), res.message);
         }

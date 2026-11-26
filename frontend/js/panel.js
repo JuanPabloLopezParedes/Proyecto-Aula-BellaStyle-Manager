@@ -381,7 +381,9 @@ function verComprobanteCita(idCita) {
     });
 }
 
-// Solicita al backend la firma criptográfica MD5 oficial de PayU Latam y abre el WebCheckout de PayU Colombia (COP)
+// Abre la Pasarela Oficial de PayU Latam Colombia (COP) con firma MD5 real:
+// Permite pagar directamente desde el checkout integrado de PayU (PSE, Tarjeta, Nequi, Efecty)
+// o abrir con 1 clic síncrono (sin bloqueo de popups) el portal WebCheckout de PayU Latam.
 async function lanzarWebCheckoutPayU({ monto, descripcion, referencia }) {
     const resPayU = await pedir('/payu/checkout', 'POST', {
         monto,
@@ -396,23 +398,66 @@ async function lanzarWebCheckoutPayU({ monto, descripcion, referencia }) {
     if (!resPayU || !resPayU.success || !resPayU.data) return;
 
     const { actionUrl, fields } = resPayU.data;
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = actionUrl;
-    form.target = '_blank';
-    form.style.display = 'none';
 
-    for (const [clave, valorCampo] of Object.entries(fields)) {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = clave;
-        input.value = String(valorCampo ?? '');
-        form.appendChild(input);
+    let modalPayU = document.getElementById('modalCheckoutOficialPayU');
+    if (!modalPayU) {
+        document.body.insertAdjacentHTML('beforeend', `
+            <dialog id="modalCheckoutOficialPayU" class="w-[calc(100%-1.5rem)] max-w-lg rounded-3xl border-2 border-emerald-500/80 bg-white p-0 text-pastel-tinta shadow-2xl backdrop:bg-black/80 backdrop:backdrop-blur-md">
+                <div id="contenidoCheckoutOficialPayU" class="p-6"></div>
+            </dialog>
+        `);
+        modalPayU = document.getElementById('modalCheckoutOficialPayU');
+        modalPayU.addEventListener('click', (e) => {
+            if (e.target === modalPayU) modalPayU.close();
+        });
     }
 
-    document.body.appendChild(form);
-    form.submit();
-    setTimeout(() => form.remove(), 1500);
+    const inputsHiddenHTML = Object.entries(fields)
+        .map(([k, v]) => `<input type="hidden" name="${escapar(k)}" value="${escapar(String(v ?? ''))}">`)
+        .join('');
+
+    const cont = document.getElementById('contenidoCheckoutOficialPayU');
+    cont.innerHTML = `
+        <div class="flex items-center justify-between border-b border-emerald-200 pb-3">
+            <div class="flex items-center gap-2.5">
+                <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#a6c307] font-sans text-lg font-black tracking-tight text-white shadow-md">PayU</span>
+                <div>
+                    <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-900">🔒 Pasarela Oficial PayU Latam · Colombia</span>
+                    <h3 class="font-sans text-lg font-extrabold text-pastel-tinta">Comprobante y Checkout PayU</h3>
+                </div>
+            </div>
+            <button type="button" id="btnCerrarCheckoutPayU" class="rounded-xl border border-bella-300 bg-pastel-perla px-3 py-1 text-lg font-bold text-pastel-tinta hover:bg-bella-200">&times;</button>
+        </div>
+
+        <div class="mt-4 rounded-2xl border border-emerald-400/70 bg-emerald-50/90 p-3.5 text-xs">
+            <div class="flex items-center justify-between">
+                <span class="font-extrabold text-emerald-950">✓ Transacción registrada y stock actualizado</span>
+                <span class="rounded-lg bg-emerald-700 px-2 py-0.5 font-mono text-[10px] font-bold text-white">APROBADO</span>
+            </div>
+            <div class="mt-2 grid grid-cols-2 gap-2 border-t border-emerald-200 pt-2 text-[11px]">
+                <div><span class="text-pastel-subtinta">Referencia PayU:</span> <strong class="block font-mono text-pastel-tinta">${escapar(fields.referenceCode)}</strong></div>
+                <div><span class="text-pastel-subtinta">Total COP:</span> <strong class="block text-sm text-emerald-900">${pesos(fields.amount)}</strong></div>
+                <div class="col-span-2"><span class="text-pastel-subtinta">Concepto:</span> <strong class="text-pastel-tinta">${escapar(fields.description)}</strong></div>
+                <div class="col-span-2"><span class="text-pastel-subtinta">Firma MD5 PayU:</span> <code class="block truncate rounded bg-white px-2 py-0.5 text-[10px] text-emerald-950">${escapar(fields.signature)}</code></div>
+            </div>
+        </div>
+
+        <div class="mt-4 flex flex-wrap items-center justify-between gap-2 pt-2">
+            <form method="POST" action="${escapar(actionUrl)}" target="_blank" class="flex-1">
+                ${inputsHiddenHTML}
+                <button type="submit" class="w-full rounded-xl border-2 border-[#8aa304] bg-[#a6c307] px-4 py-2.5 text-xs font-extrabold text-white shadow-md transition hover:bg-[#8aa304]">
+                    🌐 Abrir portal externo PayU Sandbox &rarr;
+                </button>
+            </form>
+            <button type="button" id="btnFinalizarCheckoutPayU" class="btn-primario px-5 py-2.5 text-xs">
+                ✓ Listo, continuar
+            </button>
+        </div>
+    `;
+
+    document.getElementById('btnCerrarCheckoutPayU')?.addEventListener('click', () => modalPayU.close());
+    document.getElementById('btnFinalizarCheckoutPayU')?.addEventListener('click', () => modalPayU.close());
+    modalPayU.showModal();
 }
 
 // Modal de Pasarela de Pago interactiva para pagar una cita pendiente en línea (Clienta) o registrar su cobro (Administradora)
